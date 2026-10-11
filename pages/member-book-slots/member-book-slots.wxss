@@ -1,0 +1,64 @@
+/* ⭐ 三态时段小卡片（.slot-grid/.slot-cell/.slot-time/.slot-state/.slot-dot/.slot-legend*）
+   **不在本文件里定义** —— 唯一来源是 styles/slots.wxss（教练端「新建课程」弹层共用同一份）。
+   ⛔ 本页不设任何 --slot-* 变量 ⇒ 全部走默认值（= 改版前逐字原值）⇒ 像素不变。
+   回归护栏：tests/slot-card-single-source.test.js */
+@import "../../styles/member.wxss";
+@import "../../styles/slots.wxss";
+/* M3 P1 · 约课：复用会员端 Design System；文字块一律 `flex/min-width:0`（防一字一行，M2-UI-02 铁律）。
+   ★ M3-P2-1 改版（2026-09-30）：三列大方格（每格「08:00–09:00」两段文字、112rpx 高、6 行）
+     ⇒ **四列紧凑格**（每格只给「开始时间」+ 状态、90rpx 高、5 行）。
+     同一天的 17 个时段：旧版 6 行 × 126rpx ≈ 756rpx，新版 5 行 × 100rpx = 500rpx（**少 34% 高度**）。
+     ⛔ 状态区分一个都没少：可约 / 已排课 / 已过时间 各有独立底色 + 独立边框 + 状态文字 + 顶部图例。
+     ⛔ 最晚结束时间仍是 24:00（口径来自 `occupancy.LATEST_END_MINUTES`，样式层不许出现第二个数字）。 */
+.slot-day-copy{flex:1;min-width:0}
+.slot-day{font-size:var(--member-font-section,28rpx);font-weight:800;color:var(--member-text,#22282e);overflow-wrap:break-word}
+.slot-day-nav{display:flex;gap:12rpx;flex:0 0 auto}
+.slot-day-btn{width:64rpx;height:64rpx;border-radius:20rpx;background:var(--member-surface,#ffffff);border:2rpx solid var(--member-border-strong,#d2d6da);color:var(--member-primary);font-size:32rpx;font-weight:800;display:flex;align-items:center;justify-content:center}
+.slot-day-btn.off{color:var(--member-text-sub,#757e86);border-color:var(--member-border,#e6e8ea)}
+.slot-dates{width:100%;margin-top:12rpx;white-space:nowrap}
+.slot-dates-inner{display:inline-flex;gap:10rpx}
+.slot-date{width:96rpx;padding:10rpx 0;border-radius:20rpx;background:var(--member-surface,#ffffff);border:2rpx solid var(--member-border,#e6e8ea);text-align:center;flex:0 0 auto}
+.slot-date.active{background:var(--member-primary);border-color:var(--member-primary)}
+.slot-date-week{font-size:var(--member-font-cap);color:var(--member-text-sub,#757e86)}
+.slot-date.active .slot-date-week{color:rgba(255,255,255,.82)}
+.slot-date-day{font-size:var(--member-font-body,27rpx);font-weight:800;color:var(--member-text,#22282e);margin-top:2rpx}
+.slot-date.active .slot-date-day{color:#fff}
+.slot-coaches{display:flex;flex-wrap:wrap;gap:14rpx}
+.slot-coach{max-width:100%;padding:14rpx 22rpx;border-radius:var(--member-radius-pill,999rpx);background:var(--member-surface,#ffffff);border:2rpx solid var(--member-border-strong,#d2d6da);color:var(--member-text-sub,#757e86);font-size:var(--member-font-body);font-weight:700;overflow-wrap:break-word}
+.slot-coach.active{background:var(--member-soft);border-color:var(--member-primary);color:var(--member-primary)}
+/* ⭐ 同名教练 ⇒ 补身份标签（管理人 / 授课教练）；分不开时才带教练码尾号（⛔ 不出完整内部 id） */
+.slot-coach-role{margin-left:10rpx;font-size:var(--member-font-cap);font-weight:800;color:var(--member-text-sub,#757e86);background:var(--member-surface-alt,#fafbfb);border-radius:999rpx;padding:3rpx 10rpx;overflow-wrap:break-word}
+.slot-coach.active .slot-coach-role{color:var(--member-primary);background:rgba(255,255,255,.72)}
+.slot-coach-tail{margin-left:6rpx;font-size:var(--member-font-cap);font-weight:800;color:var(--member-text-sub,#757e86)}
+.confirm-coach-role{font-size:var(--member-font-cap);color:var(--member-text-sub,#757e86);font-weight:650}
+/* ⭐ 提交等待期间那句话：明写"还在占" ⇒ 不许被读成已经成功 */
+.confirm-submit-note{margin:14rpx 0 4rpx;font-size:var(--member-font-cap);line-height:1.5;color:var(--member-warning,#8a6f34);background:var(--member-warning-soft,#f3eee2);border:var(--member-divider,1rpx) solid var(--member-border-strong,#d2d6da);border-radius:var(--member-radius-control,22rpx);padding:14rpx 18rpx}
+/* 本地回声的那一格：虚线边框 ⇒ 一眼看出"这是我刚点的、正在确认" */
+/* 标题行：右侧挂"正在核对最新排课…"（M3-P1 的缓存先出画面时用它明示后台仍在刷新）。 */
+.slots-head{display:flex;align-items:baseline;justify-content:space-between;gap:16rpx}
+.slots-refreshing{font-size:var(--member-font-cap);color:var(--member-text-sub,#757e86);flex:0 0 auto}
+/* 图例：让"颜色"这一层信息有明确语义（会员不用猜灰格是什么意思）。 */
+.booking-hint{text-align:center;color:var(--member-warning,#8a6f34);font-size:var(--member-font-cap);padding:16rpx;background:var(--member-warning-soft,#f3eee2);border:var(--member-divider,1rpx) solid var(--member-border-strong,#d2d6da);border-radius:var(--member-radius-control,22rpx);margin-bottom:var(--member-gap-md,18rpx);overflow-wrap:break-word}
+.booking-copy{flex:1;min-width:0}
+/* 课时包**可点选**：选中态 = 品牌浅底 + 描边 + 右侧「✓ 已选」；未选显示「选它」。
+   ⛔ 单份课包时 `packagesSelectable=false` ⇒ 这两条一个都不渲染（单课包用户体验不变）。 */
+.slot-pkg{padding-left:16rpx;padding-right:16rpx;border-radius:var(--member-radius-control,22rpx)}
+.slot-pkg.active{background:var(--member-soft);box-shadow:inset 0 0 0 2rpx var(--member-primary)}
+.slot-pkg-check{flex:0 0 auto;font-size:var(--member-font-cap);font-weight:800;color:var(--member-primary)}
+.slot-pkg-tip{font-size:var(--member-font-cap);font-weight:700;color:var(--member-text-sub,#757e86);margin-left:12rpx}
+/* ⭐⭐ 约课确认弹层：2026-10-04 起**不再本页自建**。
+   ⛔ 已删除（本页曾各写一份，与「我的预约」互相不一致）：
+     .booking-detail-mask（遮罩 + z-index + 底色）  → components/member-sheet
+     .booking-detail（面板 + 圆角 + 安全区 + 滚动）  → components/member-sheet
+     .booking-detail-close（「收起」文字按钮）        → 组件右上角的 ×
+     .booking-detail-btn（确认/再看看两颗按钮）      → 组件固定的底部操作区
+   ⇒ 遮罩底色、32rpx 圆角、标题字号、底部安全距离、防滚动穿透**只有一处**了。
+   ⚠️ 下面 `.booking-detail-row/-label/-value` 三条**保留**：它们是 slot 里的内容样式（不是弹层外壳），
+      且 `m3-p2-member-booking-write-channel` ⑱ 的 UI 契约把"文字块必须 min-width:0 + 可断行"
+      钉在这几个类名上（⛔ 删掉会让一条仍然有效的护栏失去落点）。 */
+.booking-detail-row{display:flex;align-items:flex-start;justify-content:space-between;gap:20rpx;padding:16rpx 0;border-bottom:var(--member-divider,1rpx) solid var(--member-border,#e6e8ea)}
+.booking-detail-label{flex:0 0 auto;color:var(--member-text-sub,#757e86);font-size:var(--member-font-sub)}
+/* ⭐ `flex:1;min-width:0` + `overflow-wrap:break-word`：没有它，长课包名在 375 窄屏上被压成一字一行（M2-UI-02 铁律）。 */
+.booking-detail-value{flex:1;min-width:0;text-align:right;font-size:var(--member-font-body);font-weight:700;color:var(--member-text,#22282e);overflow-wrap:break-word}
+/* 两条说明都在 slot 里（内容区可滚动）⇒ 窄屏上不会把底部按钮顶出屏幕。 */
+.confirm-note{margin-top:var(--member-gap-md,18rpx);padding:18rpx 20rpx;background:var(--member-warning-soft,#f3eee2);border:var(--member-divider,1rpx) solid var(--member-border-strong,#d2d6da);border-radius:var(--member-radius-control,22rpx);color:var(--member-warning,#8a6f34);font-size:var(--member-font-sub);line-height:1.6;overflow-wrap:break-word}

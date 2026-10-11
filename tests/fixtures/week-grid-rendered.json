@@ -1,0 +1,449 @@
+{
+ "_why": "微信开发者工具**实际渲染**量测值，用来校验 tests/helpers/week-grid-geometry.js 里那套公式。公式是从 wxss 文本里解析出来的，如果只让公式跟自己比，实现和测试会一起算错还全绿。所以这里存一份『模拟器量出来的数』，让公式必须能复现它。",
+ "_how": "_render-probe.js / _render-probe-sandbox.js（miniprogram-automator 连到开发者工具，读 Element.size / Element.offset / scrollHeight / Page.size）",
+ "_when": "2026-10-02（第一版）；2026-10-02 二次口径（固定行高 + 内部滚动）后重新量测；2026-10-03 六次口径见 measuredRound4、七次口径见 measuredRound7（⛔ 现行口径 = measuredRound7）",
+ "_caveat": "device / pageHeight / docHeight / bannerHeight / fabTotalHeight / fabBottomGap / topHeight / toolbarHeight / headerHeight 这些**与行高口径无关**，改前改后都成立；⛔ rowHeight* 是『24 行挤进一屏』时代的**基线证据**，现行口径已改成固定行高，测试里只断言『改后必须大于它』，不再比对具体值。",
+ "device": {
+  "name": "iPhone 12/13 (Pro)",
+  "windowWidth": 390,
+  "windowHeight": 671,
+  "screenWidth": 390,
+  "screenHeight": 844,
+  "statusBarHeight": 47,
+  "rpx": 0.52,
+  "note": "100vh == windowHeight == 671（**不含**状态栏/导航栏/tabBar/底部安全区）"
+ },
+ "measured": {
+  "topHeight": 47,
+  "toolbarHeight": 36,
+  "headerHeight": 39.5,
+  "rowHeightProduction": 20,
+  "rowHeightSandbox": 18,
+  "fabTotalHeight": 55,
+  "fabBottomGap": 10.4,
+  "bannerHeight": 49.92,
+  "noticeHeight": 40.5,
+  "pageHeightProduction": 691,
+  "pageHeightSandbox": 642,
+  "docHeightSandbox": 691,
+  "scrollableSandbox": 20
+ },
+ "measuredAfterFixedRowHeight": {
+  "_why": "2026-10-02 二次口径（--hour-row-h:96rpx + 课表内部滚动 + 底部操作带 --fab-safe:140rpx）**改后**的真实渲染值（iPhone 12/13 Pro，390×671）。",
+  "_how": "coach-miniapp/_render-probe.js（正式区）与 _render-probe-sandbox.js（强制横幅占位状态）；⛔ 全部只 setData 注入假数据，不碰任何业务账本。",
+  "hourRowHeight": 49,
+  "rowsViewportHeight": 468,
+  "rowsContentHeight": 1176,
+  "scrollable": 708,
+  "calendarTop": 92,
+  "calendarHeight": 507,
+  "calendarBottom": 599,
+  "fabTop": 606,
+  "fabBottom": 661,
+  "fabClearance": 7,
+  "lastRowBottomWhenScrolledToEnd": 600,
+  "sandboxLastRowBottomWhenScrolledToEnd": 551,
+  "sandboxNoticeLastRowBottomWhenScrolledToEnd": 591.5,
+  "fake2330CardBottomWhenScrolledToEnd": 600,
+  "noticeFlowHeight": 40.5,
+  "_how_v4": "⚠️ 下面 withBanner 两档来自 _render-probe-banner.js（report-v4.txt，2026-10-02）：**真实横幅元素**（sandbox-banner.js 临时补丁强制渲染，量完已还原并 md5 校验）**且**页面 setData inSandbox=true 拿到 with-banner。两个条件缺一不可 —— 只渲染横幅不扣页面高度会量出『＋压住课表 42px』的假象（文档高 740），只 setData 不渲染横幅则位置偏 49px。上一版 report-v3 的 ⑥⑦ 就是踩了第二个坑（横幅其实没渲染，课表几何跟正式区一模一样），已作废。",
+  "withBanner": {
+   "bannerHeight": 49,
+   "docHeight": 691,
+   "pageHeight": 642,
+   "calendarTop": 141,
+   "calendarHeight": 458,
+   "calendarBottom": 599,
+   "rowsViewportHeight": 419,
+   "scrollable": 757,
+   "hourRowHeight": 49,
+   "lastRowBottomWhenScrolledToEnd": 600,
+   "fabTop": 606,
+   "fabBottom": 661,
+   "fabClearance": 7
+  },
+  "withBannerAndNotice": {
+   "_why": "最坏情况：测试环境横幅 + 会员取消通知条同时出现（通知条用假数据注入，注入后**重新滚到底**再量 —— 先滚完再注入会量到被裁的位置）。",
+   "noticeHeight": 35,
+   "calendarTop": 181.5,
+   "calendarHeight": 418,
+   "calendarBottom": 599.5,
+   "rowsViewportHeight": 379,
+   "scrollable": 797,
+   "hourRowHeight": 49,
+   "lastRowBottomWhenScrolledToEnd": 600,
+   "fabClearance": 6.5
+  },
+  "_caveat": "测试区那一档是**强制横幅占位状态**（页面加 with-banner、横幅占流 96rpx）量出来的布局；横幅组件本身没被强制渲染，所以文档高那一项不适用（真实测试区文档高 691 见上一节实测）。"
+ },
+ "baselineBeforeFix": {
+  "_why": "第 66 轮修复**前**的实测（25 行、课表高度写死 calc(100% - 162rpx)、fab 距底 28rpx）：用来证明『当时确实被裁 + 被按钮压住』，也用来确认 —— 只要这几条重新出现，测试必须变红。",
+  "docHeight": 740,
+  "scrollable": 69,
+  "hour23BottomWhenScrolledToEnd": 670.44,
+  "viewport": 671,
+  "fabTop": 602,
+  "gridBottomWhenScrolledToEnd": 690.5,
+  "fabCoversPx": 88.5,
+  "fake2330CardBottom": 692.72,
+  "conclusion": "① 23:00 行底 670.44 距视口底只剩 0.56px（机型一变就被切）② ＋按钮压住课表底部 88.5px ≈ 4 行 ③ 23:30 旧课卡片底 692.72 > 671 ⇒ 确实被裁"
+ },
+ "measuredCompact": {
+  "_why": "2026-10-02 **三次口径**（--hour-row-h:44rpx 紧凑行高 + ＋入页头工具条 + --fab-safe:0 + 页面 padding-bottom 42rpx 补边框）改后的真实渲染值。目标：常规屏 00:00–23:00 一屏全见。",
+  "_how": "coach-miniapp/_render-probe-compact.js（PORT/TAG 环境变量，miniprogram-automator 连开发者工具）。⛔ 通知条与 23:30 卡片都是 setData 注入的显示层假数据，量完即还原，不读写任何业务账本；横幅档用 page.setData({inSandbox:true}) 造 with-banner —— 几何上与真横幅等价（横幅出场只是把整块课表下移 96rpx，行区高度不变），不切数据环境、不改源码。",
+  "_when": "2026-10-02 三次口径当天",
+  "_caveat": "⚠️ 实测行高是 22px（44rpx×0.52=22.88，渲染逐行取整）。公式与实测的**累加偏差 ≈ 0.88px×24行 ≈ 21px**，测试里的累加容差就按这个物理来源取值，不是随手放松。",
+  "tap": {
+   "_why": "点击可用性不再靠『行高≥44px』这个代理判据（44rpx 时代它必然不成立），改用**真实 tap 证据**：戳 ＋ 与戳空格各一次，页面 modal 必须真的起来（随即关闭）。⛔ 不戳 booking 卡片 —— 那会 wx.navigateTo 离开课表页，等于拿假 id 跑真实导航。",
+   "pill": true,
+   "cell": true
+  },
+  "noticeFlowHeight": 32.5,
+  "reg": {
+   "_device": "iPhone 12/13 (Pro)，window 390×671，1rpx=0.52",
+   "rowH": 22,
+   "pill": {
+    "top": 43.8,
+    "bottom": 69.8,
+    "h": 26,
+    "left": 199,
+    "toolbarTop": 42,
+    "toolbarBottom": 71
+   },
+   "week": {
+    "_caveat_content": "⛔ content 是**真实内容高**（24×行高），不是 scroll-view 的 scrollHeight：内容小于视口时 scrollHeight 返回的是视口高（572），量不出内容高 ⇒ prod 档按 24×22=528 记。banner/worst 档内容>视口，scrollHeight 即内容高。",
+    "prod": {
+     "rowsTop": 99,
+     "rowsH": 572,
+     "content": 528,
+     "scrollable": 0,
+     "visibleHours": 24,
+     "lastBottom": 627,
+     "lastBottomAtBottom": 627
+    },
+    "banner": {
+     "rowsTop": 99,
+     "rowsH": 523,
+     "content": 528,
+     "scrollable": 5,
+     "visibleHours": 23,
+     "lastBottom": 627,
+     "lastBottomAtBottom": 622
+    },
+    "notice": {
+     "rowsTop": 131.5,
+     "rowsH": 540,
+     "content": 528,
+     "scrollable": 0,
+     "visibleHours": 24,
+     "lastBottom": 659.5,
+     "lastBottomAtBottom": 659.5
+    },
+    "worst": {
+     "rowsTop": 131.5,
+     "rowsH": 491,
+     "content": 528,
+     "scrollable": 37,
+     "visibleHours": 22,
+     "lastBottom": 659.5,
+     "lastBottomAtBottom": 622
+    }
+   },
+   "day": {
+    "prod": {
+     "rowsTop": 106,
+     "rowsH": 563,
+     "content": 528,
+     "scrollable": 0,
+     "visibleHours": 24,
+     "lastBottom": 634
+    },
+    "banner": {
+     "rowsTop": 104.6,
+     "rowsH": 515,
+     "content": 528,
+     "scrollable": 13,
+     "visibleHours": 23,
+     "lastBottomAtBottom": 620.1
+    },
+    "notice": {
+     "rowsTop": 138.5,
+     "rowsH": 531,
+     "content": 528,
+     "scrollable": 0,
+     "visibleHours": 24,
+     "lastBottom": 666.5
+    },
+    "worst": {
+     "rowsTop": 133.875,
+     "rowsH": 486,
+     "content": 528,
+     "scrollable": 42,
+     "visibleHours": 22,
+     "lastBottomAtBottom": 619.9
+    }
+   },
+   "card2330": {
+    "h": 11,
+    "fontSize": 8,
+    "text": "23:30 旧课"
+   }
+  },
+  "small": {
+   "_device": "iPhone 6/7/8，window 375×555，1rpx=0.50",
+   "rowH": 22,
+   "week": {
+    "prod": {
+     "rowsTop": 96,
+     "rowsH": 459,
+     "content": 528,
+     "scrollable": 69,
+     "visibleHours": 20,
+     "lastBottomAtBottom": 555
+    }
+   },
+   "day": {
+    "prod": {
+     "rowsTop": 96.7,
+     "rowsH": 456,
+     "content": 528,
+     "scrollable": 72,
+     "visibleHours": 20,
+     "lastBottomAtBottom": 553.2
+    }
+   }
+  }
+ },
+ "measuredRound4": {
+  "_why": "六次口径（2026-10-03 响应式小时行高）的实测基线：iPhone 6/7/8（375×555，开发者工具里最矮的一档）。",
+  "_how": "由 _render-probe-round4.js 在开发者工具里量出（round4-measured.json），再按**边界跨度口径**换算：rowH = (末行底−首行顶)/行数，避开 automator size() 的整数化假象；content = 跨度；scrollable = max(0, 跨度 − 行区可视高)。",
+  "_when": "2026-10-03 17:4x · 9452 窗口 · 新包（rowHeightStyle 下发 25.53px）",
+  "_caveat": "with-banner 档是 setData 模拟的（没真渲染横幅组件）⇒ 只用于行区内部判据；真实横幅会把课表整体下移 96rpx。",
+  "device": {
+   "name": "iPhone 6/7/8",
+   "windowWidth": 375,
+   "windowHeight": 555,
+   "screenWidth": 375,
+   "screenHeight": 667,
+   "rpx": 0.5
+  },
+  "noticeFlowHeight": 32.5,
+  "tap": {
+   "_why": "真实 tap 证据：戳一个空格子，新建课程弹层必须真的起来、且 presetHour 等于那一行的小时。五次口径起「＋ 新建课程」胶囊已删除 ⇒ capsuleGone 必须为真。",
+   "cell": true,
+   "capsuleGone": true
+  },
+  "reg": {
+   "_device_note": "iPhone 6/7/8（375×555）：最矮档 ⇒ 触底轻滚是设计行为（守住 50rpx 可读下限）；更高的机器更宽松。",
+   "rowH": 25.5,
+   "rowsDefault": 18,
+   "chrome": {
+    "topHeight": 32,
+    "toolbarHeight": 28,
+    "calendarTop": 69,
+    "calendarHeight": 487,
+    "headerHeight": 26
+   },
+   "week": {
+    "_caveat_content": "prod=正式区、notice=取消通知条、banner=测试区横幅、worst=横幅+通知条。触底档的 scrollable = 轻微滚动量（滑到底 23:00 完整）。",
+    "prod": {
+     "rowsTop": 96,
+     "rowsH": 459,
+     "rowsBottom": 555,
+     "rowCount": 18,
+     "rowH": 25.5,
+     "content": 459,
+     "scrollable": 0,
+     "visibleHours": 18,
+     "visibleRows": 18,
+     "calendarBottom": 556,
+     "calendarGapToTabBar": -1,
+     "calendarH": 487,
+     "lastBottom": 555.5,
+     "lastBottomAtBottom": 555.5,
+     "atBottom": {
+      "rowsTop": 96,
+      "rowsBottom": 555,
+      "lastTop": 529.5,
+      "lastBottom": 555.5,
+      "lastBottomAtBottom": 555.5,
+      "complete": true
+     }
+    },
+    "notice": {
+     "rowsTop": 128.5,
+     "rowsH": 427,
+     "rowsBottom": 555.5,
+     "rowCount": 18,
+     "rowH": 25,
+     "content": 459,
+     "scrollable": 23,
+     "visibleHours": 17,
+     "visibleRows": 17,
+     "calendarBottom": 556.5,
+     "calendarGapToTabBar": -1.5,
+     "calendarH": 455,
+     "lastBottom": 578.5
+    },
+    "banner": {
+     "rowsTop": 96,
+     "rowsH": 411,
+     "rowsBottom": 507,
+     "rowCount": 18,
+     "rowH": 25,
+     "content": 459,
+     "scrollable": 39,
+     "visibleHours": 16,
+     "visibleRows": 16,
+     "calendarBottom": 508,
+     "calendarGapToTabBar": 47,
+     "calendarH": 439,
+     "lastBottom": 546
+    },
+    "worst": {
+     "rowsTop": 128.5,
+     "rowsH": 379,
+     "rowsBottom": 507.5,
+     "rowCount": 18,
+     "rowH": 25,
+     "content": 459,
+     "scrollable": 71,
+     "visibleHours": 14,
+     "visibleRows": 14,
+     "calendarBottom": 508.5,
+     "calendarGapToTabBar": 46.5,
+     "calendarH": 407,
+     "lastBottom": 578.5,
+     "lastBottomAtBottom": 507.5,
+     "atBottom": {
+      "rowsTop": 128.5,
+      "rowsBottom": 507.5,
+      "lastTop": 481.5,
+      "lastBottom": 507.5,
+      "lastBottomAtBottom": 507.5,
+      "complete": true
+     }
+    }
+   },
+   "day": {
+    "prod": {
+     "rowsTop": 102.9,
+     "rowsH": 450,
+     "rowsBottom": 552.9,
+     "rowCount": 18,
+     "rowH": 25,
+     "content": 450,
+     "scrollable": 0,
+     "visibleHours": 18,
+     "visibleRows": 18,
+     "calendarBottom": null,
+     "calendarGapToTabBar": null,
+     "calendarH": null,
+     "lastBottom": 553.7,
+     "lastBottomAtBottom": 552.7,
+     "atBottom": {
+      "rowsTop": 102.9,
+      "rowsBottom": 552.9,
+      "lastTop": 527.7,
+      "lastBottom": 552.7,
+      "lastBottomAtBottom": 552.7,
+      "complete": true
+     }
+    },
+    "notice": {
+     "rowsTop": 131.8,
+     "rowsH": 421,
+     "rowsBottom": 552.8,
+     "rowCount": 18,
+     "rowH": 25,
+     "content": 450,
+     "scrollable": 29,
+     "visibleHours": 16,
+     "visibleRows": 16,
+     "calendarBottom": null,
+     "calendarGapToTabBar": null,
+     "calendarH": null,
+     "lastBottom": 582.6
+    }
+   }
+  },
+  "card": {
+   "_why": "整格一节课的卡片（top:0%;height:100%）：几乎占满一整格。响应式行高下卡片是百分比 ⇒ 自动跟随。",
+   "rowH": 25.5,
+   "h": 25,
+   "fontSize": "8px",
+   "text": "整格课",
+   "_fontSize_caveat": "字号仍是 16rpx=8px（既有设计值），本轮没动。"
+  },
+  "lateBlock": {
+   "_why": "凌晨段展开态（显示层注入 6 行 + lateCount=1，一条业务数据都没动，量完还原并复查）。",
+   "_how": "setData 注入后量测，restored 自证还原。",
+   "barHeight": 24,
+   "barFlowHeight": 31,
+   "rowsHProd": 459,
+   "rowsHExpanded": 428,
+   "rowsExpanded": 24,
+   "contentExpanded": 600,
+   "scrollableExpanded": 172,
+   "lastRowTopAtBottom": 529.5,
+   "lastRowBottomAtBottom": 555.5,
+   "rowsTopExpanded": 127,
+   "calendarGapToTabBar": -1,
+   "restored": true,
+   "card": {
+    "top": 83.8,
+    "h": 12,
+    "bottom": 95.8,
+    "fontSize": "8px",
+    "text": "凌晨课"
+   }
+  }
+ },
+ "measuredRound7": {
+  "_why": "⭐⭐ 现行口径（七次口径 · 2026-10-03 · 1.3.11 真机：下拉刷新只有时间网格下移 + 一大块三点空白）的实测基线。要点：① 刷新容器只剩**页面级**一个（`.rows-scroll` 已不是 scroll-view、不带 refresher）；② 行区不内部滚动 ⇒ 空间不足时是**整页**轻微滚动；③ 行高 = 「**视口底 − 行区顶**」÷ 行数（不是量容器高度，那会自锁）；④ 页面 `min-height` 让内容撑高、卡片高度由页面下发 `cardHeightStyle`。",
+  "_how": "coach-miniapp/_r10-grid-measure.js（miniprogram-automator 连开发者工具，只读量测）。每档同时记两份：`rowH` = 页面下发的 rowHeightStyle；`rowHFromDom` = DOM 里逐行边界跨度换算值（避开 automator size() 整数化假象）；`maxDiff` = 各相邻行边界之差的最大值（严格等高的证据）。下拉刷新那一档是**真调** `onPullDownRefresh()` 后按时间采样 `refreshing`，不是 setData 假造。",
+  "_when": "2026-10-03 20:5x–21:2x · 两个已编译最新代码的窗口（375×555 / 430×752）",
+  "_caveat": "⛔ iPhone 12/13 Pro（390×671）这一档**未覆盖**：开发者工具机型清单里没有该档位可选窗口（最接近的是 14 Pro Max），按本轮口径如实标注，不拿别的档位冒充。⛔ 全部为**模拟器验证**（开发者工具），不是真机取证。⛔ 截图/量测产物落在项目目录之外（hxc/_grid-r10-out/），避免主包 2MB 上限（错误码 10051）。",
+  "_invariants": "两档共同点：`maxDiff === 0`（严格等高）、`lastRowCompleteInDoc === true`（末行完整）、`fillGap ≈ 0 或 ≤ 0`（铺满 / 轻微溢出交给整页滚）、`pullAllowance ≥ 40rpx`（页面级下拉刷新真能被触发）、`tap.opened === true && tap.presetHour === 23`（空白格点得中、小时对得上）。",
+  "devices": {
+   "iphone678": {
+    "_device": "iPhone 6/7/8，window 375×555，1rpx=0.50",
+    "rpx": 0.5,
+    "build": { "rowHeightStyle": "height:25.5px", "cardHeightStyle": "height:486px", "rowsScrollClass": "rows-scroll", "rowsScrollIsScrollView": false, "refresherAttrs": 0 },
+    "noticeFlowHeight": 32.5,
+    "prod": { "rows": 18, "rowH": 25.5, "rowHFromDom": 25.53, "maxDiff": 0, "rowsTopDoc": 96, "availH": 459, "span": 459.5, "fillGap": -0.5, "cardTop": 69, "cardBottom": 555, "cardHeight": 486, "cardGapToViewport": 0, "pageH": 576, "docH": 576, "pullAllowance": 21, "lastRowBottom": 555.5, "lastRowCompleteInDoc": true },
+    "refreshing": { "rows": 18, "rowH": 25, "rowsTopDoc": 118, "availH": 437, "span": 450, "fillGap": -13, "cardBottom": 568, "cardGapToViewport": -13, "docH": 589, "pullAllowance": 34, "lastRowCompleteInDoc": true },
+    "refreshSeq": [ { "t": 0, "refreshing": true, "rowHeightStyle": "height:25.5px" }, { "t": 1680, "refreshing": false, "rowHeightStyle": "height:25px" } ],
+    "hint": { "rows": 18, "rowH": 25, "rowsTopDoc": 118, "availH": 437, "span": 450, "fillGap": -13, "cardBottom": 568, "docH": 589, "pullAllowance": 34, "lastRowCompleteInDoc": true },
+    "notice": { "rows": 18, "rowH": 25, "rowsTopDoc": 128.5, "availH": 426.5, "span": 450, "fillGap": -23.5, "cardBottom": 578.5, "docH": 600, "pullAllowance": 45, "lastRowCompleteInDoc": true },
+    "banner": { "rows": 18, "rowH": 25.5, "rowsTopDoc": 96, "availH": 459, "span": 459.5, "fillGap": -0.5, "cardBottom": 555, "cardGapToViewport": 0, "docH": 576, "pullAllowance": 21, "lastRowCompleteInDoc": true },
+    "worst": { "rows": 18, "rowH": 25, "rowsTopDoc": 128.5, "availH": 426.5, "span": 450, "fillGap": -23.5, "cardBottom": 578.5, "docH": 600, "pullAllowance": 45, "lastRowCompleteInDoc": true },
+    "day": { "rows": 18, "rowH": 25.11, "rowHFromDom": 25.1, "maxDiff": 0, "rowsTopDoc": 103, "availH": 452, "span": 451.86, "fillGap": 0.14, "cardBottom": 555, "cardGapToViewport": 0, "docH": 576, "pullAllowance": 21, "lastRowCompleteInDoc": true },
+    "tap": { "opened": true, "presetHour": 23 }
+   },
+   "iphone14promax": {
+    "_device": "iPhone 14 Pro Max，window 430×752，1rpx=0.57",
+    "rpx": 0.57,
+    "build": { "rowHeightStyle": "height:35.78px", "cardHeightStyle": "height:674px", "rowsScrollClass": "rows-scroll", "rowsScrollIsScrollView": false, "refresherAttrs": 0 },
+    "noticeFlowHeight": 33.5,
+    "prod": { "rows": 18, "rowH": 35.78, "rowHFromDom": 35.79, "maxDiff": 0, "rowsTopDoc": 108, "availH": 644, "span": 644.15, "fillGap": -0.15, "cardTop": 78, "cardBottom": 752, "cardHeight": 674, "cardGapToViewport": 0, "pageH": 776, "docH": 776, "pullAllowance": 24, "lastRowBottom": 752.15, "lastRowCompleteInDoc": true },
+    "refreshing": { "rows": 18, "rowH": 35.78, "rowsTopDoc": 133, "availH": 619, "span": 644.15, "fillGap": -25.15, "cardBottom": 752, "cardGapToViewport": 0, "docH": 776, "pullAllowance": 24, "lastRowCompleteInDoc": true, "_caveat": "刷新提示条展开时卡片底贴视口底、行区内容溢出 25.15px ⇒ 由整页滚动接住（要求 5）。" },
+    "refreshSeq": [ { "t": 0, "refreshing": true, "rowHeightStyle": "height:35.78px" }, { "t": 120, "refreshing": false, "rowHeightStyle": "height:35.78px" } ],
+    "hint": { "rows": 18, "rowH": 34.39, "rowHFromDom": 34.36, "maxDiff": 0, "rowsTopDoc": 133, "availH": 619, "span": 618.51, "fillGap": 0.49, "cardBottom": 752, "cardGapToViewport": 0, "docH": 776, "pullAllowance": 24, "lastRowCompleteInDoc": true },
+    "notice": { "rows": 18, "rowH": 33.92, "rowsTopDoc": 141.5, "availH": 610.5, "span": 610.54, "fillGap": -0.04, "cardBottom": 752.5, "cardGapToViewport": -0.5, "docH": 776, "pullAllowance": 24, "lastRowCompleteInDoc": true },
+    "banner": { "rows": 18, "rowH": 35.78, "rowsTopDoc": 108, "availH": 644, "span": 644.15, "fillGap": -0.15, "cardBottom": 752, "cardGapToViewport": 0, "docH": 776, "pullAllowance": 24, "lastRowCompleteInDoc": true },
+    "worst": { "rows": 18, "rowH": 33.92, "rowsTopDoc": 141.5, "availH": 610.5, "span": 610.54, "fillGap": -0.04, "cardBottom": 752.5, "docH": 776, "pullAllowance": 24, "lastRowCompleteInDoc": true },
+    "day": { "rows": 18, "rowH": 35.33, "rowHFromDom": 35.31, "maxDiff": 0, "rowsTopDoc": 116, "availH": 636, "span": 635.58, "fillGap": 0.42, "cardBottom": 752, "cardGapToViewport": 0, "docH": 776, "pullAllowance": 24, "lastRowCompleteInDoc": true },
+    "tap": { "opened": true, "presetHour": 23 }
+   }
+  },
+  "notCovered": {
+   "iphone12or13pro_390x671": "开发者工具机型清单里没有这一档窗口（最接近的是 iPhone 14 Pro Max / 15 Pro Max），本轮如实标注**未覆盖**；几何公式对它的推演值仍由 tests/schedule-grid-responsive.test.js 的 ⑦/⑧ 段覆盖。"
+  },
+  "rotation": {
+   "_why": "横幅 / 通知条 / 提示条出现时，模型要求的是**行区可视高变小**、可滚余量变大 —— 两档实测都符合：375 档正式区 21px → 通知条档 45px；430 档 24px → 24px（该档行区未触底，靠卡片被撑高 + 整页滚动接住）。",
+   "iphone678": { "prodPullAllowance": 21, "hintPullAllowance": 34, "noticePullAllowance": 45 },
+   "iphone14promax": { "prodPullAllowance": 24, "hintPullAllowance": 24, "noticePullAllowance": 24 }
+  }
+ }
+}

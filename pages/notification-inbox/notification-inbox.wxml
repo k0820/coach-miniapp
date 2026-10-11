@@ -1,0 +1,26 @@
+<view class="inbox-page">
+  <view class="inbox-head">
+    <view class="inbox-title">消息中心</view>
+    <view class="inbox-subtitle">当前身份：{{roleText}}<text wx:if="{{unread>0}}"> · 未读 {{unread}} 条</text></view>
+  </view>
+
+  <view wx:if="{{disabledText}}" class="inbox-card inbox-disabled">{{disabledText}}</view>
+
+  <view class="inbox-card inbox-note">
+    站内消息<b>不限次数</b>，也不依赖微信授权。预约、取消和改期记录都会保留在这里。
+  </view>
+
+  <view wx:if="{{loading}}" class="inbox-card">正在读取消息…</view>
+  <view wx:if="{{!loading && available && emptyText}}" class="inbox-card inbox-empty">{{emptyText}}</view>
+
+  <view wx:for="{{rows}}" wx:key="id" class="inbox-card inbox-row {{item.read?'':'unread'}}" data-id="{{item.id}}" bindtap="tapRow">
+    <view class="inbox-row-top">
+      <view class="inbox-row-title">{{item.title}}</view>
+      <view wx:if="{{!item.read}}" class="inbox-dot"></view>
+    </view>
+    <view class="inbox-row-body">{{item.body}}</view>
+    <view class="inbox-row-meta">{{item.audienceText}}<text wx:if="{{item.timeText}}"> · {{item.timeText}}</text></view>
+  </view>
+
+  <button wx:if="{{available && rows.length}}" class="btn ghost" bindtap="markAll">全部标为已读</button>
+</view>

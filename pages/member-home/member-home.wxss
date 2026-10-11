@@ -1,0 +1,20 @@
+@import "../../styles/member.wxss";
+.month-count{font-size:58rpx;font-weight:850;color:var(--member-primary)}
+.offline-note{text-align:center;color:#b27b28;font-size:22rpx;margin:20rpx}
+.card-foot { margin-top: 10rpx; color: var(--member-primary, #3a454e); font-weight: 700; }
+.member-dot{color:#c9452f;font-weight:700}
+
+/* ── 2026-10-06 新首页：课时概况 / 我的教练（⛔ 复用既有设计变量，不另起视觉规范） ── */
+.home-stat { flex: 1; text-align: center; }
+.home-num { font-size: 52rpx; font-weight: 850; color: var(--member-primary, #3a454e); }
+.home-num.alt { color: #b27b28; }
+.home-num.weak { color: var(--member-muted, #7b8798); }
+.home-label { margin-top: 4rpx; font-size: 22rpx; color: var(--member-muted, #7b8798); }
+.home-coaches { margin-top: 16rpx; white-space: nowrap; }
+.home-coach {
+  display: inline-flex; flex-direction: column; align-items: center; gap: 6rpx;
+  width: 168rpx; padding: 18rpx 12rpx; margin-right: 16rpx;
+  background: var(--member-page, #f4f7fb); border-radius: 20rpx; vertical-align: top;
+}
+.home-coach-name { font-size: 24rpx; font-weight: 800; color: var(--member-text, #1d2939); width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; }
+.member-avatar.small { width: 64rpx; height: 64rpx; border-radius: 22rpx; font-size: 22rpx; }

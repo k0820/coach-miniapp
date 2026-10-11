@@ -1,0 +1,10 @@
+.sandbox-page{min-height:100vh;box-sizing:border-box;padding:80rpx 40rpx;background:#fff8e7;text-align:center}.sandbox-mark{display:inline-flex;padding:10rpx 22rpx;border-radius:999rpx;background:#f59e0b;color:#fff;font-weight:800;letter-spacing:4rpx}.sandbox-title{margin-top:30rpx;font-size:42rpx;font-weight:800;color:#7c3f00}.sandbox-desc{margin:24rpx auto 38rpx;max-width:620rpx;line-height:1.8;color:#795548}.sandbox-status{margin-bottom:34rpx;padding:22rpx;border-radius:18rpx;background:#fff;border:1rpx solid #f6c65b;color:#7c3f00}.sandbox-page button{margin:20rpx 0;border-radius:22rpx}.primary{background:#7c3f00;color:#fff}.member{background:#168c72;color:#fff}.danger{background:#fff;color:#b45309;border:1rpx solid #f59e0b}.ghost{background:#fff;color:#334155}
+/* M2 第四批：Sandbox 验收页的入口。刻意做得朴素 —— 它是临时测试入口，不是正式功能，
+   样式沿用本页既有的琥珀 TEST 色，不另起一套。 */
+.m2{display:block;margin:26rpx auto 0;padding:20rpx;border-radius:18rpx;border:2rpx dashed #f59e0b;background:#fffaf0;color:#7c3f00;font-size:25rpx;font-weight:700}
+.m2-note{margin:12rpx auto 0;max-width:620rpx;font-size:21rpx;line-height:1.7;color:#795548}
+/* ⭐ M2 真机修复：必须把「云端沙盒数据集已准备」和「本进程现在在哪个区」分成两行。
+   真机上用户就是把前者读成了"我已经进沙盒了"，然后在 M2 页被门禁挡住。 */
+.sandbox-env{margin:-14rpx auto 24rpx;max-width:620rpx;padding:16rpx 22rpx;border-radius:16rpx;background:#fff;border:1rpx dashed #b45309;color:#334155;font-size:23rpx}
+.sandbox-env.on{background:#ecfdf5;border:1rpx solid #168c72;color:#0f766e;font-weight:700}
+.m2-note.warn{color:#b45309}

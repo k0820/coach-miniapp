@@ -1,0 +1,8 @@
+<view class="picker-card">
+  <view class="heading">📚 动作库 · 点选添加</view>
+  <input class="search" placeholder="搜索当前部位的动作" bindinput="search" />
+  <scroll-view scroll-x class="groups"><view class="group-row"><view wx:for="{{groups}}" wx:key="*this" class="group {{group===item?'on':''}}" data-group="{{item}}" bindtap="chooseGroup">{{item}}</view></view></scroll-view>
+  <view wx:for="{{sections}}" wx:for-item="section" wx:key="group" class="lib-section"><view class="lib-heading">{{section.group}}</view><view class="flow"><view wx:for="{{section.items}}" wx:for-item="exercise" wx:key="key" class="exercise-wrap {{exercise.isCustom?'custom-exercise':''}}"><view class="exercise {{flash===exercise.name?'flash':''}}" data-item="{{exercise}}" bindtap="choose" bindlongpress="manageCustom">{{exercise.name}}</view></view></view></view>
+  <view wx:if="{{!sections.length}}" class="empty">没有匹配动作，可在下方自定义</view>
+  <view class="hint">点选添加动作 · 每个动作都可长按编辑或删除</view><view class="custom-title">{{editingIndex>=0 || editingBuiltinKey?'修改动作':'添加动作到动作库'}}</view><view class="custom"><input class="custom-input" value="{{customValue}}" placeholder="例如：哈克推肩" bindinput="customInput" confirm-type="done" bindconfirm="addCustom"/><picker class="custom-group-picker" range="{{customGroups}}" value="{{customGroupIndex}}" bindchange="customGroup"><view>{{customGroup}}部⌄</view></picker><button class="custom-button" bindtap="addCustom">{{editingIndex>=0 || editingBuiltinKey?'保存':'添加'}}</button></view><view wx:if="{{editingIndex>=0 || editingBuiltinKey}}" class="cancel-custom-edit" bindtap="cancelEdit">取消修改</view>
+</view>

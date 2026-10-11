@@ -1,0 +1,127 @@
+<!--
+  M2 第四批：Sandbox 真机验收入口（**临时测试页**）。
+  ⛳ 共享码是过渡期技术桥梁，不是正式业务流程：最终产品是会员靠微信身份自己选教练。
+     M3（会员自主选择教练）上线后，本页与共享码入口应当**下线**，不扩展、不美化。
+  样式一律复用 app.wxss 的既有类（page / card / title / hint / btn / primary / ghost / pill / label / input / row / spread），
+  本页只补了极少的几个验收用类，不新建第二套 Design System。
+-->
+<view class="page shared-test-page">
+  <view class="test-banner">
+    <view class="row spread">
+      <view class="test-mark">TEST · 临时共享入口</view>
+      <view class="pill">仅测试区</view>
+    </view>
+    <view class="test-title">M2 共享课时验收</view>
+    <view class="hint">共享码只是过渡期技术桥梁：最终产品里会员自己认课时、自己选教练。M3 上线后本入口下线。</view>
+  </view>
+
+  <view wx:if="{{!sandbox}}" class="card">
+    <view class="title">请先进入沙盒</view>
+    <view class="hint">本页只在测试区可用。沙盒页显示「沙盒已准备」只是说测试数据已存在，不等于已经进来了 —— 请点「进入教练端沙盒」，再回到本页。</view>
+    <button class="btn ghost" bindtap="goSandbox">去进入教练端沙盒</button>
+  </view>
+
+  <block wx:if="{{sandbox}}">
+    <!-- ★ 可观测出口：这一卡回答「我现在看的到底是哪一本账 / 刚才那次云端读取到底成功没有 / 选中的是哪一行」。
+         2026-09-27：三轮真机定位失败全都因为这三件事是看不见的，只能靠数字猜。 -->
+    <view class="card">
+      <view class="title">数据源与读取状态</view>
+      <view class="hint">{{sourceText}}</view>
+      <view class="lookup {{readFailed?'bad':'ok'}}">{{readText}}</view>
+      <view class="hint">{{selectedIdsText}} · {{pendingText}}</view>
+      <view wx:if="{{sourceError}}" class="lookup bad">测试区数据源不可用，已停止渲染数据 —— 不会退回正式区数据。</view>
+      <!-- ★★ 只读队列详情（2026-09-28 真机：8 条残留靠"一个数字"无法定位）。
+           点一下就把每一条的 requestId / 原始错误 / 依赖谁 / 三个安全出口为什么不成立
+           全部印出来 ⇒ 一次截图即可取证。**零云调用、零副作用**，且只存在于本验收页。 -->
+      <view class="row spread" style="margin-top:12rpx">
+        <view class="hint">队列详情（只读，仅测试区诊断用）</view>
+        <button size="mini" bindtap="toggleQueueDetail">{{queueDetailOpen ? '收起' : '展开'}}</button>
+      </view>
+      <view wx:if="{{queueDetailOpen}}" class="lookup" style="white-space:pre-wrap">{{queueDetailText}}</view>
+    </view>
+
+    <view class="card">
+      <view class="row spread">
+        <view><view class="title">当前教练</view><view class="hint">数据集尾号 {{datasetTail}}</view></view>
+        <view class="pill">测试区</view>
+      </view>
+      <view class="hint">A / B 必须是两位不同的教练：两边这里的尾号必须不一样。同一个微信号就是同一位教练，自己不能用自己的共享码。</view>
+    </view>
+
+    <view class="card">
+      <view class="title">① 教练 A · 该会员课时事实所在的账号</view>
+      <view class="hint">生成一枚临时共享码。只发码，不复制任何余额 —— 对方排课用的是这位会员本人的同一份课时事实（不存在"A 的课时"，课时属于会员）。</view>
+      <view class="label">选择学员</view>
+      <picker wx:if="{{students.length}}" range="{{students}}" range-key="name" value="{{studentIndex}}" bindchange="onStudentChange"><view class="input picker">{{students[studentIndex].name}} ⌄</view></picker>
+      <view wx:else class="hint">本账里还没有带课时包的学员。</view>
+      <view class="label">选择课时包</view>
+      <picker wx:if="{{students.length}}" range="{{students[studentIndex].packages}}" range-key="type" value="{{packageIndex}}" bindchange="onPackageChange"><view class="input picker">{{students[studentIndex].packages[packageIndex].type}} ⌄</view></picker>
+      <view class="package-text">{{packageText}}</view>
+      <button class="btn primary" disabled="{{busy}}" bindtap="genCode">生成 / 查看共享码</button>
+      <view wx:if="{{shareCode}}" class="code-box">
+        <view class="code-label">共享码（过渡期测试通道：把它给另一位教练，仅用于验证"不同教练访问同一份会员课时事实"）</view>
+        <view class="code-value">{{shareCode}}</view>
+        <view class="row code-actions"><view class="code-copy" bindtap="copyCode">复制</view></view>
+      </view>
+      <view wx:if="{{shareState}}" class="share-state">{{shareState}}</view>
+      <button class="btn danger" disabled="{{busy}}" bindtap="stopShare">停止共享</button>
+    </view>
+
+    <view class="card">
+      <view class="title">② 教练 B · 另一位教练身份，用同一位会员的真实课时排课</view>
+      <view class="hint">先查清楚这位会员还剩多少可约课时，再选时间排课。这节课的授课教练是你（B），课时仍是会员本人的：不会在你的账号里新建学员 / 课时包 / 销售，也不会复制出第二份余额。</view>
+      <view class="label">共享码</view>
+      <input class="input" value="{{code}}" placeholder="例如 9F2C1A7B03" bindinput="onCodeInput" />
+      <button class="btn ghost" disabled="{{busy}}" bindtap="lookupCode">查看这份共享课时</button>
+      <view wx:if="{{lookupText}}" class="lookup {{lookupOk?'ok':'bad'}}">{{lookupText}}</view>
+
+      <view class="label">上课日期</view>
+      <picker mode="date" value="{{date}}" bindchange="onDate"><view class="input picker">{{date}} ⌄</view></picker>
+      <view class="label">上课时间</view>
+      <view class="row time-row">
+        <picker class="time-picker" range="{{hours}}" value="{{hourIndex}}" bindchange="onHour"><view class="input picker">{{hours[hourIndex]}} 点 ⌄</view></picker>
+        <picker class="time-picker" range="{{minutes}}" value="{{minuteIndex}}" bindchange="onMinute"><view class="input picker">{{minutes[minuteIndex]}} 分 ⌄</view></picker>
+      </view>
+      <view class="label">预计时长（分钟，默认 60）</view>
+      <input class="input" type="number" value="{{planned}}" placeholder="60" bindinput="onPlanned" />
+      <view class="hint">超过「预计结束 + 3 小时」还没下课，课程页会出现「待确认」。</view>
+      <button class="btn primary" disabled="{{busy || !lookupOk}}" bindtap="bookOnce">{{busy?'正在排课…':'用共享码排这一节'}}</button>
+      <button class="btn ghost" disabled="{{busy}}" bindtap="bookAgain">再排一节（最后一节应被拒绝）</button>
+      <view wx:if="{{lastResult}}" class="lookup">{{lastResult}}</view>
+    </view>
+
+    <view class="card">
+      <view class="title">③ 我这边的共享预约</view>
+      <view class="hint">点进去就是正常课程页：可以上课、完成；超时未下课会出现「待确认」。</view>
+      <view wx:if="{{!sharedBookings.length}}" class="hint">还没有共享预约。</view>
+      <view wx:for="{{sharedBookings}}" wx:key="id" class="list-item booking-row" data-id="{{item.id}}" bindtap="openBooking">
+        <view class="booking-copy"><view class="booking-title">{{item.date}} {{item.time}}</view><view class="hint{{item.syncPending ? ' booking-status-sync' : ''}}">{{item.statusText}} · 课时包 {{item.packageId}}</view></view>
+        <view class="chevron">›</view>
+      </view>
+      <button class="btn ghost" disabled="{{busy}}" bindtap="verifyLast">核对两侧课时与回执</button>
+      <view wx:if="{{peerText}}" class="verify-box">{{peerText}}</view>
+    </view>
+
+    <view class="card">
+      <view class="title">④ 验收顺序（照着点就行）</view>
+      <view class="hint">
+        1. A 生成共享码并复制 · 2. 换到 B 的微信号 · 3. B 粘贴共享码 → 查看 → 选时间 → 排课 ·
+        4. B 立刻「再排一节」→ 若已排满应被拒绝 · 5. B 进入课程 → 完成（或超时后走「待确认」）·
+        6. 换回 A → ① 里看「剩余 / 已占」变化，销售仍留在 A · 7. B 那侧统计页看收入。
+      </view>
+      <view class="hint">本账行数：学员 {{counts.students}} · 课时包 {{counts.packages}} · 销售 {{counts.sales}} · 收入 {{counts.incomes}}（B 排共享课后前三个数不该增加）。</view>
+    </view>
+
+    <!-- ⑤ 课程提醒「测试时钟」：真机验收不可能真的等 3 小时 / 1 小时。
+         ⛔ 只在测试区这个临时验收页里，正式区页面与正式区云函数都没有这个入口。 -->
+    <view class="card">
+      <view class="title">⑤ 课程提醒 · 测试时钟（仅测试区）</view>
+      <view class="hint">把"现在"往前拨一会儿，立刻手动跑一次课前提醒扫描。只影响这一次调用，不改任何数据、不改系统时间；定时器下次仍按真实时间跑。</view>
+      <view class="label">时间偏移</view>
+      <picker range="{{clockOptions}}" value="{{clockIndex}}" bindchange="onClockChange"><view class="input picker">{{clockOptions[clockIndex]}} ⌄</view></picker>
+      <button class="btn primary" disabled="{{clockBusy}}" bindtap="runReminderScan">{{clockBusy ? '正在扫描…' : '跑一次课前提醒扫描'}}</button>
+      <view wx:if="{{clockText}}" class="lookup">{{clockText}}</view>
+      <view class="hint">配合五节测试课：A（3小时后）· B（1小时后）· C（预约后取消）· D（预约后改期）· E（状态通知）。每节课只发一条，取消后不再发，改期后旧提醒作废。</view>
+    </view>
+  </block>
+</view>

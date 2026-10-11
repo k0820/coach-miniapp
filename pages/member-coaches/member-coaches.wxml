@@ -1,0 +1,37 @@
+<view class="member-page member-shell" style="{{themeStyle}}">
+  <view class="member-row member-spread">
+    <view>
+      <view class="member-title">我的教练</view>
+      <view class="member-subtitle">下面都是你添加过的教练，点进去就能约课</view>
+    </view>
+    <view class="member-pill" bindtap="addByCode">添加教练</view>
+  </view>
+
+  <view wx:if="{{errorText}}" class="member-card member-empty">{{errorText}}</view>
+
+  <view wx:for="{{contacts}}" wx:key="contactKey" class="member-card">
+    <view class="member-row member-spread">
+      <view>
+        <view class="member-section-title" style="margin:0">{{item.displayName}}</view>
+        <view class="member-subtitle">教练编号 {{item.publicCode}}<text wx:if="{{item.isOwner}}"> · 管理你课时的教练</text></view>
+      </view>
+      <view class="member-pill" data-key="{{item.contactKey}}" bindtap="book">预约</view>
+    </view>
+    <view class="member-row member-spread" style="margin-top:12rpx">
+      <view class="member-subtitle" data-key="{{item.contactKey}}" data-name="{{item.displayName}}" bindtap="askRemove">移除教练 ›</view>
+      <view wx:if="{{removingKey===item.contactKey}}" class="member-subtitle">正在移除…</view>
+    </view>
+  </view>
+
+  <view wx:if="{{!contacts.length && !errorText}}" class="member-card member-empty">
+    你还没有添加教练，可以输入教练编号或扫描二维码添加。
+  </view>
+
+  <view class="member-card member-list-row member-row member-spread" bindtap="addByCode">
+    <view>输入教练编号添加教练</view><view class="member-arrow">›</view>
+  </view>
+  <view class="member-card member-list-row member-row member-spread" bindtap="addByScan">
+    <view>扫码添加教练</view><view class="member-arrow">›</view>
+  </view>
+</view>
+

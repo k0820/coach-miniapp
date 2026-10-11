@@ -1,0 +1,6 @@
+/* ⭐ 高度必须**显式钉死**（96rpx，与 app.wxss 的 `--sandbox-banner-h` 同一个数）：
+   课表页是全屏固定高度布局（`height:calc(100vh …)`），必须知道这条横幅占了多少，
+   才能把课表高度**扣掉同样的量** —— 2026-10-02 真机 Bug：横幅把整块课表往下推，
+   底部（23:00 那一行）被容器裁掉，23:30 的旧课卡片（画在那一行的下半段）因此整个看不见。
+   ⛔ 改动这个数字必须同时改 app.wxss 的变量 —— tests/week-grid-bottom.test.js 钉着两边相等。 */
+.sandbox-banner{position:sticky;top:0;z-index:1200;display:flex;align-items:center;justify-content:space-between;gap:20rpx;height:96rpx;box-sizing:border-box;overflow:hidden;padding:0 24rpx;background:#fff1c7;border-bottom:2rpx solid #f59e0b;color:#7c3f00}.sandbox-banner view{display:flex;flex-direction:column}.sandbox-banner b{font-size:28rpx}.sandbox-banner text{font-size:21rpx}.sandbox-banner button{margin:0;padding:0 20rpx;height:58rpx;line-height:58rpx;border-radius:18rpx;background:#7c3f00;color:#fff;font-size:23rpx}.sandbox-banner button:after{border:0}

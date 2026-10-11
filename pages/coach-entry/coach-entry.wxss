@@ -1,0 +1,13 @@
+@import "../../styles/member.wxss";
+.coach-login-page{padding-top:40rpx}
+.coach-login-hero{text-align:center;padding:34rpx 8rpx 42rpx}
+.coach-login-mark{width:132rpx;height:132rpx;border-radius:40rpx;margin:0 auto 28rpx;background:linear-gradient(145deg,#17365d,#315a88);color:#fff;font-size:54rpx;font-weight:850;display:flex;align-items:center;justify-content:center;box-shadow:0 16rpx 36rpx rgba(19,43,79,.2)}
+.coach-login-title{font-size:44rpx;color:#17365d;margin-bottom:18rpx}
+.coach-login-pill{display:inline-flex;padding:10rpx 22rpx;border-radius:999rpx;background:#fff1c8;color:#805a12;font-size:23rpx;font-weight:750}
+.coach-login-card{padding:34rpx}
+.coach-login-card .member-section-title{margin-top:0}
+.wechat-login{margin-top:34rpx;background:#17365d;color:#fff;border:0;border-radius:22rpx;font-size:29rpx;font-weight:800;line-height:88rpx}
+.wechat-login::after{border:0}
+.wechat-login[disabled]{background:#aab2b9;color:#fff}
+.login-note{margin-top:24rpx;padding:20rpx;border-radius:18rpx;background:#f3eee2;color:#8a6f34;font-size:23rpx;line-height:1.55}
+.login-privacy{text-align:center;color:var(--member-text-sub);font-size:21rpx;margin-top:28rpx}

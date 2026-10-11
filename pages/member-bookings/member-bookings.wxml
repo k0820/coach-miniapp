@@ -1,0 +1,171 @@
+<view class="member-page member-shell" style="{{themeStyle}}">
+  <view class="member-title">我的预约</view>
+  <view class="member-subtitle">已经排好的课，和一起流过的汗</view>
+
+  <view wx:if="{{notice}}" class="member-notice">
+    <view class="member-notice-line">· {{notice}}</view>
+  </view>
+
+  <view class="booking-tabs">
+    <view class="booking-tab {{tab==='upcoming'?'active':''}}" data-tab="upcoming" bindtap="switchTab">待上课 {{upcoming.length}}</view>
+    <!-- ⛔ 这一页签里**也**有已取消 / 未到场的课（它们都是"已经不会再上"的课），
+         所以只能叫「历史」。2026-10-01 真机事故：写成「已完成」⇒ 会员取消一节，
+         "已完成"从 16 变成 17，等于把取消统计成了完成。 -->
+    <view class="booking-tab {{tab==='history'?'active':''}}" data-tab="history" bindtap="switchTab">历史 {{history.length}}</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="member-card member-empty">正在读取你的预约…</view>
+  <view wx:elif="{{error}}" class="member-card member-empty">{{error}}</view>
+
+  <block wx:elif="{{tab==='upcoming'}}">
+    <view wx:if="{{!upcoming.length}}" class="member-card member-empty">还没有待上课的预约</view>
+    <view wx:if="{{partial && upcoming.length}}" class="booking-hint">下面只显示下一节预约</view>
+    <view wx:for="{{upcoming}}" wx:key="historyId" class="member-card booking-card" data-id="{{item.historyId}}" bindtap="openDetail">
+      <view class="member-row member-spread">
+        <view class="booking-copy">
+          <view class="booking-date">{{item.dateText}}</view>
+          <view class="member-subtitle">{{item.timeText}} · {{item.coachName}}</view>
+          <!-- ⭐ 多份学员档案时才出现：这节课属于哪一份档案（单档案用户看不到这一行） -->
+          <view wx:if="{{item.archiveText}}" class="booking-archive">档案 · {{item.archiveText}}</view>
+        </view>
+        <view class="member-pill">{{item.statusText}}</view>
+      </view>
+      <view class="booking-card-foot">{{item.typeText}}</view>
+    </view>
+  </block>
+
+  <block wx:else>
+    <!-- ⭐ 轻量筛选：**只决定这一页看哪几条**，不写回数据、不改任何一节课的状态。
+         计数一律按**全部历史**算 ⇒ 在「全部」里就能看到"已取消 3 节"，点进去才真的只剩 3 条。 -->
+    <view wx:if="{{history.length}}" class="history-filters">
+      <view class="history-filter {{historyFilter==='all'?'active':''}}" data-filter="all" bindtap="switchHistoryFilter">全部 {{historyCounts.all}}</view>
+      <view class="history-filter {{historyFilter==='done'?'active':''}}" data-filter="done" bindtap="switchHistoryFilter">已完成 {{historyCounts.done}}</view>
+      <view class="history-filter {{historyFilter==='cancelled'?'active':''}}" data-filter="cancelled" bindtap="switchHistoryFilter">已取消 {{historyCounts.cancelled}}</view>
+    </view>
+
+    <view wx:if="{{!history.length}}" class="member-card member-empty">还没有上过的课程</view>
+    <view wx:elif="{{!visibleHistory.length}}" class="member-card member-empty">
+      {{historyFilter==='done'?'还没有已完成的课程':'还没有已取消的课程'}}
+    </view>
+    <view wx:for="{{visibleHistory}}" wx:key="historyId" class="member-card booking-card" data-id="{{item.historyId}}" bindtap="openDetail">
+      <view class="member-row member-spread">
+        <view class="booking-copy">
+          <view class="booking-date">{{item.dateText}}</view>
+          <view class="member-subtitle">{{item.timeText}} · {{item.coachName}}</view>
+          <view wx:if="{{item.archiveText}}" class="booking-archive">档案 · {{item.archiveText}}</view>
+        </view>
+        <view class="member-pill member-tag-done">{{item.statusText}}</view>
+      </view>
+      <!-- ⛔ 只有**真的记录下了那一刻**才显示（已完成 ⇒ 完成于；已取消 ⇒ 取消于）。
+           没有可靠时间就**不显示这一行**，绝不拿"现在"或"课程原定时间"冒充完成 / 取消时间。 -->
+      <view wx:if="{{item.hasEventAt}}" class="booking-event-at">{{item.eventAtText}}</view>
+      <view class="booking-card-foot">{{item.typeText}}</view>
+    </view>
+  </block>
+
+  <!-- ⭐ 预约详情：2026-10-04（H）**保留本页自建**，但视觉已与 `member-sheet` 完全对齐。
+       ⭐ 为什么它是唯一保留自建的（理由见交付报告）：
+         它是**信息展示型**而不是确认型 —— 面板里那颗「取消预约」会再**打开**统一弹层，
+         它自己不需要"确认/取消"两颗对等的主操作；而它的正文是 `.detail-hero`（日期 + 状态 +
+         时间线 + 教练 + 训练总结）这一大块结构，塞进 slot 反而更绕。
+       ⛔ 但"保留结构"**不等于保留第二套长相**：下面这一段刻意复用了组件的同一组口径
+         （32rpx 顶圆角 / `--member-sheet-mask` 遮罩 / 拖动短线 / 28rpx 标题 / 安全区 / catchtouchmove），
+         ⇒ 两处弹层摆在一起是同一套视觉，只有"有没有底部固定操作区"这一个真实差异。 -->
+  <view wx:if="{{detail}}" class="booking-detail-mask" bindtap="closeDetail" catchtouchmove="noop">
+    <view class="booking-detail" catchtap="noop">
+      <view class="booking-detail-handle"></view>
+      <view class="booking-detail-head">
+        <view class="member-section-title" style="margin:0">课程详情</view>
+        <view class="booking-detail-close" bindtap="closeDetail">×</view>
+      </view>
+
+      <!-- ⭐ M3-P2-2 精简：首屏只回答会员真正关心的四件事 —— 什么时候 / 谁上 / 上什么 / 现在什么状态。
+           ⛔ 原来逐行排列的「结束时间：未记录」「课程时长：未记录」「使用课包：未记录」已全部撤掉：
+             有价值的项目才显示，没记录就**不出现这一项**，而不是把"没记录"当内容摆出来
+             （那是后台数据清单的写法，不是会员要看的东西）。
+           ⛔ 一节 60 分钟的课、同一张卡片上，日期/时间/教练/类型/状态各自只说一次。 -->
+      <view class="detail-hero">
+        <view class="member-row member-spread">
+          <view class="detail-date">{{detail.dateText}}</view>
+          <view class="member-pill {{detail.canManage?'':'member-tag-done'}}">{{detail.statusText}}</view>
+        </view>
+        <view class="detail-time">{{detail.timeLineText}}</view>
+        <view class="detail-meta">{{detail.coachName}}<text wx:if="{{detail.hasType}}"> · {{detail.typeText}}</text></view>
+        <!-- ⛔ 与列表卡片同一个出处（`bookingView`）：列表一个说法、详情另一个说法的情况不存在。 -->
+        <view wx:if="{{detail.hasEventAt}}" class="booking-event-at">{{detail.eventAtText}}</view>
+        <view wx:if="{{detail.archiveText}}" class="booking-archive">档案 · {{detail.archiveText}}</view>
+      </view>
+
+      <view wx:if="{{detail.hasPackage}}" class="detail-sub">使用课包 · {{detail.packageText}}</view>
+      <view wx:if="{{detail.hasSummary}}" class="booking-detail-summary">{{detail.summary}}</view>
+
+      <!-- ⛔ 只有「待上课」才出现管理区：历史课 / 已取消的课一个按钮都不给。
+           ⚠️ M3-P6 起这两颗按钮是**真的会写云端**的（旧版那句"现在点只会告诉你怎么做"已经不再成立，故删除）。 -->
+      <block wx:if="{{detail.canManage}}">
+        <button class="member-ghost booking-manage-btn" bindtap="addToCalendar">加入手机日历</button>
+        <view class="booking-manage-actions">
+          <button class="member-ghost booking-manage-btn" bindtap="openReschedule">修改时间</button>
+          <button class="member-ghost booking-manage-btn danger" bindtap="requestCancel">取消预约</button>
+        </view>
+      </block>
+
+      <button class="member-ghost booking-detail-btn" bindtap="closeDetail">关闭</button>
+    </view>
+  </view>
+
+  <!-- ⭐⭐ 2026-10-04（H）取消预约 = **统一弹层 + 危险层级**。
+       ⛔ 改造前这里用 `wx.showModal`（系统蓝按钮、系统圆角 ⇒ 和同页改期弹层像两个产品），
+         而且它的"取消/确认"两态在 iOS 上不认安全区。
+       ⭐ `danger` ⇒ 主按钮转红（member-sheet 规格 ⑦，全项目只有这一个危险红）。
+       ⚠️ 文案在 JS 的 `requestCancel()` 里（⛔ 不在这里写死：那段话要跟 `row` 的真实时间一起生成，
+         而且"确认之前不许发写调用"这条铁律的落点就在那段 JS 里，测试直接驱动它）。 -->
+  <member-sheet visible="{{cancelOpen}}"
+    title="取消这节课"
+    desc="{{cancelDesc}}"
+    confirmText="确认取消"
+    cancelText="再想想"
+    danger="{{true}}"
+    bindconfirm="confirmCancel" bindcancel="closeCancel" bindclose="closeCancel">
+    <!-- ⛔ 故意留空：危险确认的内容全在 `desc` 里。
+         ⛔ 这里**不许**再放第二份说明（两处说法一旦不同步，就会出现"弹层上方说 A、下方说 B"）。 -->
+  </member-sheet>
+
+  <!-- M3-P4 · 改期选择面板（⭐ 点选即可约时间 ⇒ 直接提交改期，不再有「确认修改」按钮）
+       ⭐⭐ 2026-10-04（H）：改期面板从"本页自建 `.reschedule-mask` + `.reschedule-panel`"
+       换成**统一弹层** `member-sheet`。
+       ⛔ 为什么它算"确认型"、必须换：它底部有一颗**会立刻真写云端**的主操作
+       （点时间格即提交改期），而旧面板把按钮做成了右上角一个「收起」文字 ——
+       也就是说"会改数据"的那颗按钮**没有落在固定的操作区里**，内容一长就被顶走。
+       member-sheet 的底部操作区在 scroll-view **外面**（规格 ④）⇒ 永远点得到、且层级统一。 -->
+  <member-sheet visible="{{detail && rescheduleOpen}}"
+    title="选一个新的时间"
+    desc="原来是 {{detail.dateText}} {{detail.timeText}} · 点一下可约时间就直接改期"
+    showCancel="{{false}}"
+    confirmText="收起"
+    bindconfirm="closeReschedule" bindclose="closeReschedule">
+    <scroll-view class="reschedule-dates" scroll-x="true">
+      <view class="reschedule-dates-inner">
+        <view wx:for="{{rDates}}" wx:key="key" class="reschedule-date {{rIndex===item.index?'active':''}}" data-index="{{item.index}}" bindtap="pickRescheduleDate">
+          <view class="reschedule-date-week">周{{item.weekday}}</view>
+          <view class="reschedule-date-day">{{item.short}}</view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <view wx:if="{{rHint}}" class="booking-hint">{{rHint}}</view>
+    <view wx:if="{{rRefreshing && !rLoading}}" class="booking-hint">正在核对最新排课…</view>
+    <view wx:if="{{rLoading}}" class="member-card member-empty">正在读取可约时间…</view>
+    <view wx:elif="{{!rSlots.length}}" class="member-card member-empty">这一天没有可约时间</view>
+    <view wx:else class="reschedule-grid">
+      <view wx:for="{{rSlots}}" wx:key="key" class="reschedule-cell {{item.reason}} {{rSelected && rSelected.key===item.key?'picked':''}}" data-key="{{item.key}}" bindtap="pickRescheduleSlot">
+        <view class="reschedule-time">{{item.label}}</view>
+        <view class="reschedule-state">{{item.stateText}}</view>
+      </view>
+    </view>
+
+    <view wx:if="{{rSelected}}" class="reschedule-picked">已选：{{rDateLabel}} {{rSelected.label}}</view>
+    <view class="reschedule-tip">点一下可约时间即可直接改期</view>
+  </member-sheet>
+
+  <member-nav active="profile"/>
+</view>

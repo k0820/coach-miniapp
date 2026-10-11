@@ -1,0 +1,8 @@
+@import "../../styles/member.wxss";
+.qr-card { text-align: center; }
+.qr-frame { margin: 20rpx auto 0; width: 430rpx; height: 430rpx; border-radius: 28rpx; background: var(--member-page, #f4f7fb); display: flex; align-items: center; justify-content: center; }
+.qr-image { width: 430rpx; height: 430rpx; border-radius: 28rpx; }
+.qr-empty { color: var(--member-muted, #7b8798); font-size: 24rpx; }
+.qr-note { margin-top: 14rpx; color: #b27b28; font-size: 23rpx; }
+.qr-actions { display: flex; gap: 16rpx; justify-content: center; margin-top: 20rpx; }
+.member-subtitle.dim { opacity: .75; }

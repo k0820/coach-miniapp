@@ -1,0 +1,36 @@
+<view class="page">
+  <view class="card">
+    <view class="title">正式云集合只读验证</view>
+    <view class="hint">只读取并比较，不会覆盖本机或修改云端数据。</view>
+    <button class="btn primary" bindtap="verify" loading="{{loading}}" disabled="{{loading}}">开始只读验证</button>
+    <view class="status">{{status}}</view>
+  </view>
+
+  <view wx:if="{{result}}" class="card">
+    <view class="title">完整性与一致性</view>
+    <view class="row"><text>迁移版本</text><b>{{result.migrationVersion}}</b></view>
+    <view class="row"><text>云端迁移完整性</text><b>{{result.cloudIntegrity ? '通过' : '失败'}}</b></view>
+    <view class="row"><text>与当前本机</text><b>{{result.localMatchesCloud ? '完全一致' : '有差异'}}</b></view>
+    <view class="row"><text>Checksum</text><b>{{result.checksumMatches ? '一致' : '不一致'}}</b></view>
+    <view class="row"><text>ByteSize</text><b>{{result.byteSizeMatches ? '一致' : '不一致'}}</b></view>
+    <view class="row"><text>数组顺序</text><b>{{result.orderMatches ? '一致' : '不一致'}}</b></view>
+    <view class="row"><text>关键 ID 关联</text><b>{{result.relationMatches ? '一致' : '不一致'}}</b></view>
+    <view class="hash">本机：{{result.localChecksum}} / {{result.localByteSize}} 字节</view>
+    <view class="hash">云端：{{result.cloudChecksum}} / {{result.cloudByteSize}} 字节</view>
+  </view>
+
+  <view wx:if="{{result}}" class="card">
+    <view class="title">数量与金额</view>
+    <view class="summary-head"><text>项目</text><text>本机</text><text>云端</text></view>
+    <view class="summary-row"><text>学员</text><text>{{result.localSummary.students}}</text><text>{{result.cloudSummary.students}}</text></view>
+    <view class="summary-row"><text>课时包</text><text>{{result.localSummary.packages}}</text><text>{{result.cloudSummary.packages}}</text></view>
+    <view class="summary-row"><text>预约</text><text>{{result.localSummary.bookings}}</text><text>{{result.cloudSummary.bookings}}</text></view>
+    <view class="summary-row"><text>已完成</text><text>{{result.localSummary.completedBookings}}</text><text>{{result.cloudSummary.completedBookings}}</text></view>
+    <view class="summary-row"><text>收入记录</text><text>{{result.localSummary.incomes}}</text><text>{{result.cloudSummary.incomes}}</text></view>
+    <view class="summary-row"><text>销售记录</text><text>{{result.localSummary.sales}}</text><text>{{result.cloudSummary.sales}}</text></view>
+    <view class="summary-row"><text>自定义动作</text><text>{{result.localSummary.customExercises}}</text><text>{{result.cloudSummary.customExercises}}</text></view>
+    <view class="summary-row"><text>收入总额</text><text>{{result.localSummary.incomeAmount}}</text><text>{{result.cloudSummary.incomeAmount}}</text></view>
+    <view class="summary-row"><text>销售总额</text><text>{{result.localSummary.salesAmount}}</text><text>{{result.cloudSummary.salesAmount}}</text></view>
+    <view wx:if="{{result.summaryDifferences.length}}" class="warning">存在 {{result.summaryDifferences.length}} 项摘要差异，仅报告，未覆盖任何数据。</view>
+  </view>
+</view>

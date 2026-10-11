@@ -1,0 +1,55 @@
+# Dependencies and package-manager caches
+**/node_modules/
+**/.pnpm-store/
+/miniprogram_npm/
+
+# WeChat Developer Tools local settings
+/project.private.config.json
+/.idea/
+/.vscode/
+
+# Secrets and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+**/secrets/
+**/credentials/
+
+# Real data, exports, backups and restore material
+/_*
+**/*.bak
+**/*.backup
+**/*.dump
+**/*.sqlite
+**/*.sqlite3
+**/*.db
+**/database-export/
+**/data-export/
+**/cloud-download/
+**/restore-points/
+
+# Generated diagnostics, logs and local test artifacts
+*.log
+*.tmp
+*.temp
+*.cache
+*.txt
+/outputs/
+/pkg-diag/
+/tests/_dup-*/
+/tests/_*.js
+# Contains a real incident name/date in comments; retain locally, never publish.
+/tests/local-first-revision-recovery.test.js
+/coverage/
+/dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+

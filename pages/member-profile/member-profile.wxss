@@ -1,0 +1,38 @@
+@import "../../styles/member.wxss";.profile-head{display:flex;align-items:center;gap:22rpx;background:var(--member-hero)}.member-avatar.big{width:104rpx;height:104rpx;border-radius:34rpx;font-size:38rpx}
+
+/* 2026-10-03 · 「我的」重排后的补充样式（⛔ 复用 styles/member.wxss 的设计变量） */
+.profile-copy { flex: 1; min-width: 0; }
+/* 当前使用档案：与账号昵称分行显示，避免"认领了却像没生效"的误解 */
+.profile-current { margin-top: 12rpx; display: flex; align-items: center; gap: 10rpx; flex-wrap: wrap; }
+.profile-current-label { font-size: 22rpx; font-weight: 700; color: var(--member-muted, #7b8798); background: var(--member-soft, #eaf8f0); border-radius: 10rpx; padding: 4rpx 10rpx; }
+.profile-current-name { font-size: 27rpx; font-weight: 850; color: var(--member-primary, #3a454e); }
+.profile-flag { font-size: 22rpx; font-weight: 700; padding: 2rpx 12rpx; border-radius: 999rpx; }
+.profile-flag.soft { color: var(--member-muted, #7b8798); background: var(--member-page, #f4f7fb); }
+.profile-need { border-color: var(--member-primary, #3a454e); background: var(--member-soft, #eaf8f0); }
+
+/* ── C（2026-10-04）编辑账户显示名 ───────────────────────────────────────────────
+   ⛔ 复用 styles/member.wxss 的设计变量；弹层规格与其它确认层一致。 */
+.profile-rename { margin-top: 10rpx; font-size: 24rpx; color: var(--member-primary, #3a454e); font-weight: 700; }
+.name-mask { position: fixed; inset: 0; background: var(--member-sheet-mask, rgba(15, 30, 50, .45)); z-index: 60; }
+.name-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 61;
+  background: var(--member-surface, #fff); border-radius: 32rpx 32rpx 0 0;
+  padding: 0 28rpx calc(24rpx + env(safe-area-inset-bottom));
+  box-shadow: 0 -10rpx 40rpx rgba(15, 30, 50, .18);
+}
+.name-handle { width: 72rpx; height: 8rpx; border-radius: 999rpx; background: var(--member-border, #e6ecf3); margin: 16rpx auto 12rpx; }
+.name-title { font-size: 30rpx; font-weight: 850; color: var(--member-text, #1d2939); }
+.name-sub { margin-top: 10rpx; font-size: 23rpx; line-height: 1.6; color: var(--member-muted, #7b8798); }
+.name-input {
+  margin-top: 18rpx; height: var(--member-btn-height, 88rpx); padding: 0 20rpx;
+  font-size: 28rpx; color: var(--member-text, #1d2939);
+  background: var(--member-page, #f4f7fb); border: 2rpx solid var(--member-border, #e6ecf3); border-radius: 18rpx;
+}
+.name-actions { display: flex; gap: 16rpx; margin-top: 22rpx; }
+.name-btn { flex: 1; height: var(--member-btn-height, 88rpx); line-height: var(--member-btn-height, 88rpx); text-align: center; border-radius: 20rpx; font-size: 28rpx; font-weight: 800; }
+.name-btn.ghost { background: var(--member-page, #f4f7fb); color: var(--member-text, #1d2939); }
+.name-btn:not(.ghost) { background: var(--member-primary, #3a454e); color: #fff; }
+.name-btn.disabled { opacity: .55; }
+
+/* 📥 消息中心未读条数（2026-10-06） */
+.member-dot{color:#c9452f;font-weight:700}

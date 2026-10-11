@@ -1,0 +1,60 @@
+@import "../../styles/member.wxss";
+
+/* ── ① 顶部摘要（2026-10-04 F）────────────────────────────────────────────
+ * ⭐ 为什么不再是 `.member-hero` 大数字卡：
+ *   86rpx 的数字 + 渐变底 + 装饰叶子会把**整屏首屏**占掉，而"一共还剩几节"只是入口信息。
+ *   ⇒ 压成**一行**：左边口径、右边数字，字号 44rpx（`--member-font-display` 的约一半），
+ *      高度与一张普通卡片的内容区相当，剩下的注意力交给下面的课时包列表。
+ * ⛔ 颜色全部读 `--member-*`：主题一换，摘要跟着换，页面里没有第二个色源。 */
+.balance-head{padding:var(--member-gap-lg)}
+.balance-line{display:flex;align-items:baseline;justify-content:space-between;gap:var(--member-gap-md);flex-wrap:wrap}
+.balance-label{font-size:var(--member-font-sub);font-weight:700;color:var(--member-text-sub);flex:1;min-width:0}
+/* ⭐ 数字用 `font-variant-numeric:tabular-nums`：节数变化时不会左右跳（列表会"抖"一下）。 */
+.balance-num{font-size:44rpx;font-weight:850;line-height:1.1;letter-spacing:-1rpx;color:var(--member-primary);font-variant-numeric:tabular-nums}
+.balance-unit{font-size:var(--member-font-body);font-weight:700;color:var(--member-text-sub);margin-left:8rpx}
+/* ⚠️ 口径说明**允许换行**（⛔ 窄屏 375 上单行会截断成"…不是一个"），左对齐不居中 ⇒ 换行后仍读得通。 */
+.balance-note{margin-top:var(--member-gap-xs);display:block}
+
+/* 多档案时的逐份 breakdown：合计这个数从哪来，必须可核对 */
+.archive-balance-list{margin-top:var(--member-gap-sm);padding-top:var(--member-gap-sm);border-top:var(--member-divider,1rpx) solid var(--member-border)}
+.archive-balance-row{display:flex;align-items:center;justify-content:space-between;gap:var(--member-gap-sm);padding:6rpx 0}
+.archive-balance-name{font-size:var(--member-font-cap);font-weight:700;color:var(--member-text-sub);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.archive-balance-value{font-size:var(--member-font-sub);font-weight:800;color:var(--member-primary);flex:0 0 auto;font-variant-numeric:tabular-nums}
+
+/* ── ② 范围开关 ────────────────────────────────────────────────────────────
+ * ⭐ 形状刻意做得比卡片**弱**（浅底 + 细边 + 小字）：它是"看法"的切换，不是"要去做什么"的入口，
+ *   抢过课时包列表的视线就本末倒置了。 */
+.scope-switch{display:flex;align-items:center;justify-content:space-between;gap:var(--member-gap-sm);flex-wrap:wrap;background:var(--member-surface-alt);border:var(--member-divider,1rpx) solid var(--member-border);border-radius:var(--member-radius-control);padding:14rpx 20rpx;margin-bottom:var(--member-gap-sm)}
+.scope-switch-label{font-size:var(--member-font-cap);color:var(--member-text-sub);flex:1;min-width:0;overflow-wrap:break-word}
+.scope-switch-name{font-weight:800;color:var(--member-text);margin:0 4rpx}
+.scope-switch-btn{flex:0 0 auto;padding:10rpx 22rpx;border-radius:var(--member-radius-pill);background:var(--member-soft);color:var(--member-primary);font-size:var(--member-font-cap);font-weight:800;min-height:56rpx;display:flex;align-items:center;white-space:nowrap}
+
+/* ── ③ 课时包卡片：七件事 ────────────────────────────────────────────────────
+ * ⭐ 每份课包必须**独立完整**（用户最常问的三件事就是"还剩几节 / 谁上的 / 什么时候买的"）。 */
+.package-card{margin-bottom:var(--member-gap-md)}
+.package-head{align-items:flex-start}
+/* ⭐ `flex:1;min-width:0`：没有它，长课程名 + 长教练名会把右侧状态标签挤到"一字一行"（M2-UI-02 的根因）。 */
+.package-copy{flex:1;min-width:0}
+.package-name{font-size:var(--member-font-section);font-weight:800;color:var(--member-text);overflow-wrap:break-word;line-height:1.35}
+.package-head .member-pill{flex:0 0 auto;margin-top:2rpx}
+
+/* 三个数：⛔ 刻意**不做成三个等权重大数字**（那在暗示 total-used=remaining 这条并不总成立的等式）。
+   ⇒ "还剩"是主角（主色 + 稍大），"当初登记 / 已登记使用"退成事实行，同一行内排布。 */
+.package-facts{display:flex;align-items:baseline;flex-wrap:wrap;gap:var(--member-gap-xs) var(--member-gap-lg);margin-top:var(--member-gap-sm);padding-top:var(--member-gap-sm);border-top:var(--member-divider,1rpx) solid var(--member-border)}
+.package-fact{display:flex;align-items:baseline;gap:6rpx;min-width:0}
+.package-fact-label{font-size:var(--member-font-cap);color:var(--member-text-sub);white-space:nowrap}
+/* ⭐ 数字统一 `tabular-nums` + 允许换行：≤4 位数在 375 上占 ~70rpx，
+   三个标签换行也不会出现"截断"（⛔ 不许用 ellipsis 把节数藏起来）。 */
+.package-fact-value{font-size:var(--member-font-body);font-weight:800;color:var(--member-text);font-variant-numeric:tabular-nums;overflow-wrap:break-word}
+.package-fact-unit{font-size:var(--member-font-cap);color:var(--member-text-sub)}
+/* 主角只有一个：剩下的那个数。 */
+.package-fact.strong .package-fact-label{font-weight:800;color:var(--member-text)}
+.package-fact.strong .package-fact-value{font-size:38rpx;color:var(--member-primary);letter-spacing:-1rpx}
+.package-fact.strong .package-fact-unit{color:var(--member-primary);font-weight:700}
+
+/* 多档案分组标题（单档案时 grouped=false ⇒ 这一整套不渲染，界面与改造前逐字相同） */
+.archive-group-head{padding:var(--member-gap-lg) 4rpx 10rpx}
+.archive-group-name{font-size:var(--member-font-section);font-weight:800;color:var(--member-text);overflow-wrap:break-word}
+.detail-note{margin:-8rpx 4rpx var(--member-gap-sm)}
+/* 已撤销：与 `.member-pill` 同形，只是灰掉（⛔ 不换形状 —— 换形状会让用户以为是另一种东西） */
+.member-pill.muted{background:var(--member-surface-alt);color:var(--member-text-sub)}

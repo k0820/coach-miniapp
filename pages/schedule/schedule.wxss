@@ -1,0 +1,196 @@
+/* ★ 2026-09-22 真机根因（"电脑版约了、手机版刷新还是空的"）：
+   微信原生下拉刷新有一条硬前提 —— **页面必须存在可滚动空间**。
+   页面高度 == 屏幕高度时，系统照旧播下拉动画，但 `onPullDownRefresh` 回调**一次都不会执行**
+   （社区/官方文档一致的结论）。而这里原来正是 `height:100vh + padding-bottom:0 + box-sizing:border-box`：
+   页面内容高度恰好等于窗口高度 → 回调永不触发 → 1.1.7 又删掉了唯一的手动重试行，
+   于是课表页**再也没有任何能真正发起云端读取的入口**。
+   修法：给页面留出 40rpx 的可滚动余量，同时保持**内容盒高度逐像素不变**
+   （border box = 100vh+40rpx，padding = 18rpx / 40rpx ⇒ 内容盒 = 100vh-18rpx，与改前完全一致），
+   所以课表可用高度与改前完全一致，只是"能滚了 20px"（课表高度现在由 flex 分配，不再写死 162rpx）。
+   回归护栏：tests/schedule-cross-device-refresh.test.js（第 5 步：A 预约 → B 下拉 → 出现）
+             + tests/student-editor-save-bar.test.js 同款"几何契约"思路：可滚动余量一旦被改回 0，
+             这里必须报错，而不是等真机再发现一次。 */
+/* ⛔ 页头每多一个**占流**的元素，课表高度就必须再扣一次，否则课表被顶下去、
+   底部几行被「＋」按钮压住（2026-10-02 实测：会员取消通知条一出现就压住 42.5px）。
+   所以 `.schedule-page` 上每加一种页头状态，都要有对应的高度补偿。 */
+/* ⭐ 整页是**纵向 flex**：页头各元素（标题 / 视图切换 / 取消通知条 / 开发期入口）各占各的，
+   课表吃掉**剩下的全部高度** —— 不再有任何"页头一共多少 rpx"的手写常数。
+   ⛔ 2026-10-02 实测：写死 `calc(100% - 162rpx)` 时，会员取消通知条一出现就**占流**，
+   课表高度却仍按"只有标题+工具栏"算 ⇒ 整块课表被顶到「＋」底下。flex 之后这类问题**结构性消失**。 */
+/* ⭐ 2026-10-02 三次口径把 padding-bottom 从 40rpx 改成 **42rpx**：补的是「课表自己的 1rpx 边框」。
+   实测（iPhone 6/7/8，window 375×555）：行区底 556 > 视口 555 ⇒ 滑到底后 23:00 行被裁掉 1px。
+   根因：flex 分给 `.calendar` 的是 **content-box** 高度，而它有一条 `border:1rpx`（没设 box-sizing:border-box），
+   上下边框各 1rpx 算在**外面** ⇒ 课表整体比视口多 2rpx。这里补 2rpx 把课表底拉回正好贴视口底。
+   ⛔ 40rpx 那个「下拉刷新余量」是**页面高度**上的（height:calc(100vh + 40rpx)），一个像素都不能动 ——
+      动了它 → onPullDownRefresh 永不触发（1.1.9 真机事故）。改的是 padding，不是它。 */
+.schedule-page{min-height:calc(100vh + 40rpx);padding:18rpx 14rpx 42rpx;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;background:linear-gradient(180deg,#e8e4dd 0,#f4f1ec 240rpx)}
+/* ⭐ 2026-10-03 · 顶部紧凑加载提示（1.3.11 真机：整页下拉刷新）。
+   ⛔ 原来网格自带 `scroll-view` refresher ⇒ 下拉只有时间格下移、还挤出一整块 45px 三点空白。
+      现在整页是唯一刷新容器，这条就是"正在同步"的反馈：高 44rpx、松手出现、完成收回。
+   ⛔ height **不做 transition**：占流高度必须一次到位，否则 syncRowHeight 会量到动画中间态。
+   ⛔ 只有一个转圈环，不许写成"三个点"（真机正是把三点误认为"大块加载区"）。 */
+.refresh-hint{flex:none;height:0;opacity:0;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:10rpx;font-size:21rpx;color:#26466f;transition:opacity .16s ease-out}
+.refresh-hint.on{height:44rpx;opacity:1}
+.refresh-hint-ring{flex:none;width:20rpx;height:20rpx;border-radius:50%;border:3rpx solid #c7d8f0;border-top-color:#2563eb;animation:refreshSpin .7s linear infinite}
+@keyframes refreshSpin{to{transform:rotate(360deg)}}
+/* ⭐ 紧凑页头（2026-10-02 三次口径）：目标是把 00:00–23:00 **全部压进一屏**，
+   24 行已经占掉 528px，剩下能给页头的空间就那么多 ⇒ 页头必须同步收紧（原型来自 layout-lab 方案 A，
+   已在 iPhone 12/13 Pro 实测过常规屏四档）。⛔ 这些值改在**原始声明**上、不用追加覆盖：
+   tests/helpers/week-grid-geometry.js 的 declOf 取的是**首个**匹配声明，追加层会被几何公式读漏。 */
+.top{height:64rpx;display:flex;align-items:center;gap:12rpx;padding:0 10rpx}.top-title{flex:1;min-width:0;line-height:1.18}.top-title>view{font-size:30rpx!important;font-weight:850;color:#26354a;letter-spacing:1rpx}.top-title text{display:block;font-size:19rpx!important;font-weight:500;color:#77766f;margin-top:2rpx;white-space:nowrap}.top-action{background:#26354a;color:#fff;border-radius:999rpx;font-size:20rpx!important;font-weight:700;padding:8rpx 16rpx;white-space:nowrap;box-shadow:0 7rpx 16rpx rgba(38,53,74,.16)}
+.view-toolbar{height:56rpx;display:flex;align-items:center;gap:8rpx;overflow-x:auto;white-space:nowrap;padding:0 2rpx}.mode-tabs{display:flex;flex:none;background:#ddd8d0;border-radius:999rpx;padding:5rpx}.mode-tabs>view{padding:6rpx 14rpx;border-radius:999rpx;font-size:21rpx!important;color:#62615d}.mode-tabs .on{background:#e47752;color:#fff;font-weight:800;box-shadow:0 5rpx 12rpx rgba(201,95,62,.18)}.tool-link{flex:none;background:rgba(255,253,249,.86);color:#454a52;border:1rpx solid #ddd7ce;border-radius:999rpx;font-size:19rpx!important;font-weight:650;padding:8rpx 12rpx}
+/* ⛔ `＋` 不再住在页头工具条里（`.fab-pill` 已删除）。
+   2026-10-02 本轮定稿：＋ 回到右下角、tabBar 上方，做成带文字的「＋ 新建课程」胶囊
+   （样式在 app.wxss 的 `.fab-capsule`，与学员页共用同一枚）。
+   课表用 `--fab-safe`（app.wxss 里 = 104rpx）**主动让出**这条带 ⇒ 胶囊不压任何格子 / 卡片 / 末行。
+   为什么不留页头那枚小的：一颗只写着"＋"的小圆片在工具条里排在"选日期 / 分享可约"后面，
+   视觉上和"回到今天"同级，教练真机上看不出它是"新建课程"。 */
+.calendar,.month-calendar{background:#fffdf9;border-radius:26rpx 26rpx 0 0;overflow:hidden;box-shadow:0 12rpx 34rpx rgba(49,43,36,.08);border:1rpx solid rgba(70,64,56,.05)}
+/* ⭐ 2026-10-03（1.3.11）：周/日课表卡片**不再吃 flex 剩余高度**（原来 flex:1 1 auto ⇒ 高度由弹性分配），
+   改成 `flex:none` + 由页面实测下发 `height:NNpx`（{{cardHeightStyle}}）。
+   为什么必须改：原来行区是内部可滚动的 scroll-view，屏幕/横幅一变就"只滚时间格"；
+   现在整页是唯一滚动容器 ⇒ **行区必须能被内容撑开**，flex-shrink 会让下发高度失效（被压回剩余空间）⇒ 底部被裁。
+   ⛔ `box-sizing:border-box`：下发的高度是**含 1rpx 边框**的目标高度，不加这条会多出 2rpx 把课表顶出视口。
+   ⛔ 月视图不参与：它没有小时行，仍是 flex:1 吃满剩余高度 + 自己纵向滚动。 */
+.calendar{display:flex;flex-direction:column;flex:none;box-sizing:border-box}
+.month-calendar{flex:1 1 auto;min-height:0}.grid{display:grid;grid-template-columns:68rpx repeat(7,1fr)}.header{height:52rpx;flex:none;background:#faf8f4;border-bottom:1rpx solid #e8e3dc}.day{text-align:center;font-size:20rpx!important;padding:8rpx 0 6rpx;color:#50545a}.day text{display:inline;font-size:16rpx!important;color:#9a9892;margin:0 0 0 3rpx}.day.today{color:#c75e3e;font-weight:800;background:#fbe8df;border-radius:16rpx}/* ⭐ 小时行高度（2026-10-03 响应式口径）：`var(--hour-row-h)` 现在只是**兜底下限**
+   —— 真实行高由页面实测行区可用高度 ÷ 当前行数后，用行内 `style="height:NNpx"` 下发
+   （见 schedule.js 的 `syncRowHeight` / `measureRowHeight`，行内心的 wxml 上的 `{{rowHeightStyle}}`）。
+   ⇒⛔ 行高**不再写死**：课程卡片（`slotStyle` 用百分比）与空白格点击全部自动跟着实际行高走，
+      不存在"高度变了、卡片还按旧高度画"的第二套数字。
+   ⇒⛔ 横幅 / 取消通知条出现时，减的是**可用高度**（flex 自动重算 + JS 重测），不是可见行数。 */
+.row-grid{flex:none;box-sizing:border-box;height:var(--hour-row-h)}.time{text-align:center;font-size:18rpx!important;color:#9a9892;padding-top:5rpx}.cell{height:100%;position:relative;border-left:1rpx solid #eeeae4;border-bottom:1rpx solid #eeeae4;box-sizing:border-box;overflow:hidden}.cell-active{background:#fbefe9}
+.booking{position:absolute;left:3rpx;right:3rpx;box-sizing:border-box;color:#fff;font-size:16rpx;line-height:1.15;padding:4rpx 5rpx;border-left:4rpx solid;border-radius:9rpx;overflow:hidden;display:flex;align-items:center;box-shadow:0 3rpx 8rpx rgba(0,0,0,.13)}.booking text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:650}.booking.done{opacity:.67;filter:saturate(.7)}
+/* 「＋」已从悬浮球改成页头工具条里的胶囊（见 .fab-pill）。app.wxss 的 .fab 全局按钮样式**保留**
+   （将来别的页面还要用），课表页不再渲染悬浮球 ⇒ 不再有"最后一个球形按钮压住课表底部"这回事。 */
+.day-view-head{height:66rpx;line-height:66rpx;text-align:center;font-size:25rpx;font-weight:800;color:#26354a;background:#faf8f4;border-bottom:1rpx solid #e8e3dc}/* ⭐ 日视图小时行与周视图**同一条**响应式口径：行高由 `{{rowHeightStyle}}` 下发，这里是兜底下限。 */
+.day-row{display:flex;flex:none;box-sizing:border-box;height:var(--hour-row-h);border-bottom:1rpx solid #eeeae4}.day-time{width:94rpx;flex:none;text-align:center;color:#96938e;font-size:19rpx;padding-top:6rpx}.day-cell{flex:1;border-left:1rpx solid #eeeae4;position:relative;padding:3rpx}.day-booking{display:inline-flex;color:#fff;border-radius:11rpx;padding:6rpx 13rpx;margin-right:6rpx;font-size:21rpx;font-weight:650}
+.month-week,.month-grid{display:grid;grid-template-columns:repeat(7,1fr)}.month-week{height:66rpx;align-items:center;text-align:center;color:#76746f;font-size:22rpx;font-weight:650;background:#faf8f4}.month-day{height:150rpx;border-top:1rpx solid #eee9e2;border-left:1rpx solid #eee9e2;padding:11rpx;box-sizing:border-box;font-size:24rpx;color:#444950}.month-day.blank{background:#f7f4ef}.month-day.today-month{background:#fbe8df;color:#bf5437;font-weight:850}.month-count{font-size:18rpx;color:#7d7b76;margin-top:12rpx;line-height:1.35}
+.slide-out-left{animation:outLeft .12s ease-out forwards}.slide-out-right{animation:outRight .12s ease-out forwards}.slide-in-right{animation:inRight .15s ease-out}.slide-in-left{animation:inLeft .15s ease-out}.calendar,.month-calendar{will-change:transform,opacity;transform:translateZ(0)}@keyframes outLeft{to{transform:translate3d(-10%,0,0);opacity:.72}}@keyframes outRight{to{transform:translate3d(10%,0,0);opacity:.72}}@keyframes inRight{from{transform:translate3d(10%,0,0);opacity:.72}to{transform:translate3d(0,0,0);opacity:1}}@keyframes inLeft{from{transform:translate3d(-10%,0,0);opacity:.72}to{transform:translate3d(0,0,0);opacity:1}}
+.schedule-page{background:linear-gradient(180deg,#eaf1fb 0,#f3f6fb 250rpx)}.top-title>view{color:#132b4f}.top-action{background:#132b4f;box-shadow:0 7rpx 16rpx rgba(19,43,79,.16)}.mode-tabs{background:#dfe8f5}.mode-tabs .on{background:#2563eb;box-shadow:0 5rpx 12rpx rgba(37,99,235,.2)}.tool-link{background:#fff;color:#26466f;border-color:#d7e1ef}.calendar,.month-calendar{background:#fff;border-color:#e2eaf4;box-shadow:0 12rpx 34rpx rgba(30,65,110,.08)}.header,.month-week,.day-view-head{background:#f6f9fd}.day.today,.month-day.today-month{color:#1d4ed8;background:#e5efff}.cell-active{background:#edf4ff}.fab{background:linear-gradient(145deg,#3b82f6,#1d4ed8)}
+.header{border-bottom-color:#cbd6e4}.cell{border-left-color:#d7e0eb;border-bottom-color:#d7e0eb}.time{color:#69778a;font-weight:600}.day{color:#35445a;font-weight:650}.day text{color:#748196}.day-row{border-bottom-color:#d7e0eb}.day-cell{border-left-color:#d7e0eb}.day-time{color:#69778a;font-weight:600}
+.cell{overflow:visible}.booking{z-index:4}
+
+/* ⛔ 跨午夜「接上节」片段的样式已随 2026-10-01 二次口径**整体删除**
+   （原 `.booking-cont` / `.booking-cont-tag` / `.day-booking-cont` / `.day-cont-tag`）：
+   课表**不再渲染**次日那一段（跨午夜课只在开始日画它那一段）。
+   ⛔ 这不等于不再占用 —— 占用判定不靠样式，它在 `utils/schedule-view.js` 的**绝对时间轴**里照旧生效。 */
+
+.pending-summary{flex:none;min-width:72rpx;height:62rpx;padding:0 12rpx;border-radius:18rpx;background:#fff;border:1rpx solid #d5e1f0;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 6rpx 14rpx rgba(25,61,110,.06)}.pending-summary text{font-size:16rpx;color:#7b899c;line-height:1}.pending-summary b{font-size:25rpx;color:#f97316;line-height:1.05;margin-top:4rpx}.booking{justify-content:space-between;gap:3rpx}.booking-status{flex:none;font-size:13rpx;font-weight:850;color:#fff;background:rgba(14,35,68,.28);border-radius:999rpx;padding:3rpx 5rpx}.booking.done{opacity:1;filter:none;background-image:linear-gradient(rgba(255,255,255,.2),rgba(255,255,255,.2))!important;box-shadow:inset 0 0 0 2rpx rgba(255,255,255,.75),0 3rpx 8rpx rgba(0,0,0,.1)}.booking.done .booking-status{background:#fff;color:#1d4ed8}.day-booking{align-items:center;gap:10rpx}.day-booking text{margin-left:auto;font-size:17rpx;background:rgba(15,35,66,.25);padding:4rpx 9rpx;border-radius:999rpx}.day-booking.done{opacity:1;box-shadow:inset 0 0 0 2rpx rgba(255,255,255,.75)}.month-day{padding:10rpx 8rpx}.month-number{font-size:24rpx;font-weight:750;color:#344054}.month-count{margin-top:10rpx;line-height:1.2}.month-count b{display:block;font-size:17rpx;color:#53657a;white-space:nowrap}.month-count text{display:inline-block;margin-top:6rpx;font-size:16rpx;font-weight:800;border-radius:999rpx;padding:4rpx 7rpx;white-space:nowrap}.month-pending{color:#c65d16;background:#fff0df}.month-done{color:#167752;background:#e7f7ef}
+
+/* ⭐ 2026-10-02 真机 Bug（测试环境）：课表滑到底后 23:00 那一行只剩半格，23:30 的旧课卡片看不见。
+   —— 根因以**微信开发者工具实测坐标**为准（`_render-probe.js` + `_render-probe-out/report-*.txt`），
+      不是手写公式推的。iPhone 12/13 Pro（window 390×671，1rpx = 390/750 = 0.52px）：
+
+   修复前（baseline，25 行、课表高度写死 `calc(100% - 162rpx)`）：
+     · 文档高 740 / 视口 671 / 可滚 69；滑到底后课表底仍落在视口下 **19.5px**，
+       23:00 行底 670.44 距视口底 671 只剩 **0.56px**（几乎贴边，机型一变就被切）；
+     · 「＋」按钮（视口 602~657）压住课表底部 **88.5px（≈4 行）**：21:00、22:00 整行 + 23:00 的上半
+       在**星期日那一列**被圆按钮盖住 ⇒ 这就是"23:00 行只剩约半格"；
+     · 23:30 旧课卡片（画在 23:00 行的下半段）实测视口底 692.72 > 671 ⇒ **确实被裁**。
+
+   ⛔ 结论修正（2026-10-02）：上一版注释写的"sticky 横幅**不增加**可滚动距离"是**错的**。
+      实测：横幅占文档 y 0~49.92，文档高 = 横幅 + 页面高，**它确实贡献滚动距离**。
+      真正的问题是**页面高度没扣掉横幅**，使"文档 − 视口"的余量不再等于 40rpx 的下拉余量，
+      而课表本身又按"没有横幅"的高度排 ⇒ 底部溢出。
+
+   修法（2026-10-02 **二次口径**：不再"把 24 行挤进一屏"）：
+     · 小时行改成**固定高度** `--hour-row-h`（96rpx ≈ 50px），24 行放不下就**纵向滚动**；
+       ⇒ 横幅 / 取消通知条出现时，少的是**可见行数**，行高一个像素都不减（可读、点得中）。
+     · 整页改 column flex：页头各元素各占各的，课表吃掉**剩下的全部高度**；
+       ⇒ 取消通知条这类"后来才占流"的元素**结构性不再影响**布局（不再需要手写补偿）。
+     · 课表下方留 `--fab-safe` 操作带，课表**不伸进去** ⇒ 「＋」永远不压任何一行 / 卡片 / 点击区。
+
+   ⭐ 2026-10-02 **三次口径（当前）**：同样的 flex 骨架，改的是三个数 ——
+       **目标变了：常规手机（iPhone 12/13 Pro，window 390×671）上 00:00–23:00 要能一屏看全。**
+     · `--hour-row-h` 96rpx → **44rpx**（22px）：24 行共 528px，放进行区还剩富余 ⇒ 零滚动；
+       小屏 / 带横幅 / 有取消通知条时仍然允许滚动（这是**可接受**的，见测试 ③ 段）。
+     · `--fab-safe` 140rpx → **0rpx**：「＋」搬进页头工具条 ⇒ 底部大空白消失，且按钮彻底离开网格。
+     · 页头（标题 / 工具条 / 日期表头 / 通知条）同步收紧，把腾出来的高度还给课表。
+   ⛔ 判别依据不是"看起来还行"，而是**开发者工具实测**：真实 tap 命中、卡片文案不裁、
+       23:00 行完整、一屏 24/24 —— 见 tests/week-grid-bottom.test.js 第 ② 段与 fixture 实测节。
+
+   ⛔ 40rpx 下拉余量**一个像素都不能动**：微信原生下拉刷新要求页面有可滚动空间，
+      动了它 → onPullDownRefresh 永不触发（1.1.9 真机事故）。tests/schedule-cross-device-refresh.test.js 盯着这条。 */
+.schedule-page.with-banner{min-height:calc(100vh + 40rpx - var(--sandbox-banner-h))}
+
+/* Native three-week window. Existing course blocks keep their original positioning. */
+/* ⛔ 2026-10-03 · 右下「＋ 新建课程」胶囊**已删除**，课表因此**不再让出**底部那条 104rpx 安全带。
+   ⇒ `.week-swiper` 上不再有 `margin-bottom:var(--fab-safe)`：课表一路铺到 tabBar 上方，
+      腾出来的高度全部还给小时行（常规屏 18 行更宽裕、23:00 行更完整）。
+   ⛔ 新建入口**没变**：点空白时间格（bindtap="cell"）照旧进新建课程弹层。
+      回归护栏：tests/week-grid-bottom.test.js 第 ④ 段（行区必须吃满，不许再留底部带）。 */
+.week-swiper{flex:none;height:calc(100vh - 138rpx);box-sizing:border-box;border-radius:26rpx 26rpx 0 0;overflow:hidden}
+/* 小时行区：⛔ 旧的"24 行 × 固定行高、超了就纵向滚动 + refresher-enabled"口径已于 2026-10-03 作废（见下）。 */
+/* ⭐ 2026-10-03（1.3.11）：小时行区**不再自己滚**（原来是 `scroll-view scroll-y` + 自带 refresher）。
+   ⛔ 改成 `flex:none` 的普通容器：高度 = 行数 × 下发行高，内容撑开 ⇒ 空间不足时由**整页**轻微滚动，
+      而不是"只有时间格在滚"（真机反馈的第 5 条）。
+   ⛔ 把 flex 改回 `1 1 auto` 会立刻退化回"行区内部滚动"——tests/week-grid-bottom.test.js 第 ⑥ 段盯着。 */
+.rows-scroll{flex:none}
+/* 取消通知条**占流**（实测 35px ≈ 67rpx）：flex 布局下它自动从课表高度里扣掉自己的那一份，
+   ⛔ 所以这里**不再**需要任何 `.has-notice` 手写补偿 —— 写死补偿正是 2026-10-02 压住课表的原因。 */
+/* ⛔ 2026-10-03 同上：胶囊删除后，日课表 / 月课表也不再让出底部安全带。 */
+.schedule-page .day-calendar,.schedule-page .month-calendar{margin-bottom:0}
+.schedule-page .month-calendar{overflow-y:auto}
+.week-swiper-item{height:100%;overflow:hidden}.week-swiper .week-calendar{height:100%;box-sizing:border-box;border-radius:0;box-shadow:none}
+
+/* Schedule grid: stronger hourly guides, quieter day dividers. */
+.week-swiper .header{border-bottom:0}.week-swiper .row-grid{box-sizing:border-box;border-top:1rpx solid #c9d4e4}.week-swiper .time{box-sizing:border-box;border-right:1rpx solid #c2cfe0;color:#5d6b7f}.week-swiper .cell{border-left-color:#d3dced;border-bottom:0}.week-swiper .cell.today-column{background:#f8fbff}.week-swiper .cell.today-column.cell-active{background:#edf4ff}
+.day-calendar .day-view-head{border-bottom:0}.day-calendar .day-row{box-sizing:border-box;border-top:1rpx solid #c9d4e4;border-bottom:0}.day-calendar .day-time{box-sizing:border-box;border-right:1rpx solid #c2cfe0;color:#5d6b7f}.day-calendar .day-cell{border-left-color:#d3dced}.day-calendar .day-cell.today-column{background:#f8fbff}
+
+/* Share availability — extends the existing app sheet and button system. */
+.share-mask{position:fixed;inset:0;z-index:80;display:flex;align-items:flex-end;background:rgba(20,29,42,.4);backdrop-filter:blur(5px)}
+.share-sheet{width:100%;max-height:88vh;overflow-y:auto;box-sizing:border-box;padding:30rpx 28rpx calc(22rpx + env(safe-area-inset-bottom));background:#fff;border-radius:30rpx 30rpx 0 0;box-shadow:0 -18rpx 55rpx rgba(24,34,48,.12)}
+.share-sheet-head{display:flex;align-items:flex-start;justify-content:space-between;padding:2rpx 2rpx 22rpx;border-bottom:1rpx solid #e1e8f2}.share-sheet-title{font-size:32rpx;font-weight:800;color:#1d2939}.share-sheet-hint{margin-top:7rpx;font-size:20rpx;color:#7b8798}.share-sheet-close{width:54rpx;height:54rpx;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#edf3fb;color:#7b8798;font-size:35rpx;line-height:1}
+.share-mask{animation:shareMaskIn .18s ease-out both}.share-sheet{animation:shareSheetIn .3s cubic-bezier(.2,.8,.2,1) both}@keyframes shareMaskIn{from{opacity:0}to{opacity:1}}@keyframes shareSheetIn{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.share-date-options{padding-top:4rpx}.share-date-row{min-height:100rpx;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;padding:18rpx 4rpx;border-bottom:1rpx solid #e1e8f2}.share-date-row:active{background:#f7f9fc}.share-date-row b,.share-date-row text{display:block}.share-date-row b{font-size:26rpx;font-weight:750;color:#1d2939}.share-date-row text{margin-top:6rpx;font-size:20rpx;color:#7b8798}.share-date-row i{color:#a9b3c0;font-style:normal;font-size:32rpx}
+.share-preview{padding:27rpx 2rpx 2rpx}.share-preview-date{font-size:22rpx;font-weight:650;color:#7b8798}.share-preview-title{margin-top:8rpx;font-size:30rpx;font-weight:800;color:#1d2939}.share-slot-list{margin-top:20rpx;padding:3rpx 20rpx;background:#f7f9fc;border:1rpx solid #e1e8f2;border-radius:18rpx}.share-slot{padding:15rpx 0;border-bottom:1rpx solid #e1e8f2;color:#132b4f;font-size:27rpx;font-weight:720;font-variant-numeric:tabular-nums}.share-slot:last-child{border-bottom:0}.share-empty{margin-top:20rpx;padding:31rpx 20rpx;text-align:center;background:#f7f9fc;border:1rpx solid #e1e8f2;border-radius:18rpx;color:#7b8798;font-size:23rpx}.share-question{padding:22rpx 2rpx 7rpx;color:#526071;font-size:23rpx}.share-copy{height:84rpx;line-height:84rpx;margin-top:17rpx;background:#2563eb;color:#fff;border-radius:20rpx;font-size:27rpx;font-weight:800;box-shadow:none}.share-copy::after{border:0}.share-back{text-align:center;padding:21rpx 0 5rpx;color:#2563eb;font-size:22rpx;font-weight:650}.share-cancel{text-align:center;padding:20rpx 0 2rpx;color:#7b8798;font-size:22rpx;font-weight:650}
+
+/* 待确认预约刻意没有专用视觉样式。
+   它从第一帧起就使用与正式预约完全相同的实心课程块（这是「秒回」的验收标准），
+   状态只存在于数据层（view 数据上的 pending 标记），通过点击拦截体现，不靠像素区分。 */
+
+/* 完课过程刻意没有任何专用视觉。
+   用户点下课之后回到课表，看到的就是这门课**已完成**的常态画面：块本身、文案、状态标签
+   与正式 done 落地后逐字一致，因此整个确认过程对用户是不可见的。
+   「用户已经点过下课」只存在于数据层（pendingCompletion），不通过像素区分，也就没有样式规则。 */
+
+.cancel-notice{display:flex;align-items:center;margin:8rpx 20rpx 0;padding:8rpx 14rpx;border-radius:16rpx;background:#fff5e6;border:1rpx solid #f3d3a3;color:#8a5a12}
+.cancel-notice-dot{flex:none;margin-right:12rpx;padding:4rpx 12rpx;border-radius:999rpx;background:#f0a13c;color:#fff;font-size:22rpx;font-weight:700}
+.cancel-notice-text{flex:1;min-width:0;font-size:22rpx;line-height:1.4}
+.cancel-notice-more{flex:none;margin-left:12rpx;font-size:22rpx;color:#8a5a12;font-weight:700}
+
+/* ═══ 2026-10-02 · 本轮 UI 整理：默认从 06:00 起 + 凌晨时段按需展开 ═══════════════
+   ⛔ 事实基础（不是猜的，证据见 OVERNIGHT-CHECK-20261002.md）：
+      · 现存 168 条生产预约里 **00:00–05:59 有 0 条**（最早 09:00）；全仓静态扫描也是 0。
+      · 但**通道是开着的**：补录只判"最晚 23:00"、不判最早（tests/past-lesson-backfill.test.js ⑤），
+        新建课程弹层的时间选择器起点就是 00:00 ⇒ 今天 0 条 ≠ 明天 0 条。
+      · ⇒ 所以不能把凌晨这几行**删死**（那会变成"数据在、课表看不见"），
+        改成：**有课才渲染 + 默认自动展开 + 顶部提示条可收起**。没有课就一行都不占。 */
+.late-bar{flex:none;display:flex;align-items:center;gap:10rpx;margin:6rpx 16rpx 8rpx;padding:9rpx 14rpx;border-radius:14rpx;background:#fff8ec;border:1rpx solid #f0dcb4}
+.late-bar:active{background:#fdf1dc}
+.late-bar-tag{flex:none;padding:3rpx 10rpx;border-radius:999rpx;background:#f0a13c;color:#fff;font-size:19rpx;font-weight:700}
+.late-bar-text{flex:1;min-width:0;font-size:21rpx;color:#8a5a12;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.late-bar-action{flex:none;font-size:21rpx;font-weight:700;color:#8a5a12}
+/* 凌晨行：底色轻轻一档，说明"这一段时间轴和下面不是连着的"，但不刺眼 */
+.row-late{background:#fdfaf4}
+.day-row.row-late{background:#fdfaf4}
+/* 轻动效：凌晨行是"展开出来的"，给它一次短促的上浮，让"这里多了一段"看得见 */
+.row-late{animation:lateRowIn .18s ease-out}
+@keyframes lateRowIn{from{opacity:0;transform:translateY(-6rpx)}to{opacity:1;transform:translateY(0)}}
+
+/* ── A（2026-10-04）：课程卡片高度按**真实时长**绘制，跨行时抬层级 ──────────────────
+   ⛔ 背景：`.row-grid` 每一行是独立的一小时，`.cell` 是 `position:relative` 且 `overflow:visible`
+      ⇒ 卡片给 `height:150%`（90 分钟）就会自然跨到下一行继续画。
+   ⛔ 但后面的行在 DOM 里更靠后，不抬 z-index 就会被后一行的文字与格线压住。
+   ⚠️ 行高是响应式下发的（`rowHeightStyle`），所以这里只用百分比，绝不写死任何 px/rpx 高度。 */
+.booking-spans{z-index:3;box-shadow:0 4rpx 12rpx rgba(0,0,0,.18)}
+/* 同理，普通卡片也要有基础层级：后一行的格线会画在它上面 */
+.booking{z-index:2}
+/* ⭐ 新会员入口（2026-10-05 夜）：会员扫固定小程序码进来看到的是教练课表页，
+   这条是她唯一的起点。⛔ `flex:none` —— 页头新增占流元素必须显式声明不参与高度分配，
+   否则 `.calendar` 分到的高度会被挤掉（`.schedule-page` 是纵向 flex，课表吃剩余高度）。 */
+.member-claim-entry{flex:none;margin:12rpx 10rpx 0;padding:16rpx 20rpx;border-radius:16rpx;background:#26354a;color:#fff;font-size:24rpx;font-weight:700;text-align:center;box-shadow:0 7rpx 16rpx rgba(38,53,74,.16)}
+
+/* 手动刷新课表 */
+.refresh-allow{margin:12rpx 24rpx 0;padding:16rpx 20rpx;border-radius:16rpx;background:#fff;border:2rpx solid var(--line,#e6e2d8);color:var(--navy,#132b4f);font-size:24rpx;text-align:center}

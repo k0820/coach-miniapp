@@ -1,0 +1,18 @@
+.wrap { padding: 28rpx; }
+.title { font-size: 34rpx; font-weight: 850; color: var(--member-text, #1d2939); }
+.hint { margin-top: 8rpx; font-size: 24rpx; line-height: 1.6; color: var(--member-muted, #7b8798); }
+.hint.strong { color: #b27b28; font-weight: 700; }
+.card { margin-top: 24rpx; padding: 26rpx; background: var(--member-surface, #fff); border: 1rpx solid var(--member-border, #e6ecf3); border-radius: 24rpx; }
+.big-title { font-size: 28rpx; font-weight: 800; color: var(--member-text, #1d2939); }
+.row { display: flex; }
+.stat { flex: 1; text-align: center; }
+.num { font-size: 48rpx; font-weight: 850; color: var(--member-primary, #3a454e); }
+.num.alt { color: #b27b28; }
+.num.weak { color: var(--member-muted, #7b8798); }
+.label { margin-top: 4rpx; font-size: 22rpx; color: var(--member-muted, #7b8798); }
+.hist-row { padding: 14rpx 0; border-bottom: 1rpx solid var(--member-border, #e6ecf3); font-size: 26rpx; }
+.input { margin-top: 16rpx; height: 88rpx; padding: 0 20rpx; font-size: 28rpx; background: var(--member-page, #f4f7fb); border: 2rpx solid var(--member-border, #e6ecf3); border-radius: 18rpx; }
+.btn { margin-top: 16rpx; height: 88rpx; line-height: 88rpx; text-align: center; font-size: 28rpx; font-weight: 800; border-radius: 20rpx; }
+.btn.primary { background: var(--member-primary, #3a454e); color: #fff; }
+.btn.ghost { background: var(--member-page, #f4f7fb); color: var(--member-text, #1d2939); }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--member-surface, #fff); padding: 0 28rpx calc(24rpx + env(safe-area-inset-bottom)); box-shadow: 0 -10rpx 40rpx rgba(15,30,50,.18); }

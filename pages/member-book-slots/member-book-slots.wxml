@@ -1,0 +1,111 @@
+<view class="member-page member-shell" style="{{themeStyle}}">
+  <view class="member-title">约课</view>
+  <view class="member-subtitle">挑一个你方便的时间</view>
+
+  <view wx:if="{{error}}" class="member-card member-empty">{{error}}</view>
+
+  <view class="member-card">
+    <view class="member-row member-spread">
+      <view class="slot-day-copy">
+        <view class="slot-day">{{dateLabel}}</view>
+        <view class="member-subtitle">左右滑动或点日期切换</view>
+      </view>
+      <view class="slot-day-nav">
+        <view class="slot-day-btn {{canPrev?'':'off'}}" bindtap="prevDay">‹</view>
+        <view class="slot-day-btn {{canNext?'':'off'}}" bindtap="nextDay">›</view>
+      </view>
+    </view>
+    <scroll-view class="slot-dates" scroll-x="true">
+      <view class="slot-dates-inner">
+        <view wx:for="{{dates}}" wx:key="key" class="slot-date {{dateIndex===item.index?'active':''}}" data-index="{{item.index}}" bindtap="pickDate">
+          <view class="slot-date-week">周{{item.weekday}}</view>
+          <view class="slot-date-day">{{item.short}}</view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- ⛔ 2026-10-06 新会员方案：不再有「训练档案 / 选择档案」这一层。
+       一位会员只有一份资料 ⇒ 这里不需要（也不许）提示"现在约的是哪一份"。 -->
+
+  <!-- 单教练产品：明确显示当前教练，但不再提供选择或切换。 -->
+  <view class="member-card">
+    <view class="member-section-title" style="margin-top:0">授课教练</view>
+    <view wx:if="{{coaches.length}}" class="slot-coaches">
+      <view wx:for="{{coaches}}" wx:key="coachKey" class="slot-coach active">{{item.displayName}}</view>
+    </view>
+    <view wx:else class="member-subtitle">{{archiveEmpty||'暂时读取不到教练名单，请下拉重试。'}}</view>
+  </view>
+
+  <view wx:if="{{hint}}" class="booking-hint">{{hint}}</view>
+
+  <view class="slots-head">
+    <view class="member-section-title" style="margin:0">可约时间</view>
+    <view wx:if="{{refreshing}}" class="slots-refreshing">正在核对最新排课…</view>
+  </view>
+  <view wx:if="{{loading}}" class="member-card member-empty">正在读取可约时间…</view>
+  <!-- ⛔ 2026-10-07（1.3.36）："没有教练"与"这一天真的满了"是**两回事**。
+       混成一句"没有可约时间" ⇒ 会员会以为教练满了，其实是还没加教练 / 读取失败。 -->
+  <view wx:elif="{{!coaches.length}}" class="member-card member-empty">{{archiveEmpty||'暂时读取不到授课教练，请下拉重试。'}}</view>
+  <view wx:elif="{{!slots.length}}" class="member-card member-empty">这一天没有可约时间，换一天或换一个时间试试</view>
+  <block wx:else>
+    <view class="slot-legend">
+      <view class="slot-legend-item"><view class="slot-dot"></view><text>可约</text></view>
+      <view class="slot-legend-item"><view class="slot-dot booked"></view><text>已排课</text></view>
+      <view class="slot-legend-item"><view class="slot-dot past"></view><text>已过时间</text></view>
+      <view class="slot-legend-note">每节课 60 分钟</view>
+    </view>
+    <view class="slot-grid">
+      <!-- ⛔ 类名与文案都只来自数据：`{{item.reason}}`（'' / past / booked）+ `{{item.stateText}}`。
+           这里**不许**再写 `{{item.available?'':'busy'}}` —— 那个补丁曾让教练端与会员端各有一套状态名。 -->
+      <view wx:for="{{slots}}" wx:key="key" class="slot-cell {{item.reason}} {{item.echo?'echo':''}}" data-key="{{item.key}}" bindtap="pickSlot">
+        <view class="slot-time">{{item.startText}}</view>
+        <view class="slot-state">{{item.stateText}}</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ⭐ 真机阻断 Bug 修复：课时包**可以点选**（原来整张列表没有 bindtap ⇒ 只能默默用第一个）。
+       单份课包时 `packagesSelectable=false` ⇒ 不显示"选它/已选"、不显示"点一个再确认"，
+       单课包用户体验与改造前逐字相同。 -->
+  <view class="member-card" wx:if="{{packages.length}}">
+    <view class="member-section-title" style="margin-top:0">可用课时包<text wx:if="{{packagesSelectable}}" class="slot-pkg-tip">点一个再确认</text></view>
+    <view wx:for="{{packages}}" wx:key="packageViewId" class="member-row member-list-row slot-pkg {{item.selected&&packagesSelectable?'active':''}}" data-index="{{index}}" bindtap="pickPackage">
+      <view class="booking-copy">
+        <view>{{item.typeName}}</view>
+        <!-- ⭐ 多份学员档案时才出现：这份课时包属于哪一份档案（单档案用户看不到这一行） -->
+        <view class="member-subtitle">{{item.archiveName?item.archiveName+' · ':''}}{{item.coachName}} · 还能约 {{item.availableToBook}} 节</view>
+      </view>
+      <view wx:if="{{packagesSelectable}}" class="slot-pkg-check">{{item.selected?'✓ 已选':'选它'}}</view>
+    </view>
+  </view>
+  <!-- ⛔ 这位教练一份可授权的课包都没有 ⇒ 明说原因，绝不留一片空白让人以为系统坏了。 -->
+  <view wx:if="{{packageHint}}" class="booking-hint">{{packageHint}}</view>
+
+  <!-- ⭐⭐ 约课确认：**统一弹层** `member-sheet`（2026-10-04 H）。
+       ⛔ 改造前这里是本页自建的一整套遮罩（`.booking-detail-mask` + `.booking-detail`），
+       与「我的预约」的改期面板各写一份：圆角 34rpx vs 32rpx、遮罩 .38 vs .45、标题两种做法。
+       ⇒ 现在**只有 member-sheet 一份**结构与视觉，本页只负责往 slot 里放内容。
+       ⚠️ 组件**只派发事件、不自己隐藏**（见 member-sheet.js 顶部注释）⇒ 收起由 `closeConfirm` 负责。 -->
+  <member-sheet visible="{{confirmOpen && selected}}"
+    title="确认这节课"
+    desc="{{dateLabel}} · {{selected.startText}}–{{selected.endText}} · {{coaches[coachIndex].displayName||'教练'}}"
+    confirmText="{{submitting?'正在提交…':'确认预约'}}"
+    cancelText="再看看"
+    bindconfirm="submit" bindcancel="closeConfirm" bindclose="closeConfirm">
+    <view class="booking-detail-row"><text class="booking-detail-label">日期</text><text class="booking-detail-value">{{dateLabel}}</text></view>
+    <view class="booking-detail-row"><text class="booking-detail-label">开始时间</text><text class="booking-detail-value">{{selected.startText}}</text></view>
+    <view class="booking-detail-row"><text class="booking-detail-label">结束时间</text><text class="booking-detail-value">{{selected.endText}}</text></view>
+    <view class="booking-detail-row"><text class="booking-detail-label">授课教练</text><text class="booking-detail-value">{{coaches[coachIndex].displayName||'教练'}}<text wx:if="{{coaches[coachIndex].hasRole}}" class="confirm-coach-role">（{{coaches[coachIndex].roleText}}<text wx:if="{{coaches[coachIndex].showCodeTail}}"> ·{{coaches[coachIndex].codeTail}}</text>）</text></text></view>
+    <view class="booking-detail-row"><text class="booking-detail-label">预计消耗</text><text class="booking-detail-value">1 节</text></view>
+    <view class="booking-detail-row"><text class="booking-detail-label">课时包</text><text class="booking-detail-value">{{confirmPackage?(confirmPackage.archiveName?confirmPackage.archiveName+' · ':'')+confirmPackage.typeName:'暂无可用课时包'}}</text></view>
+    <view wx:if="{{confirmPackage && confirmPackage.remaining>0}}" class="booking-detail-row"><text class="booking-detail-label">这份包还剩</text><text class="booking-detail-value">{{confirmPackage.remaining}} 节</text></view>
+    <view wx:if="{{confirmPackage && confirmPackage.archiveName}}" class="confirm-note">这一节会用「{{confirmPackage.archiveName}}」这份档案的课时；有多份档案时请确认是不是你想用的那一份。</view>
+    <view class="confirm-note">提交后会占用 1 节课时；取消或改期请联系你的教练。</view>
+    <!-- ⭐ 提交等待期间那句话：放在**内容区**（⛔ 不在按钮上做常驻 spinner —— 那是 member-sheet 规格 ⑧）。
+         明写"还在占" ⇒ 不许被读成已经成功。 -->
+    <view wx:if="{{submitNote}}" class="confirm-submit-note">{{submitNote}}</view>
+  </member-sheet>
+
+  <member-nav active="book"/>
+</view>

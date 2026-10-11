@@ -1,0 +1,14 @@
+/* 📥 站内消息中心（2026-10-06）· 只依赖全局 CSS 变量，不写死色值 */
+.inbox-page{padding:32rpx 28rpx 60rpx;background:var(--member-bg,#f3f6fb);min-height:100vh}
+.inbox-title{font-size:42rpx;font-weight:800;color:var(--navy,#132b4f)}
+.inbox-subtitle{margin-top:8rpx;font-size:25rpx;color:var(--muted,#8b8985)}
+.inbox-card{margin-top:24rpx;padding:26rpx 24rpx;border-radius:22rpx;background:#fff;border:2rpx solid var(--line,#e6e2d8)}
+.inbox-note{font-size:25rpx;line-height:1.7;color:var(--navy,#132b4f)}
+.inbox-empty{color:var(--muted,#8b8985);font-size:26rpx;line-height:1.7}
+.inbox-disabled{color:#bf5037;font-size:26rpx;line-height:1.7}
+.inbox-row.unread{border-left:8rpx solid #c9452f}
+.inbox-row-top{display:flex;align-items:center;justify-content:space-between}
+.inbox-row-title{font-size:29rpx;font-weight:700;color:var(--navy,#132b4f)}
+.inbox-dot{width:16rpx;height:16rpx;border-radius:50%;background:#c9452f}
+.inbox-row-body{margin-top:10rpx;font-size:26rpx;line-height:1.7;color:var(--navy,#132b4f)}
+.inbox-row-meta{margin-top:10rpx;font-size:23rpx;color:var(--muted,#8b8985)}

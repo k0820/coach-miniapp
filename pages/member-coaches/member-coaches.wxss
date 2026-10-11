@@ -1,0 +1,14 @@
+@import "../../styles/member.wxss";
+/* 我的教练：卡片 + 右侧「＋」。⭐ 圆角/高度/字号全部读 member.wxss 的变量，
+   ⛔ 本页不出现第二套几何口径（三个页面各写一个圆角是本轮要收掉的病）。 */
+.add-coach{width:74rpx;height:74rpx;padding:0;border-radius:var(--member-radius-control);background:var(--member-primary);color:#fff;font-size:38rpx;line-height:70rpx;flex:0 0 auto}
+.add-coach::after{border:0}
+.coach-copy{flex:1;min-width:0}
+.coach-name{font-size:var(--member-font-section);font-weight:800;color:var(--member-text);overflow-wrap:break-word}
+.coach-status{font-size:var(--member-font-cap);color:var(--member-primary);margin-top:7rpx}
+/* ⭐ 「从常用列表移除」是**破坏性但可逆**的操作（只是不再置顶，历史记录一条都不少）。
+   ⛔ 2026-10-04 修正：原来写死 `#fff6f2 / #b65e45`（一枚棕红，既不是 `--member-danger`
+   也不是任何 token）⇒ 三处"危险色"三个红。现在统一读 `--member-danger-soft` + `--member-danger`，
+   与约课页取消预约、member-sheet 的 danger 按钮同一枚红。 */
+.remove-shortcut{margin:20rpx 0 0;background:var(--member-danger-soft,#f4e9e8);color:var(--member-danger,#a8453c);border:0;border-radius:var(--member-radius-control);font-size:var(--member-font-cap);line-height:66rpx;min-height:66rpx}
+.remove-shortcut::after{border:0}

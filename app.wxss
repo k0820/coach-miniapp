@@ -1,0 +1,34 @@
+/* ⭐ 课表页两个高度常量：
+   · --hour-row-h  每小时行的**最小可读行高**（= pages/schedule/schedule.js 的 MIN_ROW_RPX，两处同源）。
+       ⛔ 2026-10-03 起它**不再是固定行高** —— 固定行高正是 1.3.10 真机 Bug 的根因：
+          18 行恒定 900rpx，而行区可用高度随机型变（6/7/8 约 459px、12/13 Pro 约 557px、
+          14 Pro Max 更高）⇒ 屏幕越大、课表底部空白越多（胶囊在时那 104rpx 安全带刚好遮住）。
+       现在的行高由页面**实测行区可用高度 ÷ 当前行数**后下发（`rowHeightStyle`）：
+          · 空间够 ⇒ 18 行严格等高、**一行不差地铺到 tabBar 上方**，零滚动；
+          · 空间不够（小屏 / 有横幅 / 有取消通知条 / 凌晨 6 行展开）⇒ 行高不低于本值，
+            网格**轻微滚动**，绝不把行压到点不中、字看不清。
+       ⇒ 这里保留的是 **CSS 兜底**：JS 还没测出高度的第一帧用它。
+       改这个值请连同 schedule.js 的 MIN_ROW_RPX 一起改 —— tests/schedule-grid-responsive.test.js 盯着。
+   · ⛔ --fab-safe（课表 / 学员页给右下悬浮「＋」留的操作带）**已于 2026-10-03 删除** ——
+      两枚悬浮胶囊（课表「＋ 新建课程」、名单「＋ 新增会员」）**连同底部安全带一起删掉**：
+        · 课表：新建课程本来就靠**点空白时间格**（bindtap="cell"），不需要悬浮按钮；
+        · 名单：「＋新增」搬进**标题行**（.students-add，在流内、跟着内容滚）。
+      ⇒ 两个页面都不再让出底部空间，课表 / 名单一路铺到 tabBar 上方。
+      ⛔ 谁再把悬浮按钮加回来，谁就得同时把"让位"加回来 —— 而那正是真机验收否掉的形状
+        （要么压住内容，要么底部白占 144rpx）。
+   · --sandbox-banner-h 测试环境横幅高度（页面高度要扣它）。 */
+page{--hour-row-h:50rpx;--sandbox-banner-h:96rpx;--navy:#132b4f;--navy2:#1e3a66;--accent:#2563eb;--accent2:#1d4ed8;--paper:#ffffff;--canvas:#f3f6fb;--line:#e1e8f2;--text:#1d2939;--muted:#7b8798;--soft:#edf3fb;background:var(--canvas);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:28rpx;-webkit-font-smoothing:antialiased}
+.page{padding:28rpx 24rpx 150rpx}.card{background:var(--paper);border:1rpx solid rgba(48,55,66,.055);border-radius:28rpx;padding:26rpx;margin-bottom:18rpx;box-shadow:0 10rpx 32rpx rgba(45,39,33,.055)}
+.title{font-size:32rpx;font-weight:800;line-height:1.35;letter-spacing:.3rpx}.hint{font-size:23rpx;color:var(--muted);line-height:1.55}.row{display:flex;align-items:center;gap:16rpx}.spread{justify-content:space-between}
+.btn{border:0;border-radius:20rpx;font-size:27rpx;font-weight:700;line-height:84rpx;margin:18rpx 0 0;transition:transform .15s,opacity .15s}.btn::after{border:0}.btn:active{transform:scale(.985);opacity:.9}.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 10rpx 24rpx rgba(201,95,62,.18)}.ghost{background:#fff;border:2rpx solid var(--line);color:var(--navy)}.danger{background:#fff;border:2rpx solid #efc9bf;color:#bf5037}
+input,textarea,picker{box-sizing:border-box}.input{height:82rpx;background:#fff;border:2rpx solid var(--line);border-radius:18rpx;padding:0 22rpx;margin-top:12rpx;font-size:27rpx}.input:focus{border-color:#c0a396}.label{font-size:23rpx;font-weight:650;color:#5f6266;margin-top:22rpx}.pill{display:inline-flex;align-items:center;border-radius:999rpx;padding:7rpx 16rpx;background:var(--soft);color:#555960;font-size:21rpx;font-weight:650}.progress{height:11rpx;border-radius:10rpx;background:#ece7e0;overflow:hidden}.progress>view{height:100%;border-radius:10rpx}.empty{text-align:center;padding:86rpx 32rpx;color:var(--muted)}
+.avatar{width:72rpx;height:72rpx;border-radius:22rpx;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;box-shadow:0 8rpx 18rpx rgba(43,48,56,.12)}.list-item{display:flex;align-items:center;gap:18rpx;padding:18rpx 0;border-bottom:1rpx solid var(--line)}.money{color:var(--accent2);font-weight:800}.fab{position:fixed;right:28rpx;bottom:28rpx;width:96rpx;height:96rpx;border-radius:50%;background:linear-gradient(145deg,#ed825c,#c95f3e);color:#fff;font-size:54rpx;line-height:90rpx;text-align:center;box-shadow:0 14rpx 34rpx rgba(201,95,62,.34);z-index:8;border:6rpx solid rgba(255,255,255,.75)}
+.fab{background:linear-gradient(145deg,#3b82f6,#1d4ed8);box-shadow:0 14rpx 34rpx rgba(37,99,235,.32);border-color:rgba(255,255,255,.84)}
+button,.fab{transition:transform .14s ease,opacity .14s ease}button:active,.fab:active{transform:scale(.97);opacity:.82}
+
+/* ⛔ 2026-10-03 · 右下角悬浮胶囊 `.fab-capsule` / `.fab-capsule-active` / `.fab-plus` / `.fab-label`
+   **已整体删除**（课表页与学员页各一枚，真机验收否掉：它们要么压内容、要么逼着页面底部白让一块地）。
+   新增入口现在分别是：课表 = 点空白时间格；学员名单 = 标题行里的「＋新增」。
+   ⛔ 回潮护栏：tests/helpers/ui-round5-contract.js 的 `no-floating-capsule`（wxml 不许再出现
+   .fab-capsule）与 tests/week-grid-bottom.test.js 第 ④ 段（课表不许再留底部带）。
+   （`.fab` 那颗老圆形悬浮球的样式**保留** —— 它已经没有任何页面在用，删它会误伤别的页面将来的用法。） */

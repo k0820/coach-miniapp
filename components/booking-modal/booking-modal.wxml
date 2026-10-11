@@ -1,0 +1,56 @@
+<view wx:if="{{visible}}" class="mask" bindtap="close" catchtouchmove="noop">
+  <view class="modal" catchtap="noop">
+    <block wx:if="{{step===1}}">
+      <view class="title">选择学员</view>
+      <view class="time-banner"><text class="time-label">预约时间</text><view class="time-value">{{date}}　{{hour}}:{{minute<10?'0'+minute:minute}}</view></view>
+      <input class="input search-input" placeholder="输入姓名或拼音首字母，如：张三 / ZS" adjust-position="true" cursor-spacing="24" confirm-type="search" bindinput="search" />
+      <scroll-view scroll-y class="student-scroll">
+        <view wx:if="{{!students.length}}" class="empty">还没有可排课的会员，请先到“学员”页添加或下拉刷新</view>
+        <view wx:for="{{students}}" wx:key="id" class="student" data-id="{{item.id}}" bindtap="chooseStudent">
+          <view><view class="name">{{item.name}}</view><view class="hint">{{item.authorized?'已添加会员':item.phone+' · 出勤 '+item.attend+' 次'}}</view></view>
+          <view class="remain">剩余 {{item.totalLeft}} 节</view>
+        </view>
+      </scroll-view>
+    </block>
+    <block wx:else>
+      <view class="title">约课 · {{student.name}}</view>
+      <view class="time-banner editable" bindtap="toggleTime"><text class="time-label">预约时间（点击修改）</text><view class="time-value">{{date}}　{{hour}}:{{minute<10?'0'+minute:minute}}　›</view></view>
+      <view class="label">课程类型（显示课时包余量）</view>
+      <view wx:for="{{packages}}" wx:key="index" class="pkg compact-pkg {{packageIndex===index?'selected':''}} {{item.left<=0?'disabled':''}}" style="border-color:{{packageIndex===index?item.color:'#dfe7f1'}};background:{{packageIndex===index?item.light:'#fff'}}" data-index="{{index}}" data-disabled="{{item.left<=0}}" bindtap="choosePackage">
+        <view class="pkg-icon" style="background:{{item.light}}">{{item.emoji}}</view><view class="pkg-copy"><view>{{item.type}}</view><view class="hint">剩余 {{item.left}} 节{{item.saleDate?' · '+item.saleDate:''}}</view></view><view class="pkg-price">{{item.gift?'赠送':'¥'+item.price+'/节'}}</view>
+      </view>
+      <view wx:if="{{timeEdit}}" class="time-editor compact-time"><view class="time-editor-head"><view><b>选择上课时间</b><text>点一个时段即可；需要非整点再展开精确时间</text></view><view class="time-preview">{{hour}}:{{minute<10?'0'+minute:minute}}</view></view>
+        <picker mode="date" value="{{date}}" bindchange="onDate"><view class="date-choice select-line"><view class="select-icon">日</view><view><text>上课日期</text><b>{{date}}</b></view><text class="select-arrow">›</text></view></picker>
+        <!-- ⭐ 三态时段小卡片：**与会员端「约课时段」同一张卡**（styles/slots.wxss 是唯一样式来源），
+             三态判定与时段生成也共用同一个纯函数（member-booking-view.slotsFor → occupancy.slotStateOf）。
+             ⛔ 状态类名与显示文案都**只从数据里取**（`{{s.reason}}` / `{{s.stateText}}`），
+                这里不许再写任何 `available?'...':'...'` 的本地兜底 —— 那是"每个页面各打一份补丁"的病根。
+             ⭐ 2026-10-03 起点改为 **06:00**（与会员端同一条规则）：教练新建课程不再能选凌晨时段；
+                00:00–05:59 的历史课**照旧展示**（课表凌晨段条件渲染保留），只是不再从入口新建。 -->
+        <view class="slots-coach">
+          <view class="slot-legend">
+            <view class="slot-legend-item"><view class="slot-dot"></view><text>可约</text></view>
+            <view class="slot-legend-item"><view class="slot-dot booked"></view><text>已排课</text></view>
+            <view class="slot-legend-item"><view class="slot-dot past"></view><text>已过时间</text></view>
+            <view class="slot-legend-note">每节 60 分钟</view>
+          </view>
+          <scroll-view class="slot-box" scroll-y enhanced show-scrollbar="{{false}}" scroll-into-view="{{slotAnchor}}" scroll-with-animation>
+            <view class="slot-grid">
+              <view wx:for="{{slots}}" wx:for-item="s" wx:key="key" id="slot-{{s.start}}" class="slot-cell {{s.reason}}" data-start="{{s.start}}" bindtap="pickSlot">
+                <view class="slot-time">{{s.startText}}</view>
+                <view class="slot-state">{{s.stateText}}</view>
+              </view>
+            </view>
+          </scroll-view>
+        </view>
+        <!-- 精确到分钟：**原来那个 picker 一个字都没改**，只是默认收起（三态卡片覆盖绝大多数情况）。
+             ⭐ 2026-10-03：picker 下界从 00:00 收到 **06:00**，与三态卡片、与云端闸门同一条规则。
+                ⛔ 存量 00:00–05:59 的历史课照旧在课表凌晨段展示（那是显示层，不是入口）。 -->
+        <view class="precise-toggle" bindtap="togglePrecise">{{preciseOpen?'收起精确时间':'需要非整点时间？展开精确时间'}} ›</view>
+        <block wx:if="{{preciseOpen}}"><picker mode="time" value="{{hour}}:{{minute<10?'0'+minute:minute}}" start="06:00" end="23:00" bindchange="onTime"><view class="date-choice select-line"><view class="select-icon time-icon">时</view><view><text>上课时间</text><b>{{hour}}:{{minute<10?'0'+minute:minute}}</b></view><text class="select-arrow">›</text></view></picker><view class="time-tip">点击上面的时间，即可滚动选择小时和任意分钟</view></block>
+      </view>
+      <button class="confirm" bindtap="confirm">确认约课</button><view class="back" bindtap="back">← 重新选学员</view>
+    </block>
+    <view class="close" bindtap="close">×</view>
+  </view>
+</view>

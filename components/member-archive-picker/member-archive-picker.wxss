@@ -1,0 +1,60 @@
+/* 2026-10-03 · 「当前使用档案」选择器
+   ⛔ 全部复用 styles/member.wxss 已有的设计变量（--member-*），不另起视觉规范。
+   ⛔ 字号全部 ≥22rpx：项目有一条硬规矩「不许靠缩小字号掩盖溢出」。 */
+@import "../../styles/member.wxss";
+
+.ap-root { display: block; }
+
+.ap-bar {
+  display: flex; align-items: center; gap: 16rpx;
+  margin: 0 0 18rpx; padding: 20rpx 22rpx;
+  background: var(--member-surface, #fff);
+  border: 1rpx solid var(--member-border, #e6ecf3);
+  border-radius: var(--member-radius-card, 24rpx);
+  box-shadow: var(--member-shadow-card, 0 6rpx 20rpx rgba(30, 65, 110, .06));
+}
+.ap-left { flex: 1; min-width: 0; }
+.ap-label { font-size: 28rpx; font-weight: 800; color: var(--member-text, #1d2939); word-break: break-all; }
+.ap-urgent { color: var(--member-danger, #c0392b); }
+.ap-hint { margin-top: 6rpx; font-size: 23rpx; color: var(--member-muted, #7b8798); line-height: 1.5; }
+.ap-action { flex: none; font-size: 25rpx; font-weight: 700; color: var(--member-primary, #3a454e); padding-left: 10rpx; }
+.ap-empty { background: var(--member-soft, #eaf8f0); border-color: var(--member-border, #e6ecf3); }
+.ap-need { border-color: var(--member-primary, #3a454e); background: var(--member-soft, #eaf8f0); }
+
+.ap-tag-soft {
+  display: inline-block; margin-left: 10rpx; padding: 2rpx 12rpx;
+  font-size: 22rpx; font-weight: 700; color: var(--member-muted, #7b8798);
+  background: var(--member-page, #f4f7fb); border-radius: 999rpx; vertical-align: 4rpx;
+}
+
+/* ── 选择层（统一规格：圆角 + 拖动横线 + 标题 + 关闭 + 可滚动 + 底部安全距离） ── */
+.ap-mask { position: fixed; inset: 0; background: var(--member-sheet-mask, rgba(15, 30, 50, .45)); z-index: 60; }
+.ap-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 61;
+  background: var(--member-surface, #fff);
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 0 24rpx calc(24rpx + env(safe-area-inset-bottom));
+  box-shadow: 0 -10rpx 40rpx rgba(15, 30, 50, .18);
+}
+.ap-handle { width: 72rpx; height: 8rpx; border-radius: 999rpx; background: var(--member-border, #e6ecf3); margin: 16rpx auto 8rpx; }
+.ap-sheet-head { display: flex; align-items: center; justify-content: space-between; }
+.ap-sheet-title { font-size: 30rpx; font-weight: 850; color: var(--member-text, #1d2939); }
+.ap-sheet-close { width: 56rpx; height: 56rpx; line-height: 52rpx; text-align: center; font-size: 40rpx; color: var(--member-muted, #7b8798); }
+.ap-sheet-sub { margin-top: 6rpx; font-size: 23rpx; color: var(--member-muted, #7b8798); }
+.ap-sheet-body { max-height: 56vh; margin-top: 16rpx; }
+.ap-sheet-foot { height: 8rpx; }
+
+.ap-item {
+  display: flex; align-items: center; gap: 16rpx;
+  padding: 22rpx 20rpx; margin-bottom: 14rpx;
+  border: 2rpx solid var(--member-border, #e6ecf3); border-radius: 20rpx;
+  background: var(--member-surface, #fff);
+}
+.ap-item.on { border-color: var(--member-primary, #3a454e); background: var(--member-soft, #eaf8f0); }
+.ap-item-left { flex: 1; min-width: 0; }
+.ap-item-name { font-size: 28rpx; font-weight: 800; color: var(--member-text, #1d2939); }
+.ap-item-sub { margin-top: 4rpx; font-size: 23rpx; color: var(--member-muted, #7b8798); }
+.ap-item-right { flex: none; text-align: right; }
+.ap-item-num { font-size: 34rpx; font-weight: 850; color: var(--member-primary, #3a454e); }
+.ap-item-unit { font-size: 22rpx; color: var(--member-muted, #7b8798); margin-left: 4rpx; }
+.ap-item-on { display: block; font-size: 22rpx; color: var(--member-primary, #3a454e); }

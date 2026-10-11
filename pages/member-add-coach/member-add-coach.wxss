@@ -1,0 +1,6 @@
+@import "../../styles/member.wxss";
+/* 2026-10-06 · 「添加教练」两个大按钮 + 共用确认卡（⛔ 复用既有设计变量） */
+.add-big { display: flex; align-items: center; gap: 18rpx; }
+.add-big-icon { width: 72rpx; height: 72rpx; border-radius: 24rpx; background: var(--member-soft, #eaf8f0); text-align: center; line-height: 72rpx; font-size: 32rpx; }
+.add-big .member-arrow { margin-left: auto; }
+.confirm-card { border-color: var(--member-primary, #3a454e); background: var(--member-soft, #eaf8f0); }

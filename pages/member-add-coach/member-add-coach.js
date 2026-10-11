@@ -1,0 +1,13 @@
+const directory = require('../../utils/member-directory')
+const theme = require('../../utils/member-theme')
+Page({
+  data: { way: 'choose', code: '', busy: false, adding: false, looking: false, card: null, note: '', lookupLeft: '', themeStyle: theme.cssVars(), requestId: '', ticket: '' },
+  onLoad(query = {}) { const ticket = String(query.t || query.scene || query.ticket || '').trim(); if (ticket) { this.setData({ ticket, way: 'scan' }); return this.confirmTicket(ticket) } if (query.way === 'scan') this.scan() },
+  chooseCode() { this.setData({ way: 'code', note: '', card: null }) }, chooseScan() { this.scan() },
+  onCode(e) { this.setData({ code: String((e && e.detail && e.detail.value) || '').toUpperCase(), note: '' }) },
+  scan() { if (this.data.busy) return; wx.scanCode({ scanType: ['qrCode'], success: a => { const raw=String((a&&a.result)||''); const ticket=String((/t=([^&]+)/.exec(raw)||/ticket=([^&]+)/.exec(raw)||[])[1]||raw).trim(); this.setData({way:'scan',ticket}); this.confirmTicket(ticket) }, fail:()=>wx.showToast({title:'没有扫到二维码，可以改用教练编号。',icon:'none'}) }) },
+  async confirmTicket(ticket) { this.setData({busy:true,note:''}); try { const r=await directory.resolveTicket(ticket); if(!r||!r.ok)return this.setData({card:null,note:(r&&r.message)||directory.TEXTS.TICKET_EXPIRED}); this.setData({card:r.card,requestId:directory.newRequestId('add')}) } finally { this.setData({busy:false}) } },
+  async lookup() { const code=String(this.data.code||'').trim(); if(!/^C[A-F0-9]{8}$/i.test(code))return wx.showToast({title:'请输入 C 开头的完整教练编号',icon:'none'}); this.setData({busy:true,looking:true,note:''}); try { const r=await directory.findByCode(code); if(!r||!r.ok)return this.setData({card:null,note:(r&&r.message)||directory.TEXTS.CONTACT_NOT_FOUND}); this.setData({card:r.card,requestId:directory.newRequestId('add'),lookupLeft:r.lookupRemaining==null?'':`今天还能查 ${r.lookupRemaining} 次`}) } finally {this.setData({busy:false,looking:false})} },
+  async add() { if(this.data.adding||!this.data.card)return; this.setData({adding:true}); try { const r=this.data.ticket?await directory.addByTicket(this.data.ticket,this.data.requestId):await directory.addByCode(this.data.code,this.data.requestId); if(!r||!r.ok)return wx.showModal({title:'没有添加成功',content:(r&&r.message)||'请稍后重试。',showCancel:false}); wx.showToast({title:r.duplicated?directory.TEXTS.DUPLICATED:'已经可以约课了',icon:'none'}); setTimeout(()=>wx.redirectTo({url:'/pages/member-coaches/member-coaches'}),600) } finally {this.setData({adding:false})} },
+  cancel(){this.setData({card:null,note:'',ticket:'',code:''})}, myQr(){wx.navigateTo({url:'/pages/member-contact-qr/member-contact-qr'})}
+})

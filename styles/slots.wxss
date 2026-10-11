@@ -1,0 +1,119 @@
+/* ⭐ 三态时段小卡片 —— **唯一来源**（教练端「新建课程」弹层 ↔ 会员端「约课时段」共用）
+ *
+ * 2026-10-02 · 本轮 UI 整理新增。
+ *
+ * ⛔ 为什么要抽成一份：
+ *   会员端 pages/member-book-slots 的这套卡片（可约 / 已排课 / 已过时间 + 图例）本来只有一份，
+ *   本轮教练端「新建课程」弹层要"复用三态"，如果直接抄一遍 CSS，就变成**两套会各自漂移的样式**。
+ *   这个项目对"两套口径"是零容忍的（同一条规则只能有一处实现），所以结构抽到这里，两边 @import。
+ *
+ * ⛔ 颜色怎么分：
+ *   每个颜色都读 `--slot-*` 变量，默认值给会员端；
+ *   教练端只在自己的容器上加一个 `.slots-coach` 覆盖成蓝色系。两边是同一张卡片，只有配色不同。
+ *
+ * ⛔ 尺寸数字（4 列 / 90rpx 高 / 18rpx 圆角 / 14rpx 圆点）**只在这里出现一次**，
+ *   页面里不许再写第二遍。
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⭐⭐ 2026-10-03 修复：三态**类名 = 状态名**，唯一状态名是 `booked`（不是 `busy`）。
+ *
+ *   ⛔ 之前的洞：唯一判定口径 `utils/package-occupancy.js` 的 `slotStateOf()` 返回
+ *      '' / 'past' / **'booked'**，而本文件定义的却是 `.slot-cell.busy`。
+ *      会员端 wxml 额外补了个 `{{item.available?'':'busy'}}` 才侥幸有灰底；
+ *      教练端弹层只写 `{{s.reason}}` ⇒ 渲染出 `slot-cell booked` ⇒ **一条规则都没命中**
+ *      ⇒ 「已排课」格与「可约」格长得一模一样（因为那几天真实数据里 booked 格恰好为 0，
+ *      这个人眼一直没发现）。
+ *
+ *   📌 现在的纪律（写死在 `tests/slot-card-single-source.test.js` 里）：
+ *      ① 状态类名**只能**是 `booked` / `past` / `''`（与 slotStateOf 的返回值逐字相同）；
+ *      ② 两个消费者 wxml **只允许**写 `{{reason}}`，不许再出现 `available?'':'...'` 这种本地补丁
+ *         （那种写法就是"每个页面各打一份补丁"的来源）；
+ *      ③ 三态样式只在本文件出现一次，消费者重定义即测试红。
+ *
+ *   ⛔ 三态必须**两两可分**：只把 booked 画对还不够 —— 上一版 booked(#f4f7f5) 与
+ *      past(#fafcfb) 两档底色几乎都是白，同样分不出来。现在按"三层深度"排：
+ *        可约 = 卡片底 + **主色实边**（能点）      ← 最亮、边框最重
+ *        已排课 = **明确灰底** + 灰边 + 灰字       ← 中间层，"这里有事、但你不能排"
+ *        已过时间 = 极淡底 + 极淡边 + 淡字         ← 最褪色，"时间已经过去了"
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⭐⭐ 2026-10-03 视觉整理：会员端四态改读**主题变量**，⛔ 教练端一个像素都不许动。
+ *
+ * ⛔ 改造前的病：会员端四态里，booked / past 那一段是**硬编码的冷蓝灰**
+ *   （#e6eef4 / #cddae6 / #8698ab…），而会员端原先三套皮肤各有自己的一套色（2026-10-05 起已收敛为唯一一套灰白）
+ *   ⇒ 「已排课」那几格永远是蓝灰色，和当前主题**不搭**，像贴错了素材。
+ *
+ * ⭐ 现在的读法（**顺序是纪律的一部分**，不许改）：
+ *      var(--slot-xxx, var(--member-slot-xxx, <老值>))
+ *                  ↑第一层           ↑第二层                ↑第三层
+ *   第一层：教练端 `.slots-coach` 在容器上覆盖了全部 `--slot-*` ⇒ 教练端**永远走第一层**，
+ *           拿到的是蓝色系，**计算值与改造前逐字相同**（回归护栏见 tests/member-theme-visual.test.js）。
+ *   第二层：会员端由 `utils/member-theme.js` 的 `cssVars()` 注入（⭐ 2026-10-05 起只有**一套**色板）
+ *           （`.member-shell` 里另有一份同值兜底，供还没注入 themeStyle 的页面用）。
+ *   第三层：主题变量也缺失时的老值 —— 保留是为了"变量没到位也不至于白成一片"。
+ *
+ * ⛔ 为什么第一层**必须**是 `--slot-*` 而不是 `--member-*`：
+ *   如果写成 `background:var(--member-slot-booked-bg,#e6eef4)`，教练端 `.slots-coach` 里
+ *   覆盖的 `--slot-booked-bg` 就**再也碰不到这条声明** ⇒ 教练端弹层会变成会员端配色。
+ *   那是"改会员端把教练端改坏"最典型的一种，已经写进测试钉死。
+ *
+ * ⭐ 四态（⛔ 不新增状态类名 —— 状态名必须与 slotStateOf 的词表逐字相同）：
+ *   ① 可约   `.slot-cell`                 卡片底 + 主色实边，"能点"
+ *   ② 已排课 `.slot-cell.booked`（不可约）主题灰底 + 灰边 + 灰字，"这里有事、你不能排"
+ *   ③ 已过   `.slot-cell.past`             极淡底 + 极淡边 + 淡字，"时间过去了"
+ *   ④ 回声   `.slot-cell.echo`（叠加）     强调色虚线边 + 强调色浅底，"这是你刚点的、正在确认"
+ *   —— 第 ④ 态是**叠加标记**，前三种来自数据里的 `reason`；四态在底色 / 边框 / 文字三个维度上
+ *      都必须两两可分（`echo` 只叠加在可约格上，所以它的底色要与可约格也不同）。
+ *
+ * ⛔ `echo` 是**会员端专属**：它来自会员端"本地回声"（刚点的、还没被云端确认的那一条）。
+ *   教练端弹层只写 `class="slot-cell {{s.reason}}"`（components/booking-modal），
+ *   教练端数据里根本没有"本地回声"这个概念 ⇒ `.slot-cell.echo` 在教练端**永不命中**，
+ *   所以给它加底色不构成"改教练端视觉"。
+ *   这条前提由 tests/member-theme-visual.test.js ⑧ 静态钉死（教练端两个消费者都不许出现 echo）。
+ *
+ * ⛔ 教练端读不到 `--member-*`：会员端那一套色板变量由 `member-theme.cssVars()` 注入到会员端页面的
+ *   `.member-shell` 上，而**没有任何教练端页面/组件引用 styles/member.wxss 或带 member-shell**
+ *   （tests/member-theme-visual.test.js ⑧ 会重新扫一遍确认这件事没变）。
+ *   所以教练端那三层 var() 的第二层恒为空 ⇒ 落到第三层老值 ⇒ 计算值与改造前逐字相同。
+ */
+
+/* ── 图例：让"颜色"这一层信息有明确语义（用户不用猜灰格是什么意思）── */
+.slot-legend{display:flex;align-items:center;flex-wrap:wrap;gap:20rpx;padding:0 4rpx 14rpx;font-size:21rpx;color:var(--slot-legend-text,var(--member-text-sub,#7b8d86))}
+.slot-legend-item{display:flex;align-items:center;gap:8rpx}
+.slot-legend-note{margin-left:auto;color:var(--slot-legend-note,var(--member-text-sub,#9aaba5))}
+.slot-dot{width:14rpx;height:14rpx;border-radius:50%;border:2rpx solid var(--slot-accent,var(--member-slot-free-line,var(--member-primary,#22a06b)));background:var(--slot-soft,var(--member-soft,#eaf8f0))}
+.slot-dot.booked{border-color:var(--slot-dot-booked-line,var(--member-slot-booked-line,#cddae6));background:var(--slot-dot-booked-bg,var(--member-slot-booked-bg,#e6eef4))}
+.slot-dot.past{border-color:var(--slot-dot-past-line,var(--member-slot-past-line,#edf1f4));background:var(--slot-dot-past-bg,var(--member-slot-past-bg,#f8fafb))}
+
+/* ── 卡片网格 ── */
+.slot-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10rpx}
+.slot-cell{box-sizing:border-box;background:var(--slot-free-bg,var(--member-slot-free-bg,#fff));border:2rpx solid var(--slot-accent,var(--member-slot-free-line,var(--member-primary,#22a06b)));border-radius:18rpx;padding:10rpx 8rpx;text-align:center;min-height:90rpx;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.slot-cell.booked{background:var(--slot-booked-bg,var(--member-slot-booked-bg,#e6eef4));border-color:var(--slot-booked-line,var(--member-slot-booked-line,#cddae6))}
+.slot-cell.past{background:var(--slot-past-bg,var(--member-slot-past-bg,#f8fafb));border-color:var(--slot-past-line,var(--member-slot-past-line,#edf1f4))}
+.slot-time{font-size:26rpx;font-weight:800;color:var(--slot-time,var(--member-slot-free-time,#153c30));white-space:nowrap}
+.slot-cell.booked .slot-time{color:var(--slot-booked-time,var(--member-slot-booked-time,#8698ab));font-weight:700}
+.slot-cell.past .slot-time{color:var(--slot-past-time,var(--member-slot-past-time,#bfc9d2))}
+.slot-state{font-size:21rpx;color:var(--slot-accent,var(--member-slot-free-line,var(--member-primary,#22a06b)));margin-top:2rpx;white-space:nowrap}
+.slot-cell.booked .slot-state{color:var(--slot-booked-state,var(--member-slot-booked-text,#8a9aad));font-weight:700}
+.slot-cell.past .slot-state{color:var(--slot-past-state,var(--member-slot-past-text,#c8d1d9))}
+/* 本地回声的那一格（第 ④ 态）：**虚线边框 + 强调色浅底** ⇒ 一眼看出"这是我刚点的、正在确认"。
+   ⚠️ 它叠加在可约格上，所以底色/边框都必须与可约格不同，否则"多了一个态"这件事看不出来。 */
+.slot-cell.echo{border-style:dashed;background:var(--slot-echo-bg,var(--member-slot-echo-bg,#fff6dd));border-color:var(--slot-echo-line,var(--member-slot-echo-line,#f0b429))}
+
+/* ── 教练端配色（只在 .slots-coach 容器内生效）──
+   蓝色 = 教练端 Design System 的 --accent / --soft，与课表页同一个色系。
+   ⛔⛔ 2026-10-03：这一段**一个字都不许改**。会员端时段格改成读主题变量之后，
+   教练端的"最终计算值"必须与改之前逐字相同 —— 因为下面把四个 `--slot-*` 全覆盖了，
+   会员端那条 `var(--slot-xxx, var(--member-xxx, 老值))` 的第二层根本不会被读到。
+   回归护栏：tests/member-theme-visual.test.js ⑧（真实解析 var() 链，比对最终计算值）。 */
+.slots-coach{
+  --slot-accent:#2563eb;
+  --slot-soft:#e8f0ff;
+  --slot-legend-text:#7b8da6;
+  --slot-legend-note:#9aa8bc;
+  --slot-dot-booked-line:#cfdaea;--slot-dot-booked-bg:#e7edf6;
+  --slot-dot-past-line:#edf1f7;--slot-dot-past-bg:#f8fafc;
+  --slot-time:#17345f;
+  --slot-booked-bg:#e7edf6;--slot-booked-line:#cfdaea;--slot-booked-time:#8798ae;--slot-booked-state:#8b9bb1;
+  --slot-past-bg:#f8fafc;--slot-past-line:#edf1f7;--slot-past-time:#bfc8d6;--slot-past-state:#c7cfdb;
+}

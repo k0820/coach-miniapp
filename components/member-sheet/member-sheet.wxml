@@ -1,0 +1,36 @@
+<!-- ⭐⭐ 会员端统一底部弹层。结构说明见 member-sheet.js 顶部注释。
+     ⛔ 三条不许动的结构纪律（tests/member-theme-visual.test.js ⑥ 钉死）：
+       ① 遮罩上必须有 `catchtouchmove="noop"`（防滚动穿透）
+       ② 底部按钮区必须在 `</scroll-view>` **之后**、且是 `.member-sheet` 的直接子节点
+          （内容再长也顶不走按钮）
+       ③ ⛔ 组件内不得出现任何常驻 loading / spinner（本组件不负责 loading） -->
+<view wx:if="{{visible}}" class="member-sheet-mask" style="{{vars}}" bindtap="onClose" catchtouchmove="noop">
+  <view class="member-sheet" catchtap="noop">
+
+    <!-- ① 顶部拖动短横线（纯装饰：点它等于点遮罩空白处 ⇒ 关闭） -->
+    <view class="member-sheet-handle"></view>
+
+    <!-- ② 标题 + 右上关闭 × -->
+    <view class="member-sheet-head">
+      <view class="member-sheet-titles">
+        <view class="member-sheet-title">{{title}}</view>
+        <view wx:if="{{desc}}" class="member-sheet-desc">{{desc}}</view>
+      </view>
+      <view class="member-sheet-close" bindtap="onClose" aria-label="关闭">×</view>
+    </view>
+
+    <!-- ③ 内容区：可滚动。slot 放在 scroll-view **内**，长内容只在这里滚，
+         标题与底部按钮始终留在屏幕上。max-height 用 vh（见 wxss）。 -->
+    <scroll-view scroll-y class="member-sheet-body" enhanced show-scrollbar="{{false}}">
+      <slot></slot>
+    </scroll-view>
+
+    <!-- ④⑤ 底部操作区：在 scroll-view **外面** ⇒ 固定；
+         padding-bottom 带 env(safe-area-inset-bottom) ⇒ 小屏不顶到 Home 指示条。 -->
+    <view class="member-sheet-foot">
+      <button wx:if="{{showCancel}}" class="member-sheet-btn ghost" bindtap="onCancel">{{cancelText}}</button>
+      <button class="member-sheet-btn primary {{danger?'danger':''}}" bindtap="onConfirm">{{confirmText}}</button>
+    </view>
+
+  </view>
+</view>

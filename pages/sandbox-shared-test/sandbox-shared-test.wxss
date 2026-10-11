@@ -1,0 +1,28 @@
+/* M2 第四批：Sandbox 验收页。
+   ⛳ 不新建 Design System：颜色 / 字体 / 圆角 / 间距 / 按钮 / 卡片一律复用 app.wxss 的既有类，
+   这里只补极少几个验收专用类；「TEST」提示沿用沙盒页已有的琥珀色（#f59e0b / #7c3f00），保持一致。 */
+.test-banner{background:#fff8e7;border:1rpx solid #f6c65b;border-radius:28rpx;padding:26rpx;margin-bottom:18rpx}
+.test-mark{display:inline-flex;padding:8rpx 18rpx;border-radius:999rpx;background:#f59e0b;color:#fff;font-size:21rpx;font-weight:800;letter-spacing:2rpx}
+.test-title{margin-top:18rpx;font-size:34rpx;font-weight:800;color:#7c3f00}
+.test-banner .hint{margin-top:10rpx;color:#795548}
+.shared-test-page .card .title{margin-bottom:8rpx}
+.shared-test-page .hint{margin-bottom:6rpx}
+.picker{display:flex;align-items:center;justify-content:space-between;color:var(--text)}
+.package-text{margin-top:14rpx;padding:16rpx 18rpx;border-radius:16rpx;background:var(--soft);font-size:24rpx;color:#3f4756}
+.code-box{margin-top:18rpx;padding:20rpx;border-radius:18rpx;border:2rpx dashed #f59e0b;background:#fffaf0}
+.code-label{font-size:22rpx;color:#795548}
+.code-value{margin-top:10rpx;font-size:40rpx;font-weight:800;letter-spacing:4rpx;color:#7c3f00}
+.code-actions{margin-top:14rpx}
+.code-copy{padding:10rpx 26rpx;border-radius:999rpx;background:#7c3f00;color:#fff;font-size:24rpx;font-weight:700}
+.share-state{margin-top:14rpx;font-size:23rpx;color:#3f4756}
+.lookup{margin-top:14rpx;padding:16rpx 18rpx;border-radius:16rpx;font-size:23rpx;line-height:1.6;background:var(--soft);color:#3f4756}
+.lookup.ok{border:1rpx solid #bfe3d0;background:#f2fbf6;color:#146c43}
+.lookup.bad{border:1rpx solid #f0c9c2;background:#fdf4f2;color:#bf5037}
+.time-row{gap:16rpx}
+.time-picker{flex:1}
+/* 「完成同步中 / 完成同步异常」必须一眼与「已完成」不同 —— 沿用本页既有的琥珀 TEST 色，不新起一套。 */
+.booking-status-sync{color:#7c3f00;font-weight:700}
+.booking-row{justify-content:space-between}
+.booking-title{font-size:26rpx;font-weight:700}
+.chevron{color:var(--muted);font-size:30rpx}
+.verify-box{margin-top:14rpx;padding:18rpx;border-radius:16rpx;background:#fff;border:1rpx solid var(--line);font-size:23rpx;line-height:1.75;color:#3f4756;white-space:pre-wrap}

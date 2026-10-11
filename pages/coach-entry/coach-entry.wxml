@@ -1,0 +1,15 @@
+<view class="member-page member-shell coach-login-page" style="{{themeStyle}}">
+  <view class="coach-login-hero">
+    <view class="coach-login-mark">表</view>
+    <view class="member-title coach-login-title">教练登录</view>
+    <view class="coach-login-pill">无需审核，直接使用</view>
+  </view>
+  <view class="member-card coach-login-card">
+    <view class="member-section-title">当前微信就是登录账号</view>
+    <view class="member-subtitle">老教练会继续读取原来的学员、课时和课程；新教练会自动建立自己的独立空间。</view>
+    <button class="wechat-login" loading="{{busy}}" disabled="{{busy}}" bindtap="loginWechat">微信一键登录</button>
+    <view wx:if="{{note}}" class="login-note">{{note}}</view>
+  </view>
+  <button class="member-ghost" disabled="{{busy}}" bindtap="back">返回选择身份</button>
+  <view class="login-privacy">登录即表示同意用户服务协议与隐私政策</view>
+</view>

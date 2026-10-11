@@ -1,0 +1,157 @@
+/* ⭐⭐ 会员端**统一设计变量 + 基础样式**（唯一样式来源）。
+ *
+ * 所有会员端页面 `wxss` 第一行都是 `@import "../../styles/member.wxss";`。
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⭐ 2026-10-03 视觉整理：把"散落在各页面里的数字"收成一份设计变量。
+ *
+ * ⛔ 改造前的病：同一个概念在三个页面里写了三个不同的值 ——
+ *    卡片圆角 30rpx（首页）/ 28rpx（约课）/ 写都不写（预约页）；
+ *    按钮高度 84rpx / 76rpx / 靠 padding 撑；
+ *    状态标签有的用胶囊、有的用方形，高度全靠字号撑。
+ *    ⇒ 三个页面摆在一起肉眼就能看出"不是一套东西"。
+ *
+ * ⭐ 现在的规矩：
+ *   ① **几何与字号**（圆角 / 间距 / 字号 / 高度 / 分隔线）在本文件定义一次，
+ *      页面里只允许**引用变量**，不许再写第二遍裸数字。
+ *   ② **颜色**不在这里写死 —— 全部读 `--member-*`，由 `utils/member-theme.js`
+ *      的 `cssVars()` 按主题注入（`.member-shell` 里另有一份同值兜底）。
+ *   ③ ⛔ **既有类名一个都不删**（十几个页面在用），本轮只做两件事：
+ *      把它们改成读变量；**新增**一批语义更准的类名。
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⚠️ 关于 `env(safe-area-inset-bottom)`：
+ *   小程序里这个函数在部分基础库上不返回 `px` 后缀，本项目统一写成
+ *   `calc(<固定值> + env(safe-area-inset-bottom))`（见 `.member-safe-bottom`）——
+ *   固定值那一截保证"函数返回空/0 时也还留得下间距"，不会退化成 0。
+ */
+
+/* ── 设计变量（几何 / 字号 / 间距）──────────────────────────────
+   ⚠️ 只在这里出现一次。各页面需要新的档位时**先想清楚是不是真需要新的**，
+      能用现有档位表达就别加 —— 变量一多就会开始漂。 */
+.member-shell{
+  /* 间距 */
+  --member-gap-xs: 8rpx;      /* 图标与文字之间 */
+  --member-gap-sm: 14rpx;     /* 小卡片内元素 */
+  --member-gap-md: 18rpx;     /* 卡片之间 */
+  --member-gap-lg: 26rpx;     /* 卡片内边距 */
+  --member-gap-xl: 34rpx;     /* 页面左右边距 */
+  /* 圆角 */
+  --member-radius-card: 30rpx;
+  --member-radius-hero: 34rpx;
+  --member-radius-control: 22rpx;
+  --member-radius-pill: 999rpx;
+  /* 字号层级（⛔ 只有这五档；页面里不许出现 25rpx / 23rpx 这种"顺手写的"） */
+  --member-font-display: 86rpx;  /* 头图大数字 */
+  --member-font-title: 34rpx;    /* 页面标题 */
+  --member-font-section: 28rpx;  /* 卡片小节标题 */
+  --member-font-body: 27rpx;     /* 正文 / 主按钮 */
+  --member-font-sub: 24rpx;      /* 次要文字 */
+  --member-font-cap: 21rpx;      /* 标签 / 提示 */
+  /* 控件高度（⛔ 按钮高度必须统一：三个页面三种高度时"确认"按钮会上下跳动） */
+  --member-button-height: 84rpx;
+  --member-button-height-sm: 76rpx;
+  --member-tag-height: 44rpx;
+  --member-divider: 1rpx;
+  /* 底部安全距离：底部导航 / 弹层按钮都要用它垫 */
+  --member-safe-gap: 40rpx;
+
+  /* —— 颜色兜底（= 唯一那套灰白简约界面的值）。真实值由 cssVars() 注入，这里只是"没注入也不至于裸奔"。
+       ⭐ 2026-10-05：这里曾经是「元气绿」三套皮肤中的一套，三套主题已撤回 ⇒ 只保留这一份。
+       ⛔ 改这两处时必须同步改 `utils/member-theme.js`（测试会比对兜底值与色板逐字一致）。—— */
+  --member-primary:#3a454e;--member-primary-deep:#252d34;--member-accent:#5f7a86;--member-soft:#eef1f3;
+  --member-hero:linear-gradient(135deg,#eff2f4,#ffffff);--member-hero-label:#5c6770;--member-hero-ink:#1d2429;
+  --member-page-bg:#f6f7f8;--member-surface:#ffffff;--member-surface-alt:#fafbfb;
+  --member-border:#e6e8ea;--member-border-strong:#d2d6da;
+  --member-shadow:0 8rpx 24rpx rgba(37,45,52,.05);
+  --member-text:#22282e;--member-text-sub:#757e86;--member-tag-bg:#eef1f3;--member-tag-text:#414c55;
+  --member-success:#4f7a5c;--member-warning:#8a6f34;--member-danger:#a8453c;
+  --member-success-soft:#ecf1ed;--member-warning-soft:#f3eee2;--member-danger-soft:#f4e9e8;
+  --member-nav-active:#3a454e;--member-nav-idle:#939ba1;
+  --member-deco-primary:#c3cace;--member-deco-secondary:#9aa3a9;
+  --member-deco-sun-radius:8rpx;--member-deco-leaf-radius:0;
+  --member-slot-free-bg:#ffffff;--member-slot-free-line:#3a454e;--member-slot-free-time:#22282e;
+  --member-slot-booked-bg:#f0f2f3;--member-slot-booked-line:#dadee1;--member-slot-booked-time:#8b949a;--member-slot-booked-text:#828b91;
+  --member-slot-past-bg:#fafafa;--member-slot-past-line:#edeef0;--member-slot-past-time:#c0c5c9;--member-slot-past-text:#ccd0d4;
+  --member-slot-echo-bg:#f2f4f5;--member-slot-echo-line:#5f7a86;
+  /* 弹层强调色（components/member-sheet 用） */
+  --member-sheet-mask:rgba(20,26,30,.42);
+  --member-sheet-handle:#d8dcdf;
+}
+
+/* ── 页面骨架 ── */
+/* ⚠️ `padding-bottom` 必须 **≥ 底部导航高度 + env(safe-area-inset-bottom)**，否则最后一张卡被压住。
+   ⭐ 2026-10-04 修正：原来是**光秃秃的 150rpx**（不含安全区）。会员端底栏实际高度 =
+     `12rpx(padding) + 40rpx(图标) + ~25rpx(文字) + 12rpx(padding) ≈ 89rpx`，
+     而 iPhone X / 11 Pro 这类**带 Home 指示条的机器** `env(safe-area-inset-bottom) = 34pt = 68rpx`
+     ⇒ 底栏实高 ≈ **157rpx > 150rpx** ⇒ 列表最后一行正好被压在底栏下面（差 7rpx，字的下沿看不见）。
+   ⇒ 统一写成 `calc(<固定值> + env(safe-area-inset-bottom))`：函数返回空/0 时也还留得下固定那一截。
+   ⛔ 页面 wxss 里不许再写自己的 padding-bottom 去覆盖这条（要留白就用 `.member-safe-bottom`）。 */
+.member-page{min-height:100vh;background:var(--member-page-bg,#f6f7f8);color:var(--member-text,#22282e);padding:var(--member-gap-lg) var(--member-gap-xl) calc(150rpx + env(safe-area-inset-bottom));box-sizing:border-box}
+.member-card{background:var(--member-surface,#ffffff);border:var(--member-divider,1rpx) solid var(--member-border,#e6e8ea);border-radius:var(--member-radius-card);padding:var(--member-gap-lg);margin-bottom:var(--member-gap-md);box-shadow:var(--member-shadow)}
+
+/* ── 排版层级 ── */
+.member-title{font-size:var(--member-font-title);font-weight:800;color:var(--member-text,#22282e)}
+.member-subtitle{font-size:var(--member-font-sub);color:var(--member-text-sub,#757e86);line-height:1.55}
+.member-section-title{font-size:var(--member-font-section);font-weight:800;margin:30rpx 4rpx 16rpx;color:var(--member-text,#22282e)}
+.member-display{font-size:var(--member-font-display);font-weight:850;line-height:1.05;letter-spacing:-3rpx;color:var(--member-hero-ink,#1d2429)}
+
+/* ── 按钮（⛔ 高度统一：三处"确认"按钮必须同高，否则切换弹层时会跳）── */
+.member-primary{background:var(--member-primary);color:#fff;border:0;border-radius:var(--member-radius-control);font-size:var(--member-font-body);font-weight:750;line-height:var(--member-button-height)}
+.member-primary::after{border:0}
+.member-primary[disabled]{background:var(--member-border-strong);color:#fff}
+/* ⭐ 危险操作统一红色（⛔ 不许各页面自己挑一个红）：取消预约 / 删除 / 清空都走这一个。
+   ⚠️ `.member-ghost.danger` **只给字色与描边**、不给底色 —— 预约页现有的
+   `.booking-manage-btn.danger`（描边式危险按钮）必须保持描边式，
+   这里若把底色也改成实心红，会和那条描边规则叠成"红底 + 浅红边"，比原来更难看。
+   实心红底只给 `.member-primary.danger`（真正按下就生效的那个按钮）。 */
+.member-primary.danger{background:var(--member-danger);border-color:var(--member-danger);color:#fff}
+.member-ghost.danger{color:var(--member-danger);border-color:var(--member-danger)}
+.member-ghost{background:var(--member-surface,#ffffff);color:var(--member-primary);border:2rpx solid var(--member-border-strong,#d2d6da);border-radius:var(--member-radius-control);font-size:var(--member-font-body);line-height:var(--member-button-height-sm)}
+
+/* ── 头图（首页 / 数字卡）── */
+.member-hero{position:relative;overflow:hidden;min-height:290rpx;background:var(--member-hero);border-radius:var(--member-radius-hero);padding:30rpx;box-sizing:border-box;margin:20rpx 0;box-shadow:var(--member-shadow)}
+.member-hero-label{font-size:var(--member-font-sub);font-weight:700;color:var(--member-hero-label,#5c6770)}
+.member-balance{font-size:var(--member-font-display);font-weight:850;line-height:1.05;margin-top:18rpx;letter-spacing:-3rpx;color:var(--member-hero-ink,#1d2429)}
+.member-balance-unit{font-size:var(--member-font-section);margin-left:8rpx;font-weight:700;color:var(--member-hero-ink,#1d2429)}
+
+/* —— 头图上的纯 CSS 装饰（⛔ 不是图片；包体只剩 ~380KB，不许加位图）——
+   头图装饰共用这**一组** DOM，形状/颜色随 token 变；
+   ⭐ 2026-10-05：主题选择页已撤回，现在只有**一套**极简 token（decoShape = plain）。*/
+.member-sun{position:absolute;width:120rpx;height:120rpx;border-radius:var(--member-deco-sun-radius,50%);background:var(--member-deco-primary);right:68rpx;top:34rpx;opacity:.68}
+.member-leaf{position:absolute;width:94rpx;height:176rpx;border-radius:var(--member-deco-leaf-radius,100% 0 100% 0);background:var(--member-deco-secondary);right:8rpx;bottom:-26rpx;transform:rotate(-12deg);opacity:.38}
+.member-leaf.second{right:98rpx;bottom:-72rpx;transform:rotate(24deg);opacity:.26}
+
+/* ── 行 / 列表 ── */
+.member-row{display:flex;align-items:center;gap:var(--member-gap-md)}
+.member-spread{justify-content:space-between}
+.member-list-row{padding:20rpx 0;border-bottom:var(--member-divider,1rpx) solid var(--member-border,#e6e8ea)}
+.member-list-row:last-child{border-bottom:0}
+.member-divider{height:var(--member-divider,1rpx);background:var(--member-border,#e6e8ea);margin:var(--member-gap-md) 0}
+.member-arrow{color:var(--member-text-sub,#757e86);font-size:38rpx}
+
+/* ── 头像 ── */
+.member-avatar{width:78rpx;height:78rpx;border-radius:25rpx;background:var(--member-soft);display:flex;align-items:center;justify-content:center;color:var(--member-primary);font-weight:800;overflow:hidden}
+.member-avatar image{width:100%;height:100%}
+
+/* ── 状态标签（⛔ 高度统一 44rpx；三个页面三种高度时列表会左右跳）── */
+.member-pill{display:inline-flex;align-items:center;min-height:var(--member-tag-height);padding:0 16rpx;border-radius:var(--member-radius-pill);background:var(--member-soft);color:var(--member-primary);font-size:var(--member-font-cap);font-weight:700;line-height:1.25}
+.member-tag-done{background:var(--member-success-soft);color:var(--member-success)}
+.member-tag-warn{background:var(--member-warning-soft);color:var(--member-warning)}
+.member-tag-danger{background:var(--member-danger-soft);color:var(--member-danger)}
+
+/* ── 九宫格快捷入口（profile / entry 用）── */
+.member-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--member-gap-sm)}
+.member-action{background:var(--member-surface,#ffffff);border-radius:var(--member-radius-card);padding:22rpx 10rpx;text-align:center;border:var(--member-divider,1rpx) solid var(--member-border,#e6e8ea);font-size:var(--member-font-cap)}
+.member-action-icon{width:66rpx;height:66rpx;border-radius:22rpx;margin:0 auto 12rpx;background:var(--member-soft);color:var(--member-primary);font-size:31rpx;display:flex;align-items:center;justify-content:center}
+
+/* ── 空态 / 提示 ── */
+.member-empty{text-align:center;padding:70rpx 32rpx;color:var(--member-text-sub,#757e86)}
+.member-notice{background:var(--member-warning-soft);border:var(--member-divider,1rpx) solid var(--member-border-strong);border-radius:24rpx;padding:20rpx 22rpx;margin-top:var(--member-gap-md)}
+.member-notice-line{font-size:var(--member-font-cap);color:var(--member-warning);line-height:1.6}
+
+/* ── 输入 ── */
+.member-input{height:var(--member-button-height);border:2rpx solid var(--member-border-strong,#d2d6da);border-radius:var(--member-radius-control);padding:0 22rpx;background:var(--member-surface,#ffffff);margin:var(--member-gap-sm) 0;font-size:var(--member-font-body)}
+
+/* ── 底部安全距离（⛔ 底部导航 / 弹层按钮都靠它，小屏才不会顶到 Home 指示条）── */
+.member-safe-bottom{height:calc(var(--member-safe-gap,40rpx) + env(safe-area-inset-bottom))}

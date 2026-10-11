@@ -1,0 +1,212 @@
+<page-meta page-style="{{modal||renewModal?'overflow:hidden;height:100%;':''}}"></page-meta>
+<sandbox-banner/>
+<view class="page students-list-page {{inSandbox?'with-banner':''}}">
+  <!-- ⭐⭐⭐ 2026-10-03 · 名单改成**内部滚动**（scroll-view）+ **没有任何悬浮遮挡物**。
+       ⛔ 历史病根（两轮真机问题，都别再犯）：
+          · 第一版：名单跟着**整页**滚，右下「＋」是 position:fixed ⇒ 手指停在任意中间位置时，
+            固定不动的按钮必然飘在某一行的「姓名 / 剩余 N 节」上面；
+          · 第二版：给名单加了**独立底部安全带**（.students-fab-band，144rpx）把悬浮胶囊圈起来，
+            几何上确实不遮挡了，但代价是名单永远少用 144rpx，真机上"底部一大块空地"。
+       ⭐ 现在的形状（本轮真机验收定稿）：**悬浮胶囊与安全带一起删掉**，
+         「＋新增」搬进标题行（.students-add，在流内、跟着名单滚）⇒ 不可能遮挡任何一行，
+         名单**回收**被安全带占掉的那 144rpx，一路铺到 tabBar 上方。
+       ⭐ 结构不变量（改动前先读这几条）：
+         · 本页**不再自己滚**：.students-list-page 有**确定高度**（扣掉占流的测试环境横幅 +
+           留 40rpx 原生下拉余量），滚动全部交给下面这个 scroll-view；
+         · 页面底部 padding-bottom = 40rpx ⇒ 滚动区下沿**正好落在视口底（tabBar 上沿）**，
+           既不吃掉可视高度，也不把最后一行推到屏幕外（40rpx 是页面为下拉刷新多出来的那一段）；
+         · refresher-enabled 让"手指落在名单上"也能下拉刷新（页面级 onPullDownRefresh 原样保留）。
+       回归护栏：tests/students-scroll-band.test.js（钉"没有悬浮遮挡物 + 名单吃满页面高度"，
+       含"把 ＋新增 改回 fixed / 把安全带加回来"两个反证）。 -->
+  <scroll-view class="students-scroll" scroll-y refresher-enabled="{{true}}" refresher-triggered="{{listRefreshing}}" bindrefresherrefresh="onListRefresh" scroll-into-view="{{scrollTarget}}" scroll-with-animation="{{true}}">
+  <view class="row spread students-page-head">
+    <view><view class="title">我的学员</view><view class="hint">课时进度与续费提醒</view>
+      <!-- ⭐ 2026-10-05 · 归档功能已撤回 ⇒ 人数就是**当前名单的全部人数**，不再有"不含已归档"这种范围说明。
+           ⛔ 续费提醒、排名、统计页的人数与金额一个都没动。 -->
+      <view class="student-count-scope">{{countScope}}</view>
+    </view>
+    <view class="students-head-right">
+      <view class="student-count"><b>{{students.length}}</b><text>人</text></view>
+      <!-- ⭐「＋新增」：原来那颗右下角悬浮胶囊（.fab-capsule + .students-fab-band）**已删除**。
+           ⛔ 绑定**照旧是 `add`**（新增会员 sheet 的同一个入口），业务规则一个字没改；
+              换的只是它所在的位置：从"浮在名单上的 fixed 按钮"变成"标题行里的一枚文字按钮"
+              ⇒ 它跟着名单一起滚，永远不可能压住任何一行姓名 / 剩余节数。 -->
+      <view class="students-add" bindtap="add">＋新增</view>
+    </view>
+  </view>
+  <!-- ⭐⭐ 2026-10-04 需求 B · 「邀请会员认领」入口（**学员列表页顶部**，与「已归档学员」同一位置层级）。
+       🚨 为什么必须在这里：改之前这个功能**藏在三层之下**（学员详情 → 会员端身份认领 → 打开），
+          而"让会员看到自己的历史记录"是教练端最该被主动使用的能力 —— 藏起来等于没有。
+       ⛔ 它排在「多教练服务」**之前**：那是"出问题时才用"的入口，
+          认领是日常入口，不能被压在后面。
+       ⛔ **不带 studentId** 跳过去：这一层没有"选中的学员"这个概念（选中学员是详情 sheet 的状态，
+          出了 sheet 就不存在了）⇒ 跳到工具页让它**先列名单让教练点一位**，避免"带一个undefined 过去"。
+       ⛔ 不动 `deleteFormStudent`（已真机验收）：本轮只**新增**入口，不碰任何删除相关绑定。 -->
+  <!-- M2 V1 · M2-UI-01（2026-09-29）：**A 侧（课包/学员所属教练）的授权管理入口**。
+       ⛔ 修复前全项目唯一能进「多教练服务」的按钮挂在「授权给我的会员」弹层里（authorizedDetail），
+          而 A 是这些会员的账本所有者 ⇒ 他的会员是**本地卡片**、点的永远走编辑流程 ⇒ 那颗按钮永不可见。
+          所以 A 手机上"根本没有授权管理入口"，B 手机却有 —— 不是功能没做，是入口挂错了位置。
+       ⛔ 不新造页面、不加新样式：沿用既有的 .editor-section / .text-action（Design System 同一套）。 -->
+  <view wx:if="{{authorizedFailed}}" class="hint">授权会员目录读取失败，下拉刷新可重试</view>
+  <!-- ⭐ 2026-10-06：「这一帧陈旧」必须**说出来**。
+       旧帧的形状是"课包看得见、但没有云端标识"（真机 BUG03 二次失败就是这个形状）：
+       卡片照旧显示（⛔ 不许因为读不到就把会员整张卡藏掉），但必须明确告诉她"下拉刷新后再排课"。 -->
+  <view wx:elif="{{authorizedStale}}" class="hint">授权会员名单还没读到最新，下拉刷新后再排课</view>
+  <view wx:if="{{renewCount}}" class="renew-alert compact-renew" bindtap="showRenewDetails">
+    <view class="renew-dot">!</view>
+    <view class="renew-copy"><view class="renew-title"><b>{{renewCount}}</b><text> 位学员需要续费</text></view><view class="renew-preview">{{renewPreview}}</view></view>
+    <view class="renew-arrow">›</view>
+  </view>
+  <view wx:if="{{!students.length}}" class="card empty"><view>还没有学员</view><view class="hint">先添加第一个学员，再去课表约课</view><button class="btn primary" bindtap="add">添加第一个学员</button></view>
+  <view wx:for="{{groups}}" wx:for-item="group" wx:key="letter" id="{{group.id}}" class="letter-section">
+    <view class="letter-title">{{group.letter}}</view>
+    <!-- ⭐ 2026-10-02 · 本轮 UI 整理：名单改成**一人一行**（姓名 + 关键状态 + 右箭头）。
+         ⛔ 为什么：37 人的时候旧卡片一人要 130px（姓名 + 每个课时包各一行 + 进度条），
+            一屏只看得到 3 个人，找一个人要划很久。现在一行 52px ⇒ 一屏 8 个。
+         ⛔ 点了什么、进哪里一个字没改：仍然是同一张卡、同一个 `bindtap="edit"`（`edit` → `openCard`
+            → 本地会员进编辑 sheet / 授权会员进只读详情）。
+         ⛔ 业务数据一个字没动：`student.rowLeft / rowTotal / rowWarn` 都是 `render()` 里现算的**视图字段**，
+            `packages` / `visiblePackages` / 续费口径 / 占用判定照旧（见 students.js 的注释）。
+         每个课时包的明细（类型 / 进度 / 已用完的包）在详情 sheet 里照旧完整可见。 -->
+    <view wx:for="{{group.students}}" wx:for-item="student" wx:key="id" class="card student-row" data-id="{{student.id}}" bindtap="edit">
+      <view class="student-row-main">
+        <view class="student-row-name">{{student.name}}</view>
+        <view class="student-row-meta">{{student.phone||'未填手机号'}}</view>
+      </view>
+      <view class="student-row-state">
+        <text wx:if="{{student.rowHas}}" class="student-row-left {{student.rowWarn?'warn':''}} {{student.rowLeft===0?'zero':''}}">剩余 {{student.rowLeft}} / {{student.rowTotal}} 节</text>
+        <text wx:else class="student-row-left zero">未购课时包</text>
+        <text wx:if="{{student.rowWarn}}" class="student-row-flag">{{student.rowWarnText}}</text>
+      </view>
+      <view class="student-row-arrow">›</view>
+    </view>
+  </view>
+  <!-- 滚动区尾部留白：最后一行与滚动区下沿之间留一点呼吸（纯视觉，不承担任何"让位"职责）。 -->
+  <view class="students-scroll-tail"></view>
+  </scroll-view>
+  <view wx:if="{{students.length}}" class="alphabet-rail"><view wx:for="{{alphabet}}" wx:key="letter" class="alphabet-letter {{item.active?'active':''}}" data-letter="{{item.letter}}" data-active="{{item.active}}" bindtap="jumpLetter">{{item.letter}}</view></view>
+</view>
+
+<view wx:if="{{renewModal}}" class="renew-mask" bindtap="closeRenewDetails" catchtouchmove="noop">
+  <view class="renew-sheet" catchtap="noop">
+    <view class="renew-sheet-head"><view><view class="renew-sheet-title">待续费学员</view><view class="renew-sheet-subtitle">共 {{renewCount}} 人，点击学员可查看详情</view></view><view class="renew-close" bindtap="closeRenewDetails">×</view></view>
+    <scroll-view scroll-y enhanced show-scrollbar="{{false}}" class="renew-list"><view wx:for="{{renewList}}" wx:key="id" class="renew-student" data-id="{{item.id}}" bindtap="openRenewStudent"><view class="renew-student-copy"><view class="renew-student-name">{{item.name}}</view><view class="renew-package-info"><view wx:for="{{item.packages}}" wx:for-item="pkg" wx:key="index" class="renew-package-line"><text class="renew-package-name">{{pkg.type}} · </text><text class="renew-package-remain">剩余 {{pkg.left}} 节</text></view></view></view><view class="renew-row-arrow">›</view></view></scroll-view>
+    <view class="renew-sheet-close" bindtap="closeRenewDetails">关闭</view>
+  </view>
+</view>
+
+<!--
+  学员编辑 sheet：可滚动区 + 固定保存条。结构不变量（改动前先读这几条）：
+  · .modal.member-editor 只负责滚动内容；.member-editor-action 是它的**兄弟**、mask 的直接子节点。
+    保存条必须留在 mask 这一层 —— 一旦被挪进 <scroll-view>，它就会跟着内容一起滚走。
+  · 祖先链上不允许出现 transform：这会让 position:fixed 的包含块从视口变成那个祖先，
+    bottom:0 不再等于屏幕底，保存条会跟着 sheet 偏移。mask 目前没有 transform，请保持。
+    （.mask 上的 backdrop-filter 同样会建立包含块，但 mask 是 inset:0 且无边框，
+     包含块仍与视口重合 → 暂时无害。改 mask 的 inset / padding / border 前先回看这条。）
+  · 内容区底部留白（.member-editor 的 padding-bottom）必须 >= 保存条本体高，
+    否则滚到底时最后一个课时包会被保存条压住、点不到。
+  回归护栏：tests/student-editor-save-bar.test.js
+-->
+<view wx:if="{{modal && form}}" class="mask member-editor-mask {{sheetClosing?'closing':''}}" bindtap="close" catchtouchmove="noop"><scroll-view scroll-y enhanced show-scrollbar="{{false}}" class="modal member-editor" style="{{sheetStyle}}" catchtap="noop">
+  <view class="sheet-handle" bindtap="close" catchtouchstart="sheetTouchStart" catchtouchmove="sheetTouchMove" catchtouchend="sheetTouchEnd"></view>
+  <view class="editor-head"><view><view class="editor-context">{{form.id?'学员资料':'新增学员'}}</view><view class="title">{{form.name||'填写学员信息'}}</view></view><view class="editor-close" bindtap="close">×</view></view>
+  <view class="editor-section profile-section">
+    <view class="editor-section-head"><view><view class="editor-section-title">基本资料</view><view class="editor-section-hint">姓名与联系方式</view></view><view wx:if="{{form.id}}" class="text-action" bindtap="toggleProfileEdit">{{profileEditing?'收起':'编辑资料'}}</view></view>
+    <block wx:if="{{profileEditing || !form.id}}"><view class="field-label">姓名</view><input class="input editor-input" value="{{form.name}}" placeholder="请输入学员姓名" data-field="name" bindinput="field"/><view class="auto-hint">搜索字母会自动生成：{{form.abbr||'—'}}</view><view class="field-label">手机号</view><input class="input editor-input" type="number" value="{{form.phone}}" placeholder="未填写" data-field="phone" bindinput="field"/></block>
+    <view wx:else class="profile-display"><view class="profile-name">{{form.name}}</view><view class="info-row"><text>手机号</text><b>{{form.phone||'未填写'}}</b></view><view class="info-row"><text>搜索字母</text><b>{{form.abbr||'—'}}</b></view></view>
+  </view>
+  <view wx:if="{{form.id}}" class="editor-section"><view class="editor-section-head"><view><view class="editor-section-title">添加会员</view><view class="editor-section-hint">用手机号或扫码把这位会员加进我的通讯录，添加后他即可主动约课</view></view><view class="text-action" bindtap="addMemberFromEditor">添加 ›</view></view></view>
+  <!-- M2-UI-01：从「学员资料」也能进授权管理（她就是在这一层找入口的）。位置紧跟课时包区之前，
+       与上面「会员端身份认领」**逐字同构**（同一个 .editor-section / .text-action，零新增视觉规范）。 -->
+  <view class="editor-section packages-section">
+    <view class="editor-section-head"><view><view class="editor-section-title">课时包</view><view class="editor-section-hint">共 {{form.packages.length}} 个课时包</view></view></view>
+    <block wx:for="{{form.packages}}" wx:key="index"><view wx:if="{{item.isNew || !item.finished || finishedExpanded}}" class="pkg-form package-detail {{item.isNew?'pkg-new':''}}">
+      <view wx:if="{{item.isNew || packageEditing[index]}}" class="package-detail-head"><view><view class="package-title">{{item.type}}</view><view wx:if="{{item.isNew}}" class="package-new-hint">新增课时包</view></view><view wx:if="{{!item.isNew && item.type!=='赠送课程' && item.canEditSale}}" class="text-action" data-id="{{item.id}}" bindtap="openSaleEditor">编辑</view><view wx:else class="text-action" data-i="{{index}}" bindtap="togglePackageEdit">{{packageEditing[index]?'收起':(!item.isNew && item.type!=='赠送课程'?'查看':'编辑')}}</view></view>
+      <block wx:if="{{packageEditing[index] && !item.isNew && item.type!=='赠送课程' && !item.canEditSale}}">
+        <view class="package-relation-warning">这条旧课时包没有唯一可确认的销售关联，不能直接修改销售数据。</view>
+        <view class="remove" data-i="{{index}}" bindtap="removePkg">检查并删除此课时包</view>
+      </block>
+      <block wx:elif="{{packageEditing[index] && (item.isNew || item.type==='赠送课程')}}">
+        <view wx:if="{{item.isNew}}" class="field-label">课程类型</view><picker wx:if="{{item.isNew}}" range="{{types}}" range-key="name" data-i="{{index}}" data-k="type" bindchange="pkg"><view class="input editor-input picker">{{item.type}}<text>⌄</text></view></picker>
+        <view class="nums"><view><text>{{item.type==='赠送课程'?'赠送课时':'购买课时'}}</text><input type="number" value="{{item.total}}" placeholder="20" data-i="{{index}}" data-k="total" bindinput="pkg"/></view><view><text>当前剩余</text><input type="number" value="{{item.remaining}}" placeholder="20" data-i="{{index}}" data-k="remaining" bindinput="pkg"/></view><view wx:if="{{item.type!=='赠送课程'}}"><text>单价（元）</text><input type="digit" value="{{item.price}}" placeholder="300.00" data-i="{{index}}" data-k="price" bindinput="pkg"/></view><view wx:else class="gift-note">赠送课不计销售业绩<br/>完课固定计收入 ¥80</view></view>
+        <view wx:if="{{item.type!=='赠送课程'}}" class="field-label">实际销售业绩</view><input wx:if="{{item.type!=='赠送课程'}}" class="input editor-input" type="digit" value="{{item.saleAmount}}" placeholder="填写这笔实际业绩" data-i="{{index}}" data-k="saleAmount" bindinput="pkg"/>
+        <view wx:if="{{item.type!=='赠送课程'}}" class="sale-date-row"><view><b>业绩归属日期</b><text>补录往月时选择实际成交日期</text></view><picker mode="multiSelector" range="{{item.dateRange}}" value="{{item.dateValue}}" data-i="{{index}}" bindcolumnchange="saleDateColumnChange" bindchange="saleDateChange"><view>{{item.saleDate}} ›</view></picker></view>
+        <!-- M2 V1：本次课包的可授课教练（按对方公开码）。销售业绩仍归创建销售的这位教练，管理权也不转移。
+             ⭐ 2026-09-29：赠课**同样适用** —— 复用同一个输入框（同一个 data-k / 同一条凭证 / 同一套 Design System），
+                不做第二套页面；发给名单里的人仍然只有授课权，管理权归发赠课的这位教练。 -->
+        <view class="field-label">可授课教练（多位用逗号分隔）</view><input class="input editor-input" value="{{item.teachingCodes}}" placeholder="例如：ABC123,DEF456（留空=只有你自己）" data-i="{{index}}" data-k="teachingCodes" bindinput="pkg"/>
+        <view wx:if="{{cloudPrimary}}" class="package-save" data-i="{{index}}" bindtap="savePackage">{{item.isNew?'保存这笔课程':'保存赠送课'}}</view>
+        <view class="remove" data-i="{{index}}" bindtap="removePkg">删除此课时包</view>
+      </block>
+      <!-- ⭐ 2026-10-02 · 本轮 UI 整理：课时包在**默认（非编辑）状态下**改成**横向紧凑卡片**。
+           ⛔ 为什么：旧版每个课时包竖着 5 行（购买课时 / 剩余课时 / 单价 / 销售业绩 / 业绩日期），
+              一个包就 190px，3 个包一屏放不下两个，每次进来都要来回滚。
+           ⭐ 现在一行一张卡：图标 + 名称 + 剩余/总量 + 进度条 + 单价（赠课显示"赠送"）+ 管理入口。
+           ⛔ 业务数据一个字没动，**入口一个都没少**：
+              · 单价 / 剩余 / 总量 都是 `form.packages` 里的**原值**（没做任何换算）；
+              · 编辑态 / 新增态的 head 与表单**一个字都没改**（只是 head 现在只在编辑态出现）。
+           ⭐ 2026-10-03 · 三件事（真机验收：含混的「管理」按钮 + 卡片点不动）：
+              ① 「管理」这个文案**废掉** —— 它没告诉教练点下去会发生什么；
+              ② 整张卡片**可点**（原来只有右侧那颗小按钮和业绩行能点，戳卡片主体没反应）；
+              ③ 分流按**能不能安全改销售数据**来，不按"新旧"：
+                 · 有唯一可确认的销售关联 ⇒ **编辑**（进 `openSaleEditor`，能改类型/总课时/销售数量/
+                   剩余/单价/业绩/业绩日期）；
+                 · 赠课 / 新包（不涉及销售记录）⇒ **编辑**（进 `togglePackageEdit`，能改课时与剩余）；
+                 · 查不到唯一销售关联的历史包 ⇒ **查看**（`togglePackageEdit`）⇒ 进去只看到
+                   「没有唯一可确认的销售关联，不能直接修改销售数据」+「检查并删除此课时包」。
+                 ⛔ 这一种是**故意不给编辑入口**：不是忘了做，是改了就会动到对不上的销售记录 / 收入。
+           ⛔ 卡片上的 `packageCardTap` 只做**分流**，它自己不写任何业务数据 ——
+              两条分支走的都是**原有的** `openSaleEditor` / `togglePackageEdit`。-->
+      <view wx:else class="pkg-card" data-id="{{item.id}}" data-i="{{index}}" bindtap="packageCardTap">
+        <view class="pkg-card-icon {{item.type==='赠送课程'?'gift':''}}">{{item.type==='赠送课程'?'赠':'课'}}</view>
+        <view class="pkg-card-main">
+          <view class="pkg-card-name">{{item.type}}</view>
+          <view class="pkg-card-facts">
+            <text class="pkg-card-left"><text class="pkg-card-left-num">{{item.remaining}}</text> / {{item.total}} 节</text>
+            <view class="pkg-card-bar"><view class="pkg-card-bar-fill {{item.type==='赠送课程'?'gift':''}}" style="width:{{item.total?item.remaining/item.total*100:0}}%"></view></view>
+            <text class="pkg-card-price">{{item.type==='赠送课程'?'赠送':(item.price?('¥'+item.price+'/节'):'未定价')}}</text>
+          </view>
+          <!-- ⛔ catchtap：业绩行自己进 openSaleEditor，别再冒到卡片上触发第二次分流。 -->
+          <view wx:if="{{item.saleAmount!==null||item.saleDate}}" class="pkg-card-sale" data-id="{{item.id}}" catchtap="openSaleEditor"><text>业绩 {{item.saleAmount===null?'—':'¥'+item.saleAmount}}</text><text class="pkg-card-sale-date">{{item.saleDate||'未记录'}}</text><text class="pkg-card-sale-more">›</text></view>
+        </view>
+        <view wx:if="{{!item.isNew && item.type!=='赠送课程' && item.canEditSale}}" class="pkg-card-manage" data-id="{{item.id}}" catchtap="openSaleEditor">编辑 ›</view>
+        <view wx:elif="{{item.isNew || item.type==='赠送课程'}}" class="pkg-card-manage" data-i="{{index}}" catchtap="togglePackageEdit">编辑 ›</view>
+        <view wx:else class="pkg-card-manage is-view" data-i="{{index}}" catchtap="togglePackageEdit">查看 ›</view>
+      </view>
+      <view wx:if="{{saleEditor && saleEditor.packageId===item.id}}" class="sale-editor">
+        <view class="sale-editor-title">修正这笔销售</view>
+        <view class="field-label">课程类型</view><picker range="{{saleTypes}}" range-key="name" bindchange="saleEditorType"><view class="input editor-input picker">{{saleEditor.type}}<text>⌄</text></view></picker>
+        <view class="sale-editor-grid"><view><text>课时包总课时</text><input type="number" value="{{saleEditor.total}}" data-k="total" bindinput="saleEditorField"/></view><view><text>销售数量</text><input type="number" value="{{saleEditor.quantity}}" data-k="quantity" bindinput="saleEditorField"/></view><view><text>当前剩余</text><input type="number" value="{{saleEditor.remaining}}" data-k="remaining" bindinput="saleEditorField"/></view><view><text>单价</text><input type="digit" value="{{saleEditor.unitPrice}}" data-k="unitPrice" bindinput="saleEditorField"/></view><view><text>实际销售业绩</text><input type="digit" value="{{saleEditor.amount}}" data-k="amount" bindinput="saleEditorField"/></view></view>
+        <view class="sale-editor-summary"><view><text>历史已使用</text><b>{{saleEditor.used}} 节</b></view></view>
+        <view class="sale-date-row"><view><b>业绩归属日期</b><text>销售与课时包将保持一致</text></view><picker mode="multiSelector" range="{{saleEditor.dateRange}}" value="{{saleEditor.dateValue}}" bindcolumnchange="saleEditorDateColumnChange" bindchange="saleEditorDateChange"><view>{{saleEditor.date}} ›</view></picker></view>
+        <view class="sale-editor-actions"><view class="sale-editor-cancel" bindtap="closeSaleEditor">取消</view><view class="sale-editor-save" bindtap="saveSaleEditor">保存修正</view></view>
+        <view class="remove" data-i="{{index}}" bindtap="removePkg">撤销这笔课程</view>
+      </view>
+    </view></block>
+    <view wx:if="{{finishedCount}}" class="finished-toggle" bindtap="toggleFinished"><text>已用完 {{finishedCount}} 个课时包，已收起</text><text class="finished-toggle-action">{{finishedExpanded?'收起':'展开查看 / 撤销'}}</text></view>
+    <view class="add-pkg" bindtap="addPkg">＋ 添加课时包</view>
+  </view>
+  <button wx:if="{{form.id}}" class="btn delete-student" bindtap="deleteFormStudent">删除学员</button>
+</scroll-view><view class="member-editor-action" catchtap="noop"><view class="editor-save{{saving?' is-saving':''}}" bindtap="save">{{saving?'正在保存…':'保存资料'}}</view></view></view>
+<view wx:if="{{modal && detail}}" class="action-mask" bindtap="close" catchtouchmove="noop"><view class="action-dialog" catchtap="noop"><view class="action-head"><view class="action-avatar">{{detail.initial}}</view><view><view class="action-name">{{detail.name}}</view><view class="hint">当前 {{detail.history.length}} 条约课</view></view></view><view class="package-summary"><view wx:for="{{detail.packages}}" wx:key="index"><text>{{item.type}}</text><b>剩余 {{item.remaining}} 节</b></view></view><view class="history-preview"><view class="history-title">最近约课</view><view wx:if="{{!detail.history.length}}" class="hint">暂无记录</view><block wx:for="{{detail.history}}" wx:key="id"><view wx:if="{{index<3}}" class="history-mini"><text>{{item.date}} {{item.time}}</text><text>{{item.status==='done'?'已完成':'待完成'}}</text></view></block></view><button class="action-primary" bindtap="bindMemberFromDetail">让会员绑定这份资料</button><button class="action-primary" bindtap="editFromDetail">编辑学员</button><button class="action-danger" bindtap="del">删除学员</button><view class="action-close" bindtap="close">关闭</view></view></view>
+<view wx:if="{{authorizedDetail}}" class="action-mask" bindtap="closeAuthorized" catchtouchmove="noop"><view class="action-dialog" catchtap="noop"><view class="action-head"><view class="action-avatar">{{authorizedDetail.initial}}</view><view><view class="action-name">{{authorizedDetail.name}}</view><view class="hint">{{authorizedDetail.phone}}</view></view></view><view wx:if="{{authorizedDetail.packages.length}}" class="course-list"><view wx:for="{{authorizedDetail.packages}}" wx:key="packageId" class="package course-item"><view class="course-line"><view class="course-name">{{item.type}}</view><view class="course-remain">{{item.left}} / {{item.total}} 节</view></view><view class="progress course-progress"><view class="course-progress-fill" style="width:{{item.percent}}%"></view></view><view class="hint">{{item.occupancy}}</view></view></view><view wx:else class="hint">还没有你有权使用的课时包。</view><view wx:if="{{authorizedDetail.upcoming.length}}" class="history-preview"><view class="history-title">未来预约</view><block wx:for="{{authorizedDetail.upcoming}}" wx:key="index"><view class="history-mini"><text>{{item.date}}</text><text>{{item.time}}</text></view></block></view><view class="history-preview"><view class="history-title">共享训练历史</view><view wx:if="{{!authorizedDetail.history.length}}" class="hint">暂无记录</view><block wx:for="{{authorizedDetail.history}}" wx:key="index"><view wx:if="{{index<3}}" class="history-mini"><text>{{item.date}}</text><text>{{item.items}}</text></view></block></view><!-- ⭐ 2026-10-06：旧「授权管理」入口已下线（谁能上课只由"添加联系人"决定），
+     这里改成**直接排课**：走 createAuthorizedBooking，云端按授权记录终判。 -->
+<view wx:if="{{authorizedDetail.packages.length}}" class="action-primary" bindtap="openBooking">去排课</view>
+<block wx:if="{{booking.open}}">
+  <view class="history-title">排一节课</view>
+  <view class="booking-row"><text class="booking-label">日期</text><picker mode="date" value="{{booking.date}}" bindchange="onBookingDate"><view class="booking-value">{{booking.date}}</view></picker></view>
+  <view class="booking-row"><text class="booking-label">时间</text><picker mode="time" value="{{booking.time}}" start="{{booking.timeStart}}" end="{{booking.timeEnd}}" bindchange="onBookingTime"><view class="booking-value">{{booking.time}}</view></picker></view>
+  <view class="booking-row"><text class="booking-label">时长</text><picker mode="selector" range="{{['60','90','120']}}" value="0" bindchange="onBookingMinutes"><view class="booking-value">{{booking.minutesText}} 分钟</view></picker></view>
+  <view class="booking-row"><text class="booking-label">课时包</text><picker mode="selector" range="{{booking.packages}}" range-key="type" value="0" bindchange="onBookingPackage"><view class="booking-value">{{booking.packageLabel}}</view></picker></view>
+  <view class="action-primary" bindtap="confirmBooking">确认排课</view>
+  <view class="action-close" bindtap="closeBooking">取消</view>
+</block>
+<button class="action-danger" bindtap="removeAuthorizedMember">移出我的会员列表</button>
+<view class="action-close" bindtap="closeAuthorized">关闭</view></view></view>
+<!-- ⛔ 2026-10-03 · 右下角「＋ 新增会员」悬浮胶囊**已删除**（与课表页那枚一起删）。
+     新增入口搬到标题行里的「＋新增」（.students-add），绑定仍是**同一个 `add`**。
+     ⛔ 为什么要删：它是 position:fixed，只要存在就必然浮在名单上 —— 上一版为了不遮挡，
+        专门给它留了 144rpx 的底部安全带，结果名单白白少用一大块（真机验收否掉了这个代价）。
+        按钮进标题行之后，它跟着内容滚，遮挡问题**结构性消失**，空间也还给了名单。 -->
+
+

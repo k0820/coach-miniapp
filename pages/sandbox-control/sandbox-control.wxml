@@ -1,0 +1,7 @@
+<view class="sandbox-page"><view class="sandbox-mark">TEST</view><view class="sandbox-title">沙盒测试环境</view><view class="sandbox-desc">假学员、假课包、假预约、假收入和假销售都保存在独立数据域。这里的操作不会修改正式区。</view><view class="sandbox-status">{{status}}</view>
+  <view class="sandbox-env {{sandbox?'on':''}}">本进程当前：{{sandbox?'测试区（可以跑 M2 验收）':'正式区（先点上面的按钮进入测试区）'}}</view>
+  <button class="primary" disabled="{{busy}}" bindtap="enter">进入教练端沙盒</button><button class="member" disabled="{{busy}}" bindtap="member">准备并进入会员端沙盒</button><button class="danger" disabled="{{busy}}" bindtap="reset">重置并进入教练端沙盒</button><button class="ghost" disabled="{{busy}}" bindtap="production">{{busy?'正在返回正式区…':'返回正式区'}}</button>
+  <navigator class="m2" url="/pages/sandbox-shared-test/sandbox-shared-test">M2 共享课时验收 · 临时测试入口 ›</navigator>
+  <view class="m2-note">共享码只是过渡期技术桥梁（最终是会员自己选教练），M3 上线后此入口下线。</view>
+  <view wx:if="{{!sandbox}}" class="m2-note warn">上面「沙盒已准备」说的是云端测试数据已存在，不等于你已经进来了 —— 现在仍在正式区，进去会被提示先进入沙盒。</view>
+</view>

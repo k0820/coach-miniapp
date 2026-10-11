@@ -1,0 +1,9 @@
+{
+  "name": "classReminderScheduler",
+  "version": "1.0.0",
+  "description": "课前提醒（上课前3小时 / 1小时）定时云函数 · 正式区",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

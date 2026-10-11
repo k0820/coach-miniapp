@@ -1,0 +1,85 @@
+<!-- 我的课时 / 课时包（2026-10-04 视觉整理 F）
+     ⭐ 三条结构纪律：
+       ① 顶部总剩余只是**一行摘要**（不占用整屏首屏）；
+       ② 每份**独立**课时包一屏说全七件事：类型 / 教练 / 购买日期 / 初始节数 / 已使用 / 剩余 / 状态；
+       ③ 状态读 `{{item.statusText}}`（人话），⛔ 本页任何地方都别渲染英文枚举 `{{item.status}}`。 -->
+<view class="member-page member-shell" style="{{themeStyle}}">
+  <view wx:if="{{notice.length}}" class="member-notice">
+    <view wx:for="{{notice}}" wx:key="*this" class="member-notice-line">· {{item}}</view>
+  </view>
+
+  <!-- ① 顶部：一行摘要。⚠️ 刻意**不用** `.member-hero` / `.member-display`：
+       86rpx 的大数字会占掉整屏首屏，而"一共还剩几节"只是入口信息，主角是下面逐份的课时包。 -->
+  <view class="member-card balance-head">
+    <view class="balance-line">
+      <!-- ⛔ 两种口径的文案**写在模板里**（不靠 JS 拼）：多份资料时必须让人看出"这是合计"，
+           否则用户会把 N 份资料的课时当成自己一个人的。 -->
+      <text class="balance-label">{{summary.multiple?'多份会员资料合计':'当前可用课时'}}</text>
+      <view class="balance-value"><text class="balance-num">{{summary.remaining}}</text><text class="balance-unit">节</text></view>
+    </view>
+    <!-- ⚠️ 口径说明必须**留在模板里**（这样才断言得到）：多份资料时明写"加在一起"，
+         单份资料时明写这个数怎么来的。⛔ 绝不让用户自己猜合计的口径。 -->
+    <view class="member-subtitle balance-note">{{summary.multiple?('这是 '+summary.archiveCount+' 份会员资料加在一起的总节数，不是一个人的课时；下面按资料分别列出'):'下面是每一份课时包各自登记的剩余节数，加在一起就是你现在能约的节数'}}</view>
+    <block wx:if="{{summary.multiple}}">
+      <view class="archive-balance-list">
+        <view wx:for="{{summary.breakdown}}" wx:key="archiveId" class="archive-balance-row">
+          <text class="archive-balance-name">{{item.name}}</text>
+          <text class="archive-balance-value">{{item.remaining}} 节</text>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <!-- ② 范围开关：只在**确实有多份资料**时出现（只有一份的人不需要理解"资料"这个概念）。
+       ⚠️ 开关的**口径**写在按钮上：打开 = 全部资料合计，关闭 = 只看当前资料。 -->
+  <view wx:if="{{multiple}}" class="scope-switch">
+    <view class="scope-switch-label">现在看的是<text class="scope-switch-name">{{scopeLabel}}</text></view>
+    <view class="scope-switch-btn" bindtap="toggleAll">{{showAll?'只看当前资料':'查看全部资料'}}</view>
+  </view>
+
+  <view class="member-section-title">课时包明细</view>
+  <view class="member-subtitle detail-note">每次购买与续课都各自独立保存，不做合并、不做换算；剩余节数以教练登记的为准</view>
+
+  <view wx:if="{{!groups.length}}" class="member-card member-empty">{{emptyText||'还没有可显示的课时包'}}</view>
+
+  <block wx:for="{{groups}}" wx:key="archiveId">
+    <view wx:if="{{item.grouped}}" class="archive-group-head">
+      <view class="archive-group-name">{{item.name}}</view>
+      <view class="member-subtitle">{{item.coachName}} · 这位会员还剩 {{item.remaining}} 节 · {{item.packageCount}} 个课时包</view>
+    </view>
+    <view wx:if="{{item.grouped && !item.packages.length}}" class="member-card member-empty">这位会员名下还没有课时包</view>
+
+    <!-- ③ 一份课包 = 一张卡，七件事一次说全（⛔ 少一件用户就得回头去问教练）。 -->
+    <view wx:for="{{item.packages}}" wx:for-item="pkg" wx:key="packageViewId" class="member-card package-card">
+      <view class="member-row member-spread package-head">
+        <view class="package-copy">
+          <view class="package-name">{{pkg.typeName}}</view>
+          <view class="member-subtitle">{{pkg.coachName}} · {{pkg.saleDateText}}</view>
+        </view>
+        <view class="member-pill {{pkg.statusTone}}">{{pkg.statusText}}</view>
+      </view>
+
+      <!-- 三个数：⛔ 刻意**不**做成三个等权重的大数字（那在暗示 total-used=remaining 这条并不总成立的等式）。
+           剩余是主角（它大一号、带主色），初始与已使用退成事实行。 -->
+      <view class="package-facts">
+        <view class="package-fact">
+          <text class="package-fact-label">当初登记</text>
+          <text class="package-fact-value">{{pkg.total}}</text>
+          <text class="package-fact-unit">节</text>
+        </view>
+        <view class="package-fact">
+          <text class="package-fact-label">已登记使用</text>
+          <text class="package-fact-value">{{pkg.used}}</text>
+          <text class="package-fact-unit">节</text>
+        </view>
+        <view class="package-fact strong">
+          <text class="package-fact-label">还剩</text>
+          <text class="package-fact-value">{{pkg.remaining}}</text>
+          <text class="package-fact-unit">节</text>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <view class="member-safe-bottom"></view>
+</view>

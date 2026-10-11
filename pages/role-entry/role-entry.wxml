@@ -1,0 +1,46 @@
+<view class="member-page member-shell role-page" style="{{themeStyle}}">
+  <view class="role-hero">
+    <view class="role-brand">
+      <view class="role-mark">
+        <view class="role-calendar-top"><view></view><view></view></view>
+        <view class="role-calendar-grid">
+          <view></view><view></view><view></view>
+          <view></view><view></view><view></view>
+          <view></view><view></view><view></view>
+        </view>
+        <view class="role-dumbbell"><view class="role-weight"></view><view class="role-bar"></view><view class="role-weight"></view></view>
+      </view>
+      <view class="role-brand-copy">
+        <view class="role-kicker">训练伙伴</view>
+        <view class="member-title role-title">选择使用身份</view>
+      </view>
+    </view>
+    <view class="member-subtitle role-lead">同一个微信，可以进入会员端或教练端</view>
+  </view>
+
+  <view class="role-choice-panel">
+    <view class="role-card" hover-class="role-card-pressed" bindtap="chooseMember">
+      <view class="role-icon member"><view class="role-person-head"></view><view class="role-person-body"></view></view>
+      <view class="role-copy">
+        <view class="role-label">会员端</view>
+        <view class="role-name">我是会员</view>
+        <view class="member-subtitle">看课时 · 约教练 · 查预约</view>
+      </view>
+      <view class="role-arrow">›</view>
+    </view>
+
+    <view class="role-divider"></view>
+
+    <view class="role-card" hover-class="role-card-pressed" bindtap="chooseCoach">
+      <view class="role-icon coach"><view class="role-board"><view></view><view></view><view></view></view></view>
+      <view class="role-copy">
+        <view class="role-label">教练端</view>
+        <view class="role-name">我是教练</view>
+        <view class="member-subtitle">管学员 · 排课程 · 记收入</view>
+      </view>
+      <view class="role-arrow">›</view>
+    </view>
+  </view>
+
+  <view class="role-tip"><view class="role-tip-dot"></view>系统会记住你的选择，下次打开直接进入</view>
+</view>

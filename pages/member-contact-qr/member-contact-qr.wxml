@@ -1,0 +1,18 @@
+<view class="member-page member-shell" style="{{themeStyle}}">
+  <view class="member-card qr-card">
+    <view class="member-section-title" style="margin-top:0">{{profile.displayName||'训练伙伴'}}</view>
+    <view class="member-subtitle" bindlongpress="copyCode">会员编号：{{publicCode||'正在生成'}}　<text wx:if="{{publicCode}}">（长按复制）</text></view>
+
+    <view wx:if="{{imageUrl}}" class="qr-frame"><image src="{{imageUrl}}" mode="widthFix" class="qr-image"/></view>
+    <view wx:else class="qr-frame qr-empty">{{drawing?'正在生成二维码…':'二维码还没生成'}}</view>
+
+    <view class="member-subtitle" style="margin-top:14rpx">让教练扫描这个二维码，就可以把你添加到他的会员列表。</view>
+    <view class="member-subtitle dim">二维码里只有临时票据，15 分钟后失效；公开会员编号可以长期使用。</view>
+    <view wx:if="{{note}}" class="qr-note">{{note}}</view>
+
+    <view class="qr-actions">
+      <view class="member-pill" bindtap="draw">{{drawing?'正在刷新…':'刷新二维码'}}</view>
+      <view class="member-pill" bindtap="save">{{saving?'正在保存…':'保存到相册'}}</view>
+    </view>
+  </view>
+</view>

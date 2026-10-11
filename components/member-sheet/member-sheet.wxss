@@ -1,0 +1,43 @@
+/* ⭐⭐ 会员端统一底部弹层。⛔ 不 import styles/member.wxss。
+ *
+ * ⛔ 为什么**不** import：
+ *   member.wxss 里的 `.member-page` 带 `padding-bottom:150rpx`、`.member-shell` 带一整套主题兜底，
+ *   那是**页面容器**的样式；弹层是一个 position:fixed 的浮层，import 进来只会让两套规则互相干扰
+ *   （例如 `.member-primary` 会把本组件的按钮改掉高度与配色）。
+ *   ⇒ 本组件自带全部样式，但**颜色一律读 `--member-*`**（自定义属性沿 DOM 继承，
+ *     调用方页面根节点上的 `style="{{themeStyle}}"` 会自动透到这里），
+ *   所以"弹窗强调色跟主题"这件事不需要调用方做任何事，也不会出现第二套配色。
+ */
+
+/* —— 遮罩 —— */
+.member-sheet-mask{position:fixed;left:0;right:0;top:0;bottom:0;z-index:60;display:flex;align-items:flex-end;background:var(--member-sheet-mask,rgba(12,40,30,.42))}
+
+/* —— 面板：顶部 32rpx 圆角（规格①）—— */
+.member-sheet{width:100%;box-sizing:border-box;max-height:88vh;display:flex;flex-direction:column;background:var(--member-surface,#ffffff);border-radius:32rpx 32rpx 0 0;box-shadow:0 -18rpx 50rpx rgba(12,40,30,.18);animation:memberSheetIn .24s cubic-bezier(.2,.8,.2,1)}
+@keyframes memberSheetIn{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+/* —— ① 拖动短横线 —— */
+.member-sheet-handle{width:72rpx;height:8rpx;border-radius:999rpx;background:var(--member-sheet-handle,#d3e3da);margin:14rpx auto 0;flex:0 0 auto}
+
+/* —— ② 标题 28rpx 加粗 + 右上关闭 —— */
+.member-sheet-head{display:flex;align-items:flex-start;gap:16rpx;padding:18rpx 32rpx 6rpx;flex:0 0 auto}
+.member-sheet-titles{flex:1;min-width:0}
+.member-sheet-title{font-size:28rpx;font-weight:800;color:var(--member-text,#22282e);line-height:1.4}
+.member-sheet-desc{font-size:24rpx;color:var(--member-text-sub,#757e86);line-height:1.5;margin-top:6rpx}
+.member-sheet-close{flex:0 0 auto;width:56rpx;height:56rpx;border-radius:50%;background:var(--member-surface-alt,#fafbfb);color:var(--member-text-sub,#757e86);font-size:38rpx;line-height:52rpx;text-align:center}
+
+/* —— ③ 内容区：⛔ max-height 用**视口百分比**，不用 rpx ——
+      小屏（SE ≈ 568pt）与大屏（Pro Max）能看到的行数必须成比例，
+      否则同一份 slot 在两种屏幕上露出的内容完全不同（"下面还有内容吗"变得看运气）。
+      scroll-view 本身还要吃掉一层高度，所以给的是 56vh 而不是更高。 —— */
+.member-sheet-body{max-height:56vh;padding:8rpx 32rpx 0;box-sizing:border-box}
+
+/* —— ④⑤ 底部操作区：固定（flex 子项，不参与滚动）+ 安全区（规格⑤）—— */
+.member-sheet-foot{display:flex;gap:16rpx;padding:20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));flex:0 0 auto;border-top:var(--member-divider,1rpx) solid var(--member-border,#e6e8ea)}
+.member-sheet-btn{flex:1;margin:0;height:84rpx;line-height:84rpx;border-radius:22rpx;font-size:28rpx;font-weight:750;padding:0}
+.member-sheet-btn::after{border:0}
+/* 主操作：强调色 = 当前主题的主色（弹窗强调色随主题走，不需要调用方传任何颜色） */
+.member-sheet-btn.primary{background:var(--member-primary);color:#fff}
+/* ⑦ 危险操作：统一红色（⛔ 全项目只有这一个危险红，不许各页面自己挑） */
+.member-sheet-btn.primary.danger{background:var(--member-danger);color:#fff}
+.member-sheet-btn.ghost{background:var(--member-surface,#ffffff);color:var(--member-primary);border:2rpx solid var(--member-border-strong,#d2d6da)}

@@ -1,0 +1,61 @@
+<!-- 2026-10-03 · 「当前使用档案」选择器（首页 / 我的 共用同一个组件，避免各页各写一遍） -->
+<view class="ap-root" style="{{themeStyle}}">
+  <!-- ① 一份都没有：如实说"没有档案"，并给重新认领的入口（由页面处理，这里只显示状态） -->
+  <view wx:if="{{mode==='none'}}" class="ap-bar ap-empty">
+    <view class="ap-label">还没有认领训练档案</view>
+    <view class="ap-hint">教练为你登记的学员记录，认领后才能在这里看到课时与训练记录</view>
+  </view>
+
+  <!-- ② 多份且没选过：⛔ 必须让人明确选，不许默认挑一份 -->
+  <view wx:elif="{{mode==='need-choice'}}" class="ap-bar ap-need" bindtap="openPicker">
+    <view class="ap-left">
+      <view class="ap-label ap-urgent">请选择当前使用哪份档案</view>
+      <view class="ap-hint">你有 {{archives.length}} 份档案，选哪一份，下面的课时、预约、训练记录就都看哪一份</view>
+    </view>
+    <view class="ap-action">去选择 ›</view>
+  </view>
+
+  <!-- ③ 已确定当前档案（自动选中或用户选过）：始终显示"当前使用的是哪一份" -->
+  <view wx:else class="ap-bar" bindtap="openPicker">
+    <view class="ap-left">
+      <view class="ap-label">
+        当前使用：{{currentName||'训练档案'}}
+        <text wx:if="{{autoSelected}}" class="ap-tag-soft">自动选中</text>
+      </view>
+      <view class="ap-hint">{{currentCoach}}{{archives.length>1?' · 共 '+archives.length+' 份档案，点这里可切换':' · 点这里可查看全部档案'}}</view>
+    </view>
+    <view class="ap-action">{{archives.length>1?'切换':'查看'}} ›</view>
+  </view>
+
+  <!-- 选择层：点遮罩关闭，内容区防穿透 -->
+  <view wx:if="{{open}}" class="ap-mask" catchtouchmove="noop" bindtap="closePicker"></view>
+  <view wx:if="{{open}}" class="ap-sheet" style="{{themeStyle}}">
+    <view class="ap-handle"></view>
+    <view class="ap-sheet-head">
+      <view class="ap-sheet-title">选择当前使用档案</view>
+      <view class="ap-sheet-close" bindtap="closePicker">×</view>
+    </view>
+    <view class="ap-sheet-sub">下面的课时、预约、训练记录都会跟着这份档案走</view>
+    <scroll-view class="ap-sheet-body" scroll-y>
+      <view
+        wx:for="{{archives}}"
+        wx:key="archiveId"
+        class="ap-item {{item.archiveId===currentId?'on':''}}"
+        data-id="{{item.archiveId}}"
+        bindtap="pick"
+      >
+        <view class="ap-item-left">
+          <view class="ap-item-name">
+            {{item.name}}
+          </view>
+          <view class="ap-item-sub">{{item.coachName}} · {{item.packageCount}} 个课时包</view>
+        </view>
+        <view class="ap-item-right">
+          <text class="ap-item-num">{{item.remaining}}</text><text class="ap-item-unit">节</text>
+          <text wx:if="{{item.archiveId===currentId}}" class="ap-item-on">使用中</text>
+        </view>
+      </view>
+    </scroll-view>
+    <view class="ap-sheet-foot"></view>
+  </view>
+</view>

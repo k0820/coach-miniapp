@@ -1,0 +1,803 @@
+{
+  "description": "健身教练管理微信小程序",
+  "compileType": "miniprogram",
+  "cloudfunctionRoot": "cloudfunctions/",
+  "libVersion": "3.6.6",
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "minified": true,
+    "postcss": false,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "appid": "wx7aa0596956732b35",
+  "projectname": "coach-miniapp",
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [
+      {
+        "type": "folder",
+        "value": "_ui-probe-out"
+      },
+      {
+        "type": "folder",
+        "value": "_probe-bak"
+      },
+      {
+        "type": "folder",
+        "value": "_probe-bak3"
+      },
+      {
+        "type": "folder",
+        "value": "tests"
+      },
+      {
+        "type": "folder",
+        "value": "_p19"
+      },
+      {
+        "type": "folder",
+        "value": "_p20"
+      },
+      {
+        "type": "folder",
+        "value": "_p21"
+      },
+      {
+        "type": "folder",
+        "value": "_p22"
+      },
+      {
+        "type": "folder",
+        "value": "_p23"
+      },
+      {
+        "type": "folder",
+        "value": "_p24"
+      },
+      {
+        "type": "folder",
+        "value": "_p25"
+      },
+      {
+        "type": "folder",
+        "value": "_p26"
+      },
+      {
+        "type": "folder",
+        "value": "_p27"
+      },
+      {
+        "type": "folder",
+        "value": "_p28"
+      },
+      {
+        "type": "folder",
+        "value": "_render-probe-out"
+      },
+      {
+        "type": "folder",
+        "value": "_backups"
+      },
+      {
+        "type": "folder",
+        "value": "_probe-bak2"
+      },
+      {
+        "type": "file",
+        "value": "_ctrl-exp-purge-page.txt"
+      },
+      {
+        "type": "file",
+        "value": "_ctrl-exp-tcb.txt"
+      },
+      {
+        "type": "file",
+        "value": "_probe.txt"
+      },
+      {
+        "type": "file",
+        "value": "_probe2.txt"
+      },
+      {
+        "type": "file",
+        "value": "_probe3.txt"
+      },
+      {
+        "type": "file",
+        "value": "_purge-page-test-restored.txt"
+      },
+      {
+        "type": "file",
+        "value": "_run-all-20260922-restored.txt"
+      },
+      {
+        "type": "file",
+        "value": "_run-all-summary.txt"
+      },
+      {
+        "type": "file",
+        "value": "_runall.txt"
+      },
+      {
+        "type": "file",
+        "value": "_sp.txt"
+      },
+      {
+        "type": "file",
+        "value": "_t3.txt"
+      },
+      {
+        "type": "file",
+        "value": "_tbd-test.txt"
+      },
+      {
+        "type": "file",
+        "value": "_tcb-restored.txt"
+      },
+      {
+        "type": "file",
+        "value": "_tcb-test1.txt"
+      },
+      {
+        "type": "file",
+        "value": "_tcb-test2.txt"
+      },
+      {
+        "type": "file",
+        "value": "_tcb-test3.txt"
+      },
+      {
+        "type": "file",
+        "value": "_ver-test.txt"
+      },
+      {
+        "type": "file",
+        "value": "_ver2-test.txt"
+      },
+      {
+        "type": "file",
+        "value": "_r8-check2.js"
+      },
+      {
+        "type": "file",
+        "value": "_r8-device-check.js"
+      },
+      {
+        "type": "file",
+        "value": "_r8-js-check.js"
+      },
+      {
+        "type": "file",
+        "value": "_r8-pkg-audit.js"
+      },
+      {
+        "type": "file",
+        "value": "_r8-pkg-diag.js"
+      },
+      {
+        "type": "file",
+        "value": "_r8-pkg-edit-shot.js"
+      },
+      {
+        "type": "file",
+        "value": "_r8-pkg-scroll-shot.js"
+      },
+      {
+        "type": "file",
+        "value": "_r8-quick-shot.js"
+      },
+      {
+        "type": "file",
+        "value": "_r8-shots.js"
+      },
+      {
+        "type": "file",
+        "value": "_r9-grid-measure.js"
+      },
+      {
+        "type": "file",
+        "value": "_regression-r9.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-r9b.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-r9c.txt"
+      },
+      {
+        "type": "file",
+        "value": "_r10-grid-measure.js"
+      },
+      {
+        "type": "file",
+        "value": "_r10-port-scan.js"
+      },
+      {
+        "type": "file",
+        "value": "_r10-shots-375.js"
+      },
+      {
+        "type": "file",
+        "value": "_regression-r10.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-r10b.txt"
+      },
+      {
+        "type": "file",
+        "value": "_formal-only-r10.txt"
+      },
+      {
+        "type": "file",
+        "value": "_deploy-log2.txt"
+      },
+      {
+        "type": "file",
+        "value": "_diag-r4.js"
+      },
+      {
+        "type": "file",
+        "value": "_ide-audit.txt"
+      },
+      {
+        "type": "file",
+        "value": "_ide-audit2.txt"
+      },
+      {
+        "type": "file",
+        "value": "_ide-windows2.txt"
+      },
+      {
+        "type": "file",
+        "value": "_IDENTITY_AUDIT_20261001.md"
+      },
+      {
+        "type": "file",
+        "value": "_m2b-regression.txt"
+      },
+      {
+        "type": "file",
+        "value": "_M2_acceptance_1.3.0.md"
+      },
+      {
+        "type": "file",
+        "value": "_M3_acceptance_P1.md"
+      },
+      {
+        "type": "file",
+        "value": "_M3_acceptance_P2.md"
+      },
+      {
+        "type": "file",
+        "value": "_M3_acceptance_P3.md"
+      },
+      {
+        "type": "file",
+        "value": "_M3_acceptance_P4.md"
+      },
+      {
+        "type": "file",
+        "value": "_M3_FIX_REPORT.md"
+      },
+      {
+        "type": "file",
+        "value": "_M3_realdevice_checklist.md"
+      },
+      {
+        "type": "file",
+        "value": "_mcp-tools.json"
+      },
+      {
+        "type": "file",
+        "value": "_mutate-m3p6.txt"
+      },
+      {
+        "type": "file",
+        "value": "_probe-banner-dbg.js"
+      },
+      {
+        "type": "file",
+        "value": "_r7-falsegreen.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20260927.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20260928.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20260928b.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20260928c.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20260928d.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20260928e.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20260930-final.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-2300-closeout.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-archive.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-authority.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-cancel-unread.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-cancel-visibility.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-cancelled-projection.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-cell-tap.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-history-order.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-m3-closeout.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-m3close.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-p2.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-p2b.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-p3.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-perf.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-picker.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-timewindow.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261001-timewindow3.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261002-endday-closeout.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261002-grid-bottom.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-20261002-verify-137.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-final.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-latest.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-m2v1.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-m2v1c.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-m2v1d.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-m2v1e.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-m2v1f.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-m2v1g.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-m2v1h.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-m2v1i.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-m3fix.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-m3p1.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-m3p2.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-m3p3.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-m3p4.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-m3p5.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-m3p6.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-P1.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-P1b.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-P1c.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-recovery-baseline.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-round5-final.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-round5.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-round7.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-round7b.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-round8.txt"
+      },
+      {
+        "type": "file",
+        "value": "_render-probe-banner.js"
+      },
+      {
+        "type": "file",
+        "value": "_render-probe-compact.js"
+      },
+      {
+        "type": "file",
+        "value": "_render-probe-round4.js"
+      },
+      {
+        "type": "file",
+        "value": "_render-probe-sandbox.js"
+      },
+      {
+        "type": "file",
+        "value": "_render-probe-small.js"
+      },
+      {
+        "type": "file",
+        "value": "_render-probe.js"
+      },
+      {
+        "type": "file",
+        "value": "_run-all.ps1"
+      },
+      {
+        "type": "file",
+        "value": "_run-round7.sh"
+      },
+      {
+        "type": "file",
+        "value": "_syntax-20260927.txt"
+      },
+      {
+        "type": "file",
+        "value": "_syntax-20260928.txt"
+      },
+      {
+        "type": "file",
+        "value": "_syntax-20260928b.txt"
+      },
+      {
+        "type": "file",
+        "value": "_syntax-20260928c.txt"
+      },
+      {
+        "type": "file",
+        "value": "_tmp_f1.txt"
+      },
+      {
+        "type": "file",
+        "value": "_tmp_f2.txt"
+      },
+      {
+        "type": "file",
+        "value": "_ui-probe-final.js"
+      },
+      {
+        "type": "file",
+        "value": "_ui-probe-round5.js"
+      },
+      {
+        "type": "file",
+        "value": "_upload-log-131.txt"
+      },
+      {
+        "type": "file",
+        "value": "_upload-log.txt"
+      },
+      {
+        "type": "file",
+        "value": "REG.txt"
+      },
+      {
+        "type": "file",
+        "value": "REG2.txt"
+      },
+      {
+        "type": "file",
+        "value": "r_m12.txt"
+      },
+      {
+        "type": "file",
+        "value": "r_m3.txt"
+      },
+      {
+        "type": "file",
+        "value": "r_m4.txt"
+      },
+      {
+        "type": "file",
+        "value": "r_p1_4_mut.txt"
+      },
+      {
+        "type": "file",
+        "value": "r_p1_5b.txt"
+      },
+      {
+        "type": "file",
+        "value": "r_p1_5_mut.txt"
+      },
+      {
+        "type": "file",
+        "value": "r_recheck.txt"
+      },
+      {
+        "type": "file",
+        "value": "r_t1.txt"
+      },
+      {
+        "type": "file",
+        "value": "r_t2.txt"
+      },
+      {
+        "type": "file",
+        "value": "r_t4.txt"
+      },
+      {
+        "type": "file",
+        "value": "r_t4b.txt"
+      },
+      {
+        "type": "file",
+        "value": "r_t4c.txt"
+      },
+      {
+        "type": "file",
+        "value": "r_wxml.txt"
+      },
+      {
+        "type": "file",
+        "value": "_fix-ignore.js"
+      },
+      {
+        "type": "file",
+        "value": "_fix-share-comment.js"
+      },
+      {
+        "type": "file",
+        "value": "_fix-time-comments.js"
+      },
+      {
+        "type": "file",
+        "value": "_m2b-mutate.js"
+      },
+      {
+        "type": "file",
+        "value": "_m2c-mutate.js"
+      },
+      {
+        "type": "file",
+        "value": "_m2d-mutate.js"
+      },
+      {
+        "type": "file",
+        "value": "_m2e-mutate.js"
+      },
+      {
+        "type": "file",
+        "value": "_m2f-mutate.js"
+      },
+      {
+        "type": "file",
+        "value": "_m2g-mutate.js"
+      },
+      {
+        "type": "file",
+        "value": "_m2h-mutate.js"
+      },
+      {
+        "type": "file",
+        "value": "_m2i-mutate.js"
+      },
+      {
+        "type": "file",
+        "value": "_mcp-probe.js"
+      },
+      {
+        "type": "file",
+        "value": "_r7-probe-page.js"
+      },
+      {
+        "type": "file",
+        "value": "_r7-probe-style.js"
+      },
+      {
+        "type": "file",
+        "value": "_repro-week-grid.js"
+      },
+      {
+        "type": "file",
+        "value": "_round7-acceptance.js"
+      },
+      {
+        "type": "file",
+        "value": "_screen.py"
+      },
+      {
+        "type": "file",
+        "value": "_slot-tri-state-evidence.js"
+      },
+      {
+        "type": "file",
+        "value": "_zoom-evidence.py"
+      },
+      {
+        "type": "file",
+        "value": "_add-ignore.js"
+      },
+      {
+        "type": "file",
+        "value": "_mutate-r10c.txt"
+      },
+      {
+        "type": "file",
+        "value": "_pkg-analysis.js"
+      },
+      {
+        "type": "file",
+        "value": "_regression-r10d.txt"
+      },
+      {
+        "type": "file",
+        "value": "_residue-audit.js"
+      },
+      {
+        "type": "file",
+        "value": "_add2.js"
+      },
+      {
+        "type": "file",
+        "value": "_frozen-fp.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-r11.txt"
+      },
+      {
+        "type": "file",
+        "value": "_src-fp-after.txt"
+      },
+      {
+        "type": "file",
+        "value": "_src-fp-before.txt"
+      },
+      {
+        "type": "file",
+        "value": "_formal-only-r11.txt"
+      },
+      {
+        "type": "file",
+        "value": "_regression-r12.txt"
+      },
+      {
+        "type": "file",
+        "value": "_upload-1.3.21.txt"
+      },
+      {
+        "type": "file",
+        "value": "_upload-1.3.22.txt"
+      }
+    ],
+    "include": []
+  },
+  "editorSetting": {}
+}

@@ -1,0 +1,7 @@
+<view class="page diagnostic-page">
+  <view class="card"><view class="title">Production 课程恢复诊断</view><view class="hint">临时只读工具。不会完课、扣课、改收入或清理队列。选定的课程退出后仍冻结发送。</view></view>
+  <view class="card"><view class="title">选择上午失败的课程</view><scroll-view scroll-y class="course-list"><view wx:for="{{candidates}}" wx:key="bookingId" class="course-row" data-id="{{item.bookingId}}" bindtap="choose">{{item.label}}{{selectedId===item.bookingId?' · 已冻结':''}}</view></scroll-view></view>
+  <view class="card"><view class="title">核查结论</view><text class="plain" selectable="true">{{plain}}</text></view>
+  <view wx:if="{{selectedId && !released}}" class="card"><view class="hint">只有重新核对本机无草稿/队列、云端仍未完课且没有收入后，才允许解除这节课的临时冻结。本按钮不会发送旧命令，也不会替你下课。</view><button type="warn" disabled="{{busy}}" loading="{{busy}}" bindtap="releaseForRecovery">核对并解除本节课冻结</button></view>
+  <view wx:if="{{detail}}" class="card"><view class="title">只读技术详情</view><text class="detail" selectable="true">{{detail}}</text></view>
+</view>

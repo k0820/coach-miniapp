@@ -1,0 +1,2 @@
+const member=require('../../utils/member-runtime'),theme=require('../../utils/member-theme')
+Page({data:{row:null,themeStyle:theme.cssVars()},onLoad(query){const data=member.cached()||{},id=decodeURIComponent(query.id||''),row=(data.recentTraining||[]).find(item=>item.historyId===id)||null;this.setData({row,themeStyle:theme.cssVars()});if(!row)wx.showModal({title:'记录暂不可用',content:'请返回刷新会员数据后重试。',showCancel:false})}})

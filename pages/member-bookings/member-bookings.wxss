@@ -1,0 +1,94 @@
+@import "../../styles/member.wxss";
+/* M3 P1 · 我的预约：只复用已确认的会员端 Design System（颜色/字体/圆角/间距/卡片），不新建视觉规范。 */
+/* ⭐ 每一行文字块都要 `flex:1;min-width:0` —— 没有 min-width:0，中文会被压成"一字一行"（M2-UI-02 的根因）。 */
+.booking-tabs{display:flex;gap:14rpx;margin:22rpx 0 4rpx}
+.booking-tab{flex:1 1 0;min-width:0;text-align:center;padding:18rpx 12rpx;border-radius:22rpx;background:var(--member-surface,#ffffff);border:2rpx solid var(--member-border-strong,#d2d6da);color:var(--member-text-sub,#757e86);font-size:26rpx;font-weight:750}
+.booking-tab.active{background:var(--member-primary);color:#fff;border-color:var(--member-primary)}
+.booking-card{padding:24rpx 26rpx}
+.booking-copy{flex:1;min-width:0}
+.booking-date{font-size:28rpx;font-weight:800;color:var(--member-text,#22282e);overflow-wrap:break-word}
+.booking-card-foot{margin-top:14rpx;padding-top:14rpx;border-top:var(--member-divider,1rpx) solid var(--member-border,#e6e8ea);font-size:var(--member-font-cap);color:var(--member-text-sub,#757e86);overflow-wrap:break-word}
+.booking-hint{text-align:center;color:var(--member-warning,#8a6f34);font-size:22rpx;padding:16rpx;background:var(--member-warning-soft,#f3eee2);border:var(--member-divider,1rpx) solid var(--member-border-strong,#d2d6da);border-radius:24rpx;margin-bottom:18rpx}
+/* ── 预约详情弹层：2026-10-04（H）**保留自建，但视觉与 member-sheet 逐项对齐** ──
+ * ⭐ 这是全项目**唯一**保留自建的会员端弹层，理由是它是信息展示型（不是确认型）：
+ *   它的正文是一整块 `.detail-hero`，而它的「取消预约」会再打开统一弹层，
+ *   它自己不需要"确认 / 取消"两颗对等主操作 ⇒ 换不成 member-sheet 的固定底部操作区。
+ * ⛔ 但下面这几条**刻意与 components/member-sheet 逐字同口径**（不是"差不多"，是一致）：
+ *   遮罩底色 --member-sheet-mask / 32rpx 顶圆角 / 拖动短线 / 28rpx 标题 / 安全区 / catchtouchmove。
+ *   ⇒ 两处弹层摆在一起是同一套视觉；唯一真实差异是"有没有底部固定操作区"。
+ *   （`tests/member-sheet-usage-and-layout.test.js` 会把这两组口径逐条比对，改一处必须改两处。） */
+.booking-detail-mask{position:fixed;left:0;right:0;top:0;bottom:0;background:var(--member-sheet-mask,rgba(12,40,30,.42));display:flex;align-items:flex-end;z-index:30}
+.booking-detail{width:100%;box-sizing:border-box;background:var(--member-surface,#ffffff);border-radius:32rpx 32rpx 0 0;padding:14rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));max-height:88vh;overflow-y:auto;box-shadow:0 -18rpx 50rpx rgba(12,40,30,.18)}
+/* 与组件 `.member-sheet-handle` 同口径（72×8rpx、居中、同一档底色） */
+.booking-detail-handle{width:72rpx;height:8rpx;border-radius:999rpx;background:var(--member-sheet-handle,#d3e3da);margin:0 auto 4rpx}
+/* 标题行：与组件 `.member-sheet-head` 同结构（标题 + 右侧关闭） */
+.booking-detail-head{display:flex;align-items:flex-start;gap:16rpx;padding:14rpx 0 6rpx}
+.booking-detail-close{flex:0 0 auto;width:56rpx;height:56rpx;border-radius:50%;background:var(--member-surface-alt,#fafbfb);color:var(--member-text-sub,#757e86);font-size:38rpx;line-height:52rpx;text-align:center}
+/* ⭐ M3-P2-2 · 详情首屏：把原来"八行 label/value 表格"换成一张三行读完的卡片。
+   ⛔ 只搬运已经确认的 Design System 取值（主色 / 圆角 / 分隔线 / 灰阶），不新建视觉规范。 */
+.detail-hero{margin-top:6rpx;padding:22rpx 0 18rpx;border-bottom:var(--member-divider,1rpx) solid var(--member-border,#e6e8ea)}
+.detail-date{flex:1;min-width:0;font-size:32rpx;font-weight:800;color:var(--member-text,#22282e);overflow-wrap:break-word}
+.detail-time{margin-top:10rpx;font-size:30rpx;font-weight:800;color:var(--member-primary)}
+.detail-meta{margin-top:8rpx;font-size:24rpx;color:var(--member-text-sub,#757e86);overflow-wrap:break-word}
+.detail-sub{margin-top:16rpx;font-size:var(--member-font-cap);color:var(--member-text-sub,#757e86);overflow-wrap:break-word}
+.booking-detail-row{display:flex;align-items:flex-start;justify-content:space-between;gap:20rpx;padding:16rpx 0;border-bottom:var(--member-divider,1rpx) solid var(--member-border,#e6e8ea)}
+/* ⚠️ `.booking-detail-row/-label/-value` 三条规则**保留**（详情弹层已不再使用它们，但
+   `m3-p2-member-booking-write-channel` ⑱ 的 UI 契约把"文字块必须 min-width:0 + 可断行"
+   钉在这几个类名上）。删掉它们会让一条仍然有效的护栏失去落点。 */
+.booking-detail-label{flex:0 0 auto;color:var(--member-text-sub,#757e86);font-size:24rpx}
+.booking-detail-value{flex:1;min-width:0;text-align:right;font-size:26rpx;font-weight:700;color:var(--member-text,#22282e);overflow-wrap:break-word}
+.booking-detail-summary{margin-top:18rpx;padding:18rpx 20rpx;background:var(--member-soft);border-radius:20rpx;color:var(--member-text,#22282e);font-size:24rpx;line-height:1.6;overflow-wrap:break-word}
+.booking-detail-btn{margin-top:26rpx;width:100%}
+.booking-detail-btn.off{opacity:.45}
+/* M3-P4 · 管理区：**只给「待上课」**，历史课 / 已取消的课不渲染这一块（wxml 里 `detail.canManage` 把关）。 */
+.booking-manage-title{margin-top:28rpx;font-size:26rpx;font-weight:800;color:var(--member-text,#22282e)}
+.booking-manage-note{margin-top:10rpx;padding:16rpx 18rpx;background:var(--member-warning-soft,#f3eee2);border:var(--member-divider,1rpx) solid var(--member-border-strong,#d2d6da);border-radius:18rpx;color:var(--member-warning,#8a6f34);font-size:22rpx;line-height:1.6;overflow-wrap:break-word}
+.booking-manage-actions{display:flex;gap:14rpx;margin-top:24rpx}
+/* ⭐ 两个按钮都要 `flex:1 1 0;min-width:0` ⇒ 窄屏（320）上不会被挤成"一字一行"。 */
+.booking-manage-btn{flex:1 1 0;min-width:0;line-height:76rpx;font-size:26rpx;padding:0 8rpx;overflow-wrap:break-word}
+.booking-manage-btn.danger{color:var(--member-danger,#a8453c);border-color:var(--member-danger,#a8453c)}
+/* M3-P4 · 改期面板：⭐⭐ 2026-10-04（H）**外壳已全部删除**，改用 `components/member-sheet`。
+   ⛔ 已删除（本页曾自建一份，与约课确认各写一套）：
+     .reschedule-mask（遮罩 + z-index 40 + 底色 .45）  → 组件
+     .reschedule-panel（面板 + 圆角 + 安全区 + max-height）→ 组件
+   ⚠️ 下面这些是**内容区（slot 内）**的样式，保留：
+   ⚠️ `.reschedule-panel` 的 `padding` 这条断言（`m3-p4` ㉕ 按它算窄屏格子宽度）
+     现在改由组件的 `.member-sheet-body` 提供 —— 见本文件末尾 `.reschedule-slot` 那一段。 */
+.reschedule-dates{width:100%;margin-top:18rpx;white-space:nowrap}
+.reschedule-dates-inner{display:inline-flex;gap:12rpx}
+.reschedule-date{width:104rpx;padding:14rpx 0;border-radius:22rpx;background:var(--member-surface,#ffffff);border:2rpx solid var(--member-border,#e6e8ea);text-align:center;flex:0 0 auto}
+.reschedule-date.active{background:var(--member-primary);border-color:var(--member-primary)}
+.reschedule-date-week{font-size:21rpx;color:var(--member-text-sub,#757e86)}
+.reschedule-date.active .reschedule-date-week{color:rgba(255,255,255,.82)}
+.reschedule-date-day{font-size:26rpx;font-weight:800;color:var(--member-text,#22282e);margin-top:4rpx}
+.reschedule-date.active .reschedule-date-day{color:#fff}
+/* ⭐ 与约课页 `.slot-grid` 同一套排版：4 栏 / gap 10rpx / 格子 90rpx（17 段 ⇒ 6 行 756rpx → 5 行 500rpx，少 34%）。
+   字号一个没缩（时间 25rpx / 状态 21rpx）⇒ 不是"缩字号换密度"。 */
+.reschedule-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10rpx;margin-top:18rpx}
+.reschedule-cell{box-sizing:border-box;background:var(--member-surface,#ffffff);border:2rpx solid var(--member-border,#e6e8ea);border-radius:24rpx;padding:10rpx 8rpx;text-align:center;min-height:90rpx;display:flex;flex-direction:column;align-items:center;justify-content:center}
+/* ⛔ 状态类名 = 状态名：`booked`（与 utils/package-occupancy.js 的 slotStateOf 返回值逐字相同）。
+   原来这里写 `.busy`，而 wxml 靠 `{{item.available?'':'busy'}}` 本地补一个类才生效 ——
+   同一个状态在三个文件里有两个名字，这就是"各页各打一份补丁"的病根。 */
+.reschedule-cell.booked{background:var(--member-slot-booked-bg,#e7f0e9);border-color:var(--member-slot-booked-line,#c3dbcb)}
+/* 已过时间：本面板过去**只有 busy 一条规则**，past 态没有样式 ⇒ 它和"可约"长得一样。
+   现在补齐三态（色值与 styles/slots.wxss 的 --slot-past-* 默认值逐字一致）。
+   ⛔ 本面板是有自己尺寸的第二个渲染器，但**状态口径与状态名和约课页完全相同**：
+      `reason` 直接进类名、文案取 `stateText` —— 本页不再自己算状态、也不自己拼文案。 */
+.reschedule-cell.past{background:var(--member-slot-past-bg,#f5f8f5);border-color:var(--member-slot-past-line,#e6ece7)}
+.reschedule-cell.picked{border-color:var(--member-primary);background:var(--member-soft)}
+.reschedule-time{font-size:25rpx;font-weight:800;color:var(--member-text,#22282e)}
+.reschedule-cell.booked .reschedule-time{color:var(--member-slot-booked-time,#7d9488)}
+.reschedule-cell.past .reschedule-time{color:var(--member-slot-past-time,#bcc7bf)}
+.reschedule-state{font-size:21rpx;color:var(--member-primary);margin-top:8rpx}
+.reschedule-cell.booked .reschedule-state{color:var(--member-slot-booked-text,#6d857a);font-weight:700}
+.reschedule-cell.past .reschedule-state{color:var(--member-slot-past-text,#c9d2cb)}
+.reschedule-picked{margin-top:20rpx;padding:18rpx 20rpx;background:var(--member-soft);border-radius:20rpx;color:var(--member-text,#22282e);font-size:24rpx;font-weight:700;overflow-wrap:break-word}
+.booking-archive{display:inline-block;margin-top:8rpx;padding:6rpx 14rpx;border-radius:999rpx;background:var(--member-surface-alt,#fafbfb);color:var(--member-text-sub,#757e86);font-size:22rpx;font-weight:700}
+/* ⭐ 历史卡片的「完成于 / 取消于」：比正文弱、比页脚强的一行小字（沿用既有灰阶，不新建视觉规范）。
+   ⛔ 只有真的记录下了那一刻才渲染 —— 没记录就是**不出现这一行**，不是显示一句"未记录"。 */
+.booking-event-at{display:block;margin-top:10rpx;font-size:22rpx;color:var(--member-text-sub,#757e86);font-weight:700;overflow-wrap:break-word}
+/* ⭐ 历史筛选：与页签同一套形状（圆角 / 边框 / 主色），只是更小一号 ⇒ 不像第二组页签那样抢视线。
+   ⛔ 三个都要 `flex:1 1 0;min-width:0` ⇒ 窄屏（320）不会被挤成"一字一行"。 */
+.history-filters{display:flex;gap:10rpx;margin:18rpx 0 4rpx}
+.history-filter{flex:1 1 0;min-width:0;text-align:center;padding:12rpx 8rpx;border-radius:18rpx;background:var(--member-surface,#ffffff);border:2rpx solid var(--member-border-strong,#d2d6da);color:var(--member-text-sub,#757e86);font-size:23rpx;font-weight:700;overflow-wrap:break-word}
+.history-filter.active{background:var(--member-primary);color:#fff;border-color:var(--member-primary)}

@@ -1,0 +1,104 @@
+<sandbox-banner/>
+<view class="schedule-page {{inSandbox?'with-banner':''}}">
+  <!-- ⭐ 2026-10-03 · 页面级下拉刷新的**紧凑加载提示**（1.3.11 真机反馈的修法之一）。
+       ⛔ 它替换掉的是原来 `scroll-view` 自带的 refresher 区域（默认一整块 45px 的三点空白，
+          只有时间网格下移、页头一动不动）。
+       现在整页是**唯一**的刷新容器 ⇒ 下拉时月份标题 / 月周日 / 选择日期 / 分享可约 / 星期标题 /
+       时间网格**一起**下移；松手后就地展开这一条（44rpx，不占大块高度），同步完成自动收回。
+       ⛔ height 不做 transition（瞬时就位）⇒ 占流高度一次到位，syncRowHeight 量到的就是终值，
+          不会量到动画中间态（那会让行高算小、底部被裁）。只有 opacity 过渡。
+       ⛔ 不许再画成"三个点"（那正是真机上被误认为"大块三点加载区"的东西）。 -->
+  <view class="refresh-hint {{refreshing?'on':''}}"><view class="refresh-hint-ring"></view><text>正在同步云端课表…</text></view>
+  <view class="top"><view class="top-title"><view style="font-size:34rpx">{{year}} 年 {{month}} 月</view><text style="font-size:21rpx">{{viewMode==='week'?weekRange:selectedLabel}}</text></view><view class="top-action" style="font-size:22rpx" bindtap="today">回到今天</view></view>
+  <view class="view-toolbar">
+    <view class="mode-tabs"><view style="font-size:23rpx" data-mode="month" class="{{viewMode==='month'?'on':''}}" bindtap="setView">月</view><view style="font-size:23rpx" data-mode="week" class="{{viewMode==='week'?'on':''}}" bindtap="setView">周</view><view style="font-size:23rpx" data-mode="day" class="{{viewMode==='day'?'on':''}}" bindtap="setView">日</view></view>
+    <view class="tool-link" style="font-size:23rpx" bindtap="openDateCalendar">选择日期</view>
+    <view class="tool-link" style="font-size:23rpx" bindtap="openShareAvailable">分享可约</view>
+  </view>
+
+  <view class="refresh-allow" bindtap="refreshScheduleNow">{{refreshAllowText}}</view>
+
+  <!-- ⭐ 会员取消了预约：这些课不再出现在课表上，但**必须**让教练看见是谁取消了哪几节
+       （不静默隐藏）。点击列出明细；没有任何"恢复/撤销"入口 —— 取消是会员的权利。 -->
+  <view wx:if="{{cancelNotice.count}}" class="cancel-notice" bindtap="showCancelledNotice">
+    <text class="cancel-notice-dot">已取消</text>
+    <text class="cancel-notice-text">会员新取消了 {{cancelNotice.count}} 节课<text wx:if="{{cancelNotice.latest}}"> · {{cancelNotice.latest}}</text></text>
+    <text class="cancel-notice-more">查看 ›</text>
+  </view>
+
+  <!-- 开发期入口：只在开发包显示（utils/release-flags.js 的 RELEASE_BUILD）。页面本身与底层能力都保留。 -->
+  <block wx:if="{{devEntries}}">
+    <navigator url="/pkg-diag/candidate-staging-test/candidate-staging-test" style="margin:12rpx 24rpx;padding:16rpx 20rpx;border:1rpx dashed #93a4bd;border-radius:16rpx;color:#64748b;font-size:24rpx;text-align:center;">临时测试入口：Candidate Staging Fixture</navigator>
+    <navigator url="/pkg-diag/cloud-cutover/cloud-cutover" style="margin:12rpx 24rpx;padding:16rpx 20rpx;border:1rpx dashed #93a4bd;border-radius:16rpx;color:#64748b;font-size:24rpx;text-align:center;">临时入口：真实云端切换</navigator>
+  </block>
+
+  <swiper wx:if="{{viewMode==='week'}}" class="week-swiper" style="{{cardHeightStyle}}" current="{{swiperCurrent}}" duration="{{swiperDuration}}" easing-function="easeOutCubic" bindchange="swiperChange">
+    <swiper-item wx:for="{{weekSlides}}" wx:key="key" class="week-swiper-item">
+      <view class="calendar week-calendar">
+        <view class="grid header"><view class="time"></view><view wx:for="{{item.days}}" wx:for-item="day" wx:key="date" class="day {{day.today?'today':''}}" style="font-size:22rpx">周{{day.week}}<text style="font-size:19rpx">{{day.md}}</text></view></view>
+        <!-- ⭐ 凌晨时段提示条：**这一周真有 00:00–05:59 的课才出现**。
+             默认自动展开（不藏课），点它可以收起 —— 收起后那 6 行**不进 DOM**，
+             但这条提示还在（写着有几节）⇒ 随时点回来，不是静默隐藏。
+             这两行文字里没有任何"写死的数字"：节数来自 `lateBlockOf()` 的数。 -->
+        <view wx:if="{{item.lateCount}}" class="late-bar" data-i="{{index}}" bindtap="toggleLate">
+          <text class="late-bar-tag">凌晨</text>
+          <text class="late-bar-text">00:00–06:00 有 {{item.lateCount}} 节课{{item.lateExpanded?'（已展开）':'（已收起）'}}</text>
+          <text class="late-bar-action">{{item.lateExpanded?'收起':'展开'}} ›</text>
+        </view>
+        <view class="rows-scroll">
+          <view wx:for="{{item.rows}}" wx:for-item="row" wx:key="hour" class="grid row-grid {{row.isLate?'row-late':''}}" style="{{rowHeightStyle}}"><view class="time" style="font-size:19rpx">{{row.time}}</view><view wx:for="{{row.cells}}" wx:for-item="cell" wx:key="date" class="cell {{cell.today?'today-column':''}}" hover-class="cell-active" data-date="{{cell.date}}" data-hour="{{cell.hour}}" bindtap="cell"><view wx:for="{{cell.bookings}}" wx:for-item="booking" wx:key="viewKey" class="booking {{booking.spansRows?'booking-spans':''}}" style="{{booking.blockStyle}};{{booking.slotStyle}}" data-id="{{booking.id}}" data-pending="{{booking.pendingKey}}" catchtap="booking"><text>{{booking.bookingText}}</text></view></view></view>
+        </view>
+      </view>
+    </swiper-item>
+  </swiper>
+
+  <view wx:elif="{{viewMode==='day'}}" class="calendar day-calendar {{calendarAnim}}" style="{{cardHeightStyle}}" bindtouchstart="periodTouchStart" bindtouchend="periodTouchEnd">
+    <view class="day-view-head">{{selectedDate}} · 日课表</view>
+    <view wx:if="{{dayLateCount}}" class="late-bar" bindtap="toggleLate">
+      <text class="late-bar-tag">凌晨</text>
+      <text class="late-bar-text">00:00–06:00 有 {{dayLateCount}} 节课（{{lateExpanded?'已展开':'已收起'}}）</text>
+      <text class="late-bar-action">{{lateExpanded?'收起':'展开'}} ›</text>
+    </view>
+    <view class="rows-scroll"><view wx:for="{{dayRows}}" wx:key="hour" class="day-row {{item.isLate?'row-late':''}}" style="{{rowHeightStyle}}"><view class="day-time">{{item.time}}</view><view class="day-cell {{item.cell.today?'today-column':''}}" data-date="{{item.cell.date}}" data-hour="{{item.cell.hour}}" bindtap="cell"><view wx:for="{{item.cell.bookings}}" wx:key="viewKey" class="day-booking" style="{{item.blockStyle}}" data-id="{{item.id}}" data-pending="{{item.pendingKey}}" catchtap="booking">{{item.studentName}} · {{item.dayLabel}}</view></view></view></view>
+  </view>
+
+  <view wx:else class="month-calendar {{calendarAnim}}" bindtouchstart="periodTouchStart" bindtouchend="periodTouchEnd"><view class="month-week"><text>一</text><text>二</text><text>三</text><text>四</text><text>五</text><text>六</text><text>日</text></view><view class="month-grid"><view wx:for="{{monthDays}}" wx:key="key" class="month-day {{item.blank?'blank':''}} {{item.today?'today-month':''}}" data-date="{{item.date}}" bindtap="monthDay"><text class="month-number">{{item.day}}</text><view wx:if="{{item.count}}" class="month-count"><b>{{item.count}}节课程</b></view></view></view></view>
+</view>
+
+<view wx:if="{{shareSheet}}" class="share-mask" bindtap="closeShareAvailable" catchtouchmove="noop">
+  <view class="share-sheet" catchtap="noop">
+    <view class="share-sheet-head">
+      <view><view class="share-sheet-title">分享可约</view><view class="share-sheet-hint">{{shareStage==='choose'?'选择要发送给学员的日期':'复制前先确认可预约时间'}}</view></view>
+      <view class="share-sheet-close" bindtap="closeShareAvailable">×</view>
+    </view>
+
+    <view wx:if="{{shareStage==='choose'}}" class="share-date-options">
+      <view class="share-date-row" bindtap="chooseShareToday"><view><b>今天</b><text>{{shareTodayLabel}}</text></view><i>›</i></view>
+      <view class="share-date-row" bindtap="chooseShareTomorrow"><view><b>明天</b><text>{{shareTomorrowLabel}}</text></view><i>›</i></view>
+      <picker mode="date" value="{{shareDate}}" bindchange="chooseShareDate"><view class="share-date-row"><view><b>选择日期</b><text>查看其他日期的可预约时间</text></view><i>›</i></view></picker>
+    </view>
+
+    <view wx:else class="share-preview">
+      <view class="share-preview-date">{{shareDateLabel}}</view>
+      <view class="share-preview-title">可预约</view>
+      <view wx:if="{{shareSlots.length}}" class="share-slot-list"><view wx:for="{{shareSlots}}" wx:key="*this" class="share-slot">{{item}}</view></view>
+      <view wx:else class="share-empty">当天暂时没有可预约时间</view>
+      <view class="share-question">{{shareSlots.length?'以上时段都可以选择合适的时间预约，你看几点方便？':'我们再看看其他日期吧。'}}</view>
+      <button class="share-copy" bindtap="copyShareAvailable">复制可约时间</button>
+      <view class="share-back" bindtap="backShareChoice">重新选择日期</view>
+    </view>
+    <view class="share-cancel" bindtap="closeShareAvailable">关闭</view>
+  </view>
+</view>
+
+<!-- ⛔ 2026-10-03 · 右下角「＋ 新建课程」胶囊**已删除**（真机验收：它压在课表右下角、
+     教练第一眼把它当成装饰；新建课程本来就靠**点空白时间格**进）。
+     ⛔ 唯一的新建入口 = 格子上的 `bindtap="cell"`（空格 ⇒ 新建课程弹层），业务规则一个字没改：
+        · 空格 → 新建课程（cellTapIntentOf 判 'create'）
+        · 已排课 → 打开这节课（'open'）
+        · 已过时间 → 按现有规则处理（同一条 cellTapIntentOf，不在这里分叉）
+     胶囊删掉后课表**不再让出**底部那条 104rpx 安全带 ⇒ 课表一路铺到 tabBar 上方，
+     腾出来的高度全部还给小时行（23:00 行更完整，不是"挤进去"）。
+     回归护栏：tests/week-grid-bottom.test.js 第 ④ 段（胶囊必须彻底不存在 + 行区吃满）。 -->
+<booking-modal visible="{{modal}}" preset-date="{{presetDate}}" preset-hour="{{presetHour}}" bindclose="closeModal" bindsaved="onBookingSaved" />
+

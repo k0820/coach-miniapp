@@ -1,0 +1,51 @@
+<view class="member-page member-shell" style="{{themeStyle}}"><member-sandbox-banner/>
+  <!-- ① 顶部：昵称 + 会员编号 + 编辑昵称 -->
+  <view class="member-card profile-head">
+    <view class="member-avatar big">{{initial}}</view>
+    <view class="profile-copy">
+      <view class="member-title">{{member.displayName||'训练伙伴'}}</view>
+      <view class="member-subtitle">会员编号 · {{publicCode||'正在生成'}}</view>
+      <view class="profile-rename" bindtap="openName">{{sandboxHint||'编辑昵称 ›'}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{errorText}}" class="member-card member-empty">{{errorText}}</view>
+
+  <!-- ③ 第二组：课时 / 预约 / 训练记录 -->
+  <view class="member-card">
+    <view class="member-list-row member-row member-spread" bindtap="packages">
+      <view>我的课时与课时包</view><view class="member-arrow">›</view>
+    </view>
+    <view class="member-list-row member-row member-spread" bindtap="bookings">
+      <view>我的预约</view><view class="member-subtitle">改期与取消 ›</view>
+    </view>
+    <view class="member-list-row member-row member-spread" bindtap="history">
+      <view>训练记录</view><view class="member-arrow">›</view>
+    </view>
+  </view>
+
+  <!-- 站内消息不受微信一次性订阅额度影响。 -->
+  <view class="member-card">
+    <view wx:if="{{inboxAvailable}}" class="member-list-row member-row member-spread" bindtap="openInbox">
+      <view>消息中心<text wx:if="{{inboxUnread>0}}" class="member-dot"> 未读 {{inboxUnread}} 条</text></view>
+      <view class="member-subtitle">不受微信次数限制 ›</view>
+    </view>
+  </view>
+
+  <!-- ⑤ 第四组：进入教练端 / 其他设置 -->
+  <button class="member-ghost" disabled="{{busy}}" bindtap="coachMode">{{busy?'正在返回…':'进入教练端'}}</button>
+
+  <view wx:if="{{nameOpen}}" class="name-mask" catchtouchmove="noop" bindtap="closeName"></view>
+  <view wx:if="{{nameOpen}}" class="name-sheet">
+    <view class="name-handle"></view>
+    <view class="name-title">改一下你的昵称</view>
+    <view class="name-sub">这个昵称会显示给已经添加你的教练。会员编号和微信身份不会改变。</view>
+    <input class="name-input" value="{{nameDraft}}" maxlength="30" placeholder="给自己起个名字" bindinput="onNameInput"/>
+    <view class="name-actions">
+      <view class="name-btn ghost" bindtap="closeName">取消</view>
+      <view class="name-btn {{nameBusy?'disabled':''}}" bindtap="saveName">{{nameBusy?'保存中…':'保存'}}</view>
+    </view>
+  </view>
+  <member-nav active="profile"/>
+</view>
+

@@ -1,0 +1,26 @@
+<view class="member-page member-shell" style="{{themeStyle}}">
+  <view class="member-row member-spread">
+    <view>
+      <view class="member-title">会员登录</view>
+      <view class="member-subtitle">用手机号找到你的专属会员资料</view>
+    </view>
+  </view>
+
+  <view wx:if="{{!available}}" class="member-card member-empty">{{note}}</view>
+
+  <block wx:else>
+    <view class="member-card">
+      <view class="member-section-title" style="margin-top:0">微信手机号一键登录</view>
+      <button class="member-primary" open-type="getPhoneNumber" bindgetphonenumber="onPhone" loading="{{busy}}" disabled="{{busy}}">使用微信手机号登录</button>
+      <view class="member-subtitle" style="margin-top:10rpx">授权后由云端核对你的会员资料，不会在本地留存手机号。</view>
+    </view>
+
+    <view wx:if="{{fallback}}" class="member-card">
+      <view class="member-section-title" style="margin-top:0">手动输入手机号（兜底）</view>
+      <input class="member-input" type="number" maxlength="11" placeholder="请输入注册时留的手机号" value="{{phone}}" bindinput="onPhoneInput" />
+      <button class="member-ghost" bindtap="onManualLogin" loading="{{busy}}" disabled="{{busy}}">用手机号登录</button>
+    </view>
+
+    <view wx:if="{{note}}" class="member-card member-empty">{{note}}</view>
+  </block>
+</view>

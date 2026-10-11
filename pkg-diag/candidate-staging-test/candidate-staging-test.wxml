@@ -1,0 +1,25 @@
+<view class="page">
+  <view class="card">
+    <view class="title">Candidate Staging 隔离验证</view>
+    <view class="hint">只使用代码内置 fixture，不读取本机 coachDB，不激活 dataset。</view>
+    <button class="primary" bindtap="begin" loading="{{busy}}" disabled="{{busy}}">开始 fixture candidate</button>
+    <button bindtap="continueUpload" disabled="{{busy || !ready}}">上传 / 继续</button>
+    <button bindtap="verify" disabled="{{busy || !ready}}">Verify 云端回读</button>
+    <button bindtap="status" disabled="{{busy || !ready}}">查看状态</button>
+    <button class="danger" bindtap="cleanup" disabled="{{busy || !ready}}">清理我的 Fixture Candidate</button>
+    <view class="progress">{{progress}}</view>
+  </view>
+  <view class="card"><text selectable="true" class="result">{{result}}</text></view>
+  <view class="card">
+    <view class="title">最新本机 coachDB → Candidate Dry-run</view>
+    <view class="hint">只有点击下方按钮才会读取本机 coachDB。不修改本机数据，不激活、不切换 head。</view>
+    <button bindtap="analyzeLegacySales" disabled="{{busy}}">只读分析历史课程销售</button>
+    <button bindtap="analyzeHistoricalBookings" disabled="{{busy}}">只读分析历史 Booking</button>
+    <button class="danger" bindtap="realDryRun" disabled="{{busy}}">开始真实 Candidate Dry-run</button>
+  </view>
+  <view class="card">
+    <view class="title">Pre-Activation Readiness Check</view>
+    <view class="hint">重新读取当前本机数据并只读核对 verified Candidate 与 active head；不会执行激活或切换数据源。</view>
+    <button class="primary" bindtap="preActivationReadiness" loading="{{busy}}" disabled="{{busy}}">开始切换前只读检查</button>
+  </view>
+</view>

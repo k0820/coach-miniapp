@@ -1,0 +1,16 @@
+<view class="wrap">
+  <view class="title">我的联系人二维码</view>
+  <view class="hint">让会员扫描这个二维码，就可以把你添加到他的教练列表。</view>
+  <view class="hint">教练编号：{{publicCode||'正在生成'}}</view>
+
+  <view class="card qr-card">
+    <view wx:if="{{imageUrl}}" class="qr-frame"><image src="{{imageUrl}}" mode="widthFix" class="qr-image"/></view>
+    <view wx:else class="qr-frame qr-empty">{{drawing?'正在生成二维码…':'二维码还没生成'}}</view>
+    <view wx:if="{{note}}" class="qr-note">{{note}}</view>
+    <view class="qr-actions">
+      <view class="btn ghost" bindtap="draw">{{drawing?'正在刷新…':'刷新二维码'}}</view>
+      <view class="btn ghost" bindtap="save">{{saving?'正在保存…':'保存到相册'}}</view>
+    </view>
+  </view>
+
+</view>

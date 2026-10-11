@@ -1,0 +1,34 @@
+<view class="notify-page">
+  <view class="notify-title">微信通知设置</view>
+  <view class="notify-subtitle">当前身份：{{roleText}}</view>
+
+  <!-- ⛔ 两套独立授权：一方授权**绝不代表**另一方也能收到。 -->
+  <view class="notify-card">
+    <view class="notify-section-title">谁会收到提醒</view>
+    <view class="notify-line">· 这一页设置的是<b>{{roleText}}</b>自己手机上收到的微信提醒。</view>
+    <view class="notify-line muted">{{scopeText}}</view>
+  </view>
+
+  <view class="notify-card">
+    <view class="notify-section-title">三个提醒模板</view>
+    <view wx:for="{{templates}}" wx:key="slot" class="notify-template">
+      <view class="notify-template-name">{{item.name}}</view>
+      <view class="notify-template-state">{{item.configured?'已在微信后台选用（…'+item.idTail+'）':'还没在微信后台选用'}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{configuredText}}" class="notify-card notify-empty">{{configuredText}}</view>
+
+  <button class="btn primary" disabled="{{busy||!configured}}" bindtap="allow">{{buttonText}}</button>
+
+  <!-- ⛔ 拒绝 / 额度用完之后给**明确退路**，⛔ 绝不停在一句"已开启"上 -->
+  <button wx:if="{{showOpenSetting}}" class="btn ghost" bindtap="openWechatSetting">{{openSettingText}}</button>
+  <view wx:if="{{quotaUsedText}}" class="notify-card notify-empty">{{quotaUsedText}}</view>
+
+  <view wx:if="{{statusText}}" class="notify-hint">{{statusText}}</view>
+
+  <view class="notify-card">
+    <view class="notify-section-title">一次同意能管多久</view>
+    <view class="notify-line">{{longTermNote}}</view>
+  </view>
+</view>

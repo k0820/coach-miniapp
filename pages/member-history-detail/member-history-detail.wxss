@@ -1,0 +1,1 @@
+@import "../../styles/member.wxss";.detail-head{background:var(--member-hero)}.detail-head .member-pill{margin-top:20rpx}.exercise{padding:20rpx 0;border-bottom:1rpx solid #edf2ef}.exercise:last-child{border-bottom:0}.exercise-name{font-size:28rpx;font-weight:760}.summary{line-height:1.75;color:#3e5e53}

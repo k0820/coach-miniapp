@@ -1,0 +1,71 @@
+<view class="wrap">
+  <view class="head">
+    <view class="title">readActive 只读诊断</view>
+    <view class="sub">只调云端查询，不写任何数据。页面打开即自动跑一次。</view>
+  </view>
+
+  <view class="card verdict {{running ? 'busy' : ''}}">
+    <view class="k">结论</view>
+    <view class="v">{{verdict}}</view>
+    <view class="k mt" wx:if="{{controlScope}}">通道范围</view>
+    <view class="v sm" wx:if="{{controlScope}}">{{controlScope}}</view>
+    <view class="tick" wx:if="{{running}}">{{tick}}</view>
+  </view>
+
+  <view class="card" wx:for="{{steps}}" wx:key="id">
+    <view class="row">
+      <view class="label">{{item.label}}</view>
+      <view class="ms {{item.ok ? 'pass' : 'fail'}}">{{item.ms}} ms</view>
+    </view>
+    <view class="line {{item.ok ? 'pass' : 'fail'}}">
+      {{item.ok ? (item.result.ok === false ? '已到达云端 · 云端拒绝 ' + item.result.code : '调用成功') : '调用失败'}}
+    </view>
+    <view class="mono" wx:if="{{!item.ok}}">errCode: {{item.errCode === null ? '(字段缺失)' : item.errCode}}</view>
+    <view class="mono" wx:if="{{!item.ok}}">errMsg&nbsp;: {{item.errMsg}}</view>
+    <view class="mono dim" wx:if="{{!item.ok && item.errorKeys.length}}">err字段: {{item.errorKeys}}</view>
+    <view class="mono" wx:if="{{item.ok && item.result.ok === false}}">code&nbsp;&nbsp;: {{item.result.code}}</view>
+    <view class="mono" wx:if="{{item.ok && item.result.ok !== false}}">
+      <block wx:if="{{item.id === 'metadata'}}">datasetId: {{item.result.datasetId}}&#10;dataRevision: {{item.result.dataRevision}}&#10;headVersion: {{item.result.headVersion}}</block>
+      <block wx:elif="{{item.id === 'integrity'}}">dataRevision: {{item.result.dataRevision}}&#10;checksum: {{item.result.checksum}}&#10;counts: {{item.result.physicalCounts}}</block>
+      <block wx:elif="{{item.id === 'page'}}">collection: {{item.result.collection}}&#10;done: {{item.result.done}} · nextCursor: {{item.result.nextCursor}} · payloadChars: {{item.result.payloadChars}}</block>
+      <block wx:elif="{{item.id === 'controlCommand'}}">found: {{item.result.found}} · status: {{item.result.status}}</block>
+      <block wx:elif="{{item.id === 'controlRead'}}">migrationVersion: {{item.result.migrationVersion}} · collections: {{item.result.collections}}</block>
+      <block wx:else>{{item.result}}</block>
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{relations}}">
+    <view class="k">⑥ 关系定位（谁挂在已消失的学员上）</view>
+    <view class="line {{relations.danglingCount ? 'fail' : 'pass'}}" wx:if="{{relations.ok}}">
+      断链 {{relations.danglingCount}} 条 · students {{relations.counts.students}} · tombstones {{relations.counts.tombstones}} · packages {{relations.counts.packages}}
+    </view>
+    <view class="mono" wx:if="{{relations.ok && relations.danglingCount}}">悬空套餐：{{relations.dangling}}</view>
+    <view class="mono" wx:if="{{relations.danglingFromSnapshot}}">旧迁移快照里是否还有这位学员：{{relations.danglingFromSnapshot}}</view>
+    <view class="mono" wx:if="{{!relations.ok}}">{{relations}}</view>
+  </view>
+
+  <view class="card">
+    <view class="k">本机落盘状态（只读）</view>
+    <view class="mono tiny" wx:if="{{local}}">
+dataSourceMode: {{local.dataSourceMode}}
+cache.datasetId: {{local.cache.datasetId}}
+cache.revision: {{local.cache.revision}}
+cache.updatedAt: {{local.cache.updatedAtText}}（{{local.cache.ageMinutes}} 分钟前）
+outbox: 条目 {{local.outbox.entryCount}} · seq {{local.outbox.seq}} · idMap {{local.outbox.idMapKeys}} · failed {{local.outbox.failedCount}}
+recoveryHold: {{local.recoveryHold}}
+bookingBindings: {{local.bookingBindingsPresent ? '存在' : '不存在'}}
+pendingBookingRequests: {{local.pendingBookingRequestCount}}</view>
+    <view class="mono tiny" wx:if="{{expanded && local && local.outbox}}">outbox 明细：
+{{local.outbox.entries}}</view>
+    <view class="mono tiny" wx:if="{{expanded && steps}}">步骤原文：
+{{steps}}</view>
+  </view>
+
+  <view class="btns">
+    <view class="btn primary" bindtap="run">重新诊断</view>
+    <view class="btn" bindtap="toggle">{{expanded ? '收起明细' : '展开明细'}}</view>
+    <view class="btn" bindtap="copyAll">复制结果</view>
+  </view>
+
+  <view class="foot">临时诊断页。删掉 pages/diag-readonly 与 app.json 里那一行即可完全移除。</view>
+</view>

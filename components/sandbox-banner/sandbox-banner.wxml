@@ -1,0 +1,1 @@
+<view wx:if="{{visible}}" class="sandbox-banner"><view><b>测试环境</b><text>这里全部是假数据，不会影响正式区</text></view><button disabled="{{returning}}" bindtap="exit">{{returning?'正在返回…':'返回正式区'}}</button></view>

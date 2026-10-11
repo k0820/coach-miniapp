@@ -1,0 +1,39 @@
+<view class="wrap">
+  <view class="title">{{member.displayName||'会员'}}</view>
+  <view class="hint">会员编号 · {{member.publicCode||'——'}}</view>
+
+  <view wx:if="{{errorText}}" class="card hint">{{errorText}}</view>
+
+  <view wx:if="{{summary}}" class="card">
+    <view class="row">
+      <view class="stat"><view class="num">{{summary.available}}</view><view class="label">可用课时</view></view>
+      <view class="stat"><view class="num alt">{{summary.occupied}}</view><view class="label">已占用</view></view>
+      <view class="stat"><view class="num weak">{{summary.used}}</view><view class="label">已完成</view></view>
+    </view>
+  </view>
+
+  <!-- ⛔ 非主管教练必须看到这一句（不是"把按钮藏起来就完事"） -->
+  <view wx:if="{{note}}" class="card hint strong">{{note}}</view>
+
+  <view class="card">
+    <view class="big-title">与我有关的预约与训练记录</view>
+    <view wx:for="{{history}}" wx:key="*this" class="hist-row">
+      <view>{{item.date}} {{item.hour}}:00</view>
+      <view class="hint">{{item.typeName}} · {{item.status==='done'?'已完成':(item.status==='cancelled'?'已取消':'待上课')}}</view>
+    </view>
+    <view wx:if="{{!history.length}}" class="hint">还没有和你有关的课程记录。</view>
+  </view>
+
+  <button class="btn primary" bindtap="schedule">安排课程</button>
+  <button wx:if="{{isOwner}}" class="btn ghost" bindtap="openEdit">修改昵称</button>
+
+  <view wx:if="{{editOpen}}" class="sheet">
+    <view class="card">
+      <view class="big-title">修改会员资料</view>
+      <view class="hint">只有主管教练能改核心昵称；会员编号和微信身份不会改变。</view>
+      <input class="input" maxlength="30" value="{{draftName}}" placeholder="会员昵称" bindinput="onDraftName"/>
+      <button class="btn primary" loading="{{busy}}" disabled="{{busy}}" bindtap="save">{{busy?'正在保存…':'保存'}}</button>
+      <button class="btn ghost" bindtap="closeEdit">取消</button>
+    </view>
+  </view>
+</view>

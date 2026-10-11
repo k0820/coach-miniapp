@@ -1,0 +1,38 @@
+<view class="page">
+  <view class="card">
+    <view class="title">真实数据云端迁移验证</view>
+    <view class="hint">本阶段只复制并校验，本机 coachDB 仍是主数据。</view>
+    <view class="meta-label">当前 coachId</view>
+    <view class="meta-value">{{coachId || '尚未获取'}}</view>
+    <view class="status">{{status}}</view>
+  </view>
+
+  <view wx:if="{{localSummary}}" class="card">
+    <view class="title">本地数据摘要</view>
+    <view class="summary-grid">
+      <view>学员<text>{{localSummary.students}}</text></view>
+      <view>课时包<text>{{localSummary.packages}}</text></view>
+      <view>预约<text>{{localSummary.bookings}}</text></view>
+      <view>已完成<text>{{localSummary.completedBookings}}</text></view>
+      <view>收入<text>{{localSummary.incomes}}</text></view>
+      <view>销售<text>{{localSummary.sales}}</text></view>
+      <view>自定义动作<text>{{localSummary.customExercises}}</text></view>
+    </view>
+    <button class="btn primary" bindtap="startMigration" loading="{{loading}}" disabled="{{loading || !coachId}}">开始迁移</button>
+  </view>
+
+  <view wx:if="{{result}}" class="card">
+    <view class="title">云端回读校验结果</view>
+    <view class="result-row"><text>迁移版本</text><b>{{result.migrationVersion}}</b></view>
+    <view class="result-row"><text>完整性</text><b>{{result.verified ? '通过' : '失败'}}</b></view>
+    <view class="result-row"><text>重复迁移</text><b>{{result.idempotent ? '已安全复用' : '首次完成'}}</b></view>
+    <view class="result-id">Migration ID：{{result.migrationId}}</view>
+    <view class="result-id">Checksum：{{result.checksum}}</view>
+  </view>
+
+  <view class="card">
+    <view class="title">Phase 6.4</view>
+    <view class="hint">迁移完成后，只读检查正式云集合与本机是否一致。</view>
+    <button class="btn ghost" bindtap="openCloudReadTest">进入云端只读验证</button>
+  </view>
+</view>

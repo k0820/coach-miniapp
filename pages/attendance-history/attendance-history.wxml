@@ -1,0 +1,10 @@
+<sandbox-banner/>
+<view class="page attendance-page">
+  <view class="hero"><view class="hero-title">出勤查询</view><view class="hero-hint">选择任意日期范围，查看已完成课程统计</view></view>
+  <view class="card filter-card">
+    <view class="quick"><button bindtap="previousMonth">上个月</button><button bindtap="currentMonth">本月</button></view>
+    <view class="date-grid"><picker mode="date" value="{{startDate}}" bindchange="startDate"><view class="date-box"><text>开始日期</text><b>{{startDate}}</b></view></picker><view class="arrow">→</view><picker mode="date" value="{{endDate}}" bindchange="endDate"><view class="date-box"><text>结束日期</text><b>{{endDate}}</b></view></picker></view>
+  </view>
+  <view class="summary"><view><b>{{total}}</b><text>完成课时</text></view><view><b>{{studentCount}}</b><text>上课会员</text></view><view><b>{{days}}</b><text>统计天数</text></view></view>
+  <view class="card result-card"><view class="result-head"><b>会员出勤排行</b><text>{{startDate}} 至 {{endDate}}</text></view><view wx:if="{{!list.length}}" class="empty">这个时间段暂无完课记录</view><view wx:for="{{list}}" wx:key="id" class="attendance-row"><view class="rank">{{index+1}}</view><view class="member"><b>{{item.name}}</b><text>{{item.detail}}</text></view><view class="count"><b>{{item.count}}</b><text>节</text></view></view></view>
+</view>

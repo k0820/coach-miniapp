@@ -1,0 +1,30 @@
+.wrap { padding: 24rpx 24rpx 60rpx; background: #f5f7fa; min-height: 100vh; box-sizing: border-box; }
+.head { padding: 8rpx 4rpx 20rpx; }
+.title { font-size: 40rpx; font-weight: 700; color: #182230; }
+.sub { margin-top: 8rpx; font-size: 24rpx; color: #64748b; line-height: 1.5; }
+
+.card { background: #ffffff; border-radius: 18rpx; padding: 24rpx; margin-bottom: 20rpx; box-shadow: 0 2rpx 10rpx rgba(15, 23, 42, 0.05); }
+.card.verdict.busy { border-left: 8rpx solid #d97706; }
+
+.k { font-size: 22rpx; color: #64748b; letter-spacing: 1rpx; }
+.k.mt { margin-top: 18rpx; }
+.v { margin-top: 10rpx; font-size: 30rpx; font-weight: 700; color: #182230; line-height: 1.45; }
+.v.sm { font-size: 26rpx; font-weight: 500; color: #334155; }
+.tick { margin-top: 12rpx; font-size: 24rpx; color: #d97706; }
+
+.row { display: flex; align-items: flex-start; justify-content: space-between; }
+.label { flex: 1; font-size: 26rpx; font-weight: 700; color: #182230; line-height: 1.4; }
+.ms { margin-left: 16rpx; font-size: 26rpx; font-weight: 700; }
+.line { margin-top: 12rpx; font-size: 26rpx; font-weight: 600; }
+.pass { color: #0f766e; }
+.fail { color: #b42318; }
+
+.mono { margin-top: 10rpx; font-family: Consolas, Menlo, monospace; font-size: 24rpx; color: #182230; word-break: break-all; line-height: 1.5; }
+.mono.dim { color: #64748b; }
+.mono.tiny { font-size: 22rpx; color: #334155; white-space: pre-wrap; }
+
+.btns { display: flex; gap: 16rpx; margin-top: 8rpx; }
+.btn { flex: 1; text-align: center; padding: 24rpx 0; border-radius: 14rpx; font-size: 28rpx; color: #182230; background: #ffffff; border: 1rpx solid #e2e8f0; }
+.btn.primary { background: #2563eb; color: #ffffff; border-color: #2563eb; font-weight: 700; }
+
+.foot { margin-top: 26rpx; font-size: 22rpx; color: #94a3b8; line-height: 1.6; }

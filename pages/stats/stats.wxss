@@ -1,0 +1,117 @@
+.stats-page{padding-top:24rpx}.overview-section,.attendance-section{padding:30rpx 26rpx}.section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18rpx}.section-head>view:first-child{min-width:0}.section-head .title{font-size:35rpx;color:var(--navy)}.text-entry{margin:0}.text-entry::after{border:0}
+.overview-numbers{margin-top:30rpx}.overview-number{display:inline-flex;width:50%;box-sizing:border-box;vertical-align:top;flex-direction:column;padding:0 20rpx 24rpx 0}.overview-number:nth-child(2){padding-left:24rpx;padding-right:0;border-left:1rpx solid var(--line)}.overview-number>text,.commission-total text{font-size:22rpx;color:var(--muted)}.overview-number>b{display:block;max-width:100%;margin-top:8rpx;font-size:43rpx;line-height:1.2;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:-1.5rpx}.overview-number .adaptive-money{font-size:clamp(31rpx,5.4vw,43rpx)}.overview-number small,.commission-total small{display:block;margin-top:7rpx;font-size:19rpx;color:var(--muted)}.commission-total{display:flex;align-items:center;justify-content:space-between;gap:20rpx;padding:22rpx 0;border-top:1rpx solid var(--line);border-bottom:1rpx solid var(--line)}.commission-total>view{min-width:0}.commission-total>b{font-size:39rpx;color:var(--accent2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.breakdown-area{display:grid;grid-template-columns:1fr 1fr;gap:30rpx;padding:23rpx 0 5rpx}.breakdown-group{min-width:0}.breakdown-title,.settings-title{font-size:22rpx;font-weight:800;color:#344054;margin-bottom:10rpx}.breakdown-row{display:flex;align-items:center;justify-content:space-between;gap:10rpx;padding:7rpx 0;color:#667085;font-size:20rpx}.breakdown-row>view{display:flex;align-items:center;min-width:0}.breakdown-row i{width:10rpx;height:10rpx;border-radius:50%;margin-right:8rpx;flex:none}.breakdown-row text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.breakdown-row b{font-size:20rpx;color:#344054;white-space:nowrap}.gift-row{border-top:1rpx solid #edf1f6;margin-top:5rpx;padding-top:10rpx}.breakdown-empty{font-size:20rpx;color:#9aa4b2;padding:7rpx 0}.text-entry{width:100%;padding:0;background:transparent;color:var(--accent2);font-size:22rpx;font-weight:750;line-height:68rpx;border-top:1rpx solid var(--line);border-radius:0;text-align:left}.text-entry text{float:right;font-size:30rpx;color:#91a0b4}
+.compact-head{align-items:center}.rank{padding:18rpx 2rpx;border-bottom:1rpx solid #e8edf4}.rank-index{display:inline-flex;width:36rpx;color:#9aa4b2;font-variant-numeric:tabular-nums}.count{font-weight:800;color:var(--accent2);font-size:21rpx}.detail{font-size:21rpx;color:#526071;background:var(--soft);border-radius:15rpx;padding:14rpx;margin-top:10rpx}.ranking-more{border-top:0;text-align:center}.ranking-more text{float:none;margin-left:8rpx}.empty-small{text-align:center;color:#8590a0;padding:28rpx}
+.settings-entry{display:flex;align-items:center;justify-content:space-between;padding:25rpx 28rpx}.settings-entry .title{font-size:28rpx}.entry-arrow{font-size:38rpx;color:#9aa6b5}
+.sale-mask{position:fixed;inset:0;z-index:50;background:rgba(15,33,61,.55);display:flex;align-items:flex-end;justify-content:center;box-sizing:border-box;backdrop-filter:blur(6px)}.sale-dialog{width:100%;max-height:88vh;overflow-y:auto;background:#fff;border-radius:34rpx 34rpx 0 0;padding:36rpx 30rpx calc(28rpx + env(safe-area-inset-bottom));box-sizing:border-box;box-shadow:0 -24rpx 70rpx rgba(10,32,68,.2)}.sale-dialog .title{font-size:33rpx;color:var(--navy)}.dialog-x{width:58rpx;height:58rpx;border-radius:50%;background:var(--soft);color:#607087;text-align:center;line-height:54rpx;font-size:38rpx;flex:none}.detail-dialog{max-height:72vh}.sale-row{display:flex;align-items:center;justify-content:space-between;padding:15rpx 2rpx;border-bottom:1rpx solid #eef2f7}.sale-row b,.sale-row text{display:block}.sale-row b{font-size:22rpx;color:#344054}.sale-row text{font-size:18rpx;color:#8a95a5;margin-top:3rpx}.sale-amount{font-size:23rpx!important;font-weight:800;color:var(--accent)!important;white-space:nowrap}
+.sale-mask{animation:statsMaskIn .18s ease-out both}.sale-dialog{animation:statsSheetIn .34s cubic-bezier(.22,.82,.24,1) both}.inline-save-status{position:fixed;z-index:80;left:50%;top:150rpx;transform:translateX(-50%);padding:14rpx 24rpx;border-radius:999rpx;background:rgba(19,43,79,.92);color:#fff;font-size:21rpx;box-shadow:0 10rpx 28rpx rgba(19,43,79,.2);animation:statsMaskIn .18s ease-out both}.stats-page button,.dialog-x,.history-tabs view,.sale-edit,.sale-delete,.safety-item{transition:transform .14s ease,opacity .14s ease,background-color .14s ease}.stats-page button:active,.dialog-x:active,.history-tabs view:active,.sale-edit:active,.sale-delete:active,.safety-item:active{transform:scale(.97);opacity:.72}@keyframes statsMaskIn{from{opacity:0}to{opacity:1}}@keyframes statsSheetIn{from{opacity:.4;transform:translate3d(0,52rpx,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+.history-dialog{max-height:90vh}.history-month{height:78rpx;margin-top:22rpx;padding:0 20rpx;display:grid;grid-template-columns:auto 1fr auto;align-items:center;background:#f7f9fc;border:1rpx solid var(--line);border-radius:18rpx;color:#60728b}.history-month b{text-align:center;color:#17345f;font-size:26rpx}.history-totals{display:grid;grid-template-columns:repeat(3,1fr);margin-top:18rpx;padding:18rpx 0;border-top:1rpx solid var(--line);border-bottom:1rpx solid var(--line)}.history-totals>view{text-align:center;border-right:1rpx solid var(--line);min-width:0}.history-totals>view:last-child{border-right:0}.history-totals text,.history-totals b{display:block}.history-totals text{font-size:18rpx;color:#77869a}.history-totals b{font-size:clamp(20rpx,3.4vw,25rpx);color:#17345f;margin-top:6rpx;white-space:nowrap}.history-section{margin-top:24rpx}.history-section-title{font-size:24rpx;font-weight:900;color:#263b5e;padding-bottom:9rpx;border-bottom:1rpx solid #e7ecf3}.history-row{display:flex;align-items:center;justify-content:space-between;padding:15rpx 2rpx;border-bottom:1rpx solid #edf1f6}.history-row b,.history-row text{display:block}.history-row b{font-size:22rpx;color:#344054}.history-row text{font-size:18rpx;color:#8a95a5;margin-top:4rpx}.history-amount{font-size:23rpx!important;font-weight:850;color:var(--accent)!important;white-space:nowrap}.history-table-head,.history-main{display:grid;grid-template-columns:minmax(0,1fr) 90rpx 170rpx;align-items:center;column-gap:10rpx}.history-table-head{padding:13rpx 4rpx 8rpx;color:#8793a4;font-size:18rpx}.history-table-head text:nth-child(2),.history-main>text:nth-child(2){text-align:center}.history-table-head text:nth-child(3),.history-main>text:nth-child(3){text-align:right}.history-student-row{padding:15rpx 4rpx;border-bottom:1rpx solid #edf1f6}.history-main b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:23rpx;color:#344054}.history-main>text:nth-child(2){font-size:22rpx;font-weight:800;color:#40516a}.history-types{margin-top:5rpx;font-size:18rpx;color:#8a95a5;letter-spacing:.3rpx}
+.history-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8rpx;margin-top:20rpx;padding:6rpx;background:var(--soft);border-radius:16rpx}.history-tabs view{text-align:center;padding:13rpx 8rpx;border-radius:12rpx;font-size:22rpx;font-weight:750;color:var(--muted)}.history-tabs .active{background:#fff;color:var(--accent2);box-shadow:0 2rpx 8rpx rgba(15,35,66,.06)}.history-tabs+.history-month{margin-top:14rpx}.history-row>view{min-width:0;flex:1}.history-row>view b,.history-row>view text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.history-row>.history-amount{flex:none;margin-left:18rpx}
+.sale-row-side,.history-sale-side{flex:none!important;display:flex;flex-direction:column;align-items:flex-end;margin-left:18rpx}.sale-item-actions{display:flex;align-items:center;justify-content:flex-end;gap:18rpx;margin-top:6rpx}.sale-edit,.sale-delete{display:block;padding:6rpx 0 2rpx;font-size:18rpx!important;font-weight:650;line-height:1.2}.sale-edit{color:var(--accent2)!important}.sale-delete{color:var(--muted)!important}.history-sale-side .history-amount{margin-left:0}
+.settings-dialog{max-height:86vh}.settings-group{padding:24rpx 0;border-bottom:1rpx solid var(--line)}.settings-group:last-child{border-bottom:0}.setting-grid{display:grid;grid-template-columns:1fr 1fr;gap:14rpx}.setting-grid .label,.sale-form-dialog .label{margin-top:10rpx}.setting-note{font-size:19rpx;color:var(--muted);margin-top:11rpx}.compact-input{height:70rpx;border-width:1rpx;border-radius:16rpx;margin-top:8rpx;font-size:24rpx;padding:0 18rpx}.compact-button{line-height:72rpx;border-radius:18rpx;margin-top:14rpx;font-size:24rpx}.settings-group>.compact-button{width:100%}.data-actions .backup-hint{margin-top:14rpx}.validity{gap:13rpx}.validity>view{flex:1;min-width:0}.validity .compact-input{font-size:20rpx;padding:0 10rpx}.close-sale{text-align:center;color:#778397;font-weight:650;padding:19rpx}.sale-form-dialog{max-height:88vh}
+@media (max-width:350px){.stats-page{padding-left:18rpx;padding-right:18rpx}.overview-section,.attendance-section{padding-left:20rpx;padding-right:20rpx}.section-head{gap:10rpx}.overview-number>b{font-size:35rpx}.overview-number .adaptive-money{font-size:29rpx}.commission-total>b{font-size:34rpx}.breakdown-area{gap:18rpx}.history-main,.history-table-head{grid-template-columns:minmax(0,1fr) 72rpx 140rpx}.setting-grid{grid-template-columns:1fr}}
+.overview-number .adaptive-money{font-size:35rpx}.history-totals b{font-size:23rpx}
+.metric-note{display:block;margin-top:7rpx;font-size:19rpx;color:var(--muted)}
+@media (max-width:350px){.overview-number .adaptive-money{font-size:29rpx}}
+
+/* 真机布局修复：收紧首屏密度，并阻止内容产生横向尺寸 */
+.stats-page{width:100%;max-width:100vw;box-sizing:border-box;overflow-x:hidden;padding-top:18rpx}
+.stats-page>.card{width:100%;max-width:100%;box-sizing:border-box;margin-left:0;margin-right:0}
+.overview-section,.attendance-section{padding:22rpx 24rpx;margin-bottom:14rpx}
+/* 原 .overview-section>.section-head / .head-actions（含 history-button / mini-add）已随层级整理删除：
+   月份切换上移到 .stats-head，「＋ 其他业绩」改为卡内 .text-entry，相关规则见文件末尾 */
+.overview-numbers{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);margin-top:18rpx;width:100%;max-width:100%;box-sizing:border-box}
+.overview-number{display:flex;width:auto;min-width:0;max-width:100%;padding:0 16rpx 16rpx 0;overflow:hidden}
+.overview-number:nth-child(2){padding-left:18rpx;padding-right:0}
+.overview-number>b{font-size:38rpx;line-height:1.15;margin-top:5rpx;letter-spacing:-1rpx;min-width:0;max-width:100%}
+.overview-number .adaptive-money{font-size:34rpx}
+.metric-note{margin-top:5rpx;font-size:18rpx;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.commission-total{grid-column:1/-1;min-width:0;max-width:100%;box-sizing:border-box;padding:15rpx 0;gap:12rpx}
+.commission-total>view{flex:1;min-width:0}
+.commission-total>b{flex:none;max-width:58%;font-size:34rpx;letter-spacing:-1rpx;overflow:hidden;text-overflow:ellipsis}
+.breakdown-area{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20rpx;width:100%;max-width:100%;box-sizing:border-box;padding:15rpx 0 2rpx}
+.breakdown-title{margin-bottom:5rpx}
+.breakdown-row{min-width:0;padding:5rpx 0;gap:6rpx}
+.breakdown-row>view{flex:1;min-width:0;max-width:100%}
+.breakdown-row b{flex:none;max-width:48%;overflow:hidden;text-overflow:ellipsis}
+.gift-row{margin-top:3rpx;padding-top:7rpx}
+.text-entry{width:100%;max-width:100%;box-sizing:border-box;line-height:56rpx}
+.attendance-section .section-head,.attendance-section .section-head>view:first-child{min-width:0}
+.attendance-section .stats-head-entry{flex:none;max-width:none}
+.rank{padding:15rpx 2rpx}
+.settings-entry{min-width:0}
+.settings-entry>view{min-width:0}
+
+@media (max-width:375px){
+  .stats-page{padding-left:18rpx;padding-right:18rpx}
+  .overview-section,.attendance-section{padding-left:20rpx;padding-right:20rpx}
+  .overview-number>b{font-size:34rpx}
+  .overview-number .adaptive-money{font-size:30rpx}
+  .commission-total>b{font-size:31rpx}
+  .breakdown-area{gap:16rpx}
+  .breakdown-row,.breakdown-row b{font-size:18rpx}
+}
+.commission-total>b{overflow:visible;text-overflow:clip}
+
+/* 设置弹层收尾：数据安全改为轻量列表（「历史结算」放大规则已随入口迁移到 .stats-head-entry） */
+.settings-dialog{padding-top:30rpx}
+.settings-dialog .settings-group{padding:18rpx 0}
+.settings-dialog .settings-title{margin-bottom:7rpx}
+.settings-dialog .setting-grid{gap:12rpx}
+.settings-dialog .setting-grid .label{margin-top:7rpx}
+.settings-dialog .compact-input{height:66rpx;margin-top:6rpx}
+.save-settings-button{grid-column:1/-1;width:100%;line-height:64rpx;margin-top:10rpx;font-size:23rpx}
+.safety-list{border-top:1rpx solid var(--line)}
+.safety-item{display:flex;align-items:center;justify-content:space-between;gap:18rpx;min-width:0;padding:17rpx 2rpx;border-bottom:1rpx solid var(--line)}
+.safety-item>view{flex:1;min-width:0}
+.safety-item b,.safety-item>view>text{display:block}
+.safety-item b{font-size:24rpx;font-weight:750;color:var(--text);line-height:1.4}
+.safety-item>view>text{margin-top:3rpx;font-size:19rpx;color:var(--muted);line-height:1.4}
+.safety-arrow{flex:none;color:var(--muted);font-size:31rpx}
+.safety-item.danger-item b{color:#bf5037}.safety-item.danger-item .safety-arrow{color:#bf5037}
+.data-actions .backup-hint{margin-top:13rpx;font-size:18rpx;line-height:1.5;color:var(--muted)}
+.cloud-verify-result{margin-top:16rpx;padding:18rpx 20rpx;border:1rpx solid var(--line);border-radius:16rpx;background:#f7f9fc}.cloud-verify-result b,.cloud-verify-result text{display:block}.cloud-verify-result b{font-size:23rpx;color:var(--navy);margin-bottom:9rpx}.cloud-verify-result text{font-size:19rpx;line-height:1.55;color:#607087}.cloud-verify-result .verify-detail{margin-top:7rpx;color:var(--muted)}
+
+/* 历史结算 · 课时明细（展开式）：沿用现有 Design System —— soft 底 + 15rpx 圆角 + 1rpx 描边 */
+.history-lesson-entry{margin-top:8rpx;font-size:19rpx;font-weight:750;color:var(--accent2)}
+.history-lessons{margin-top:10rpx;padding:10rpx 14rpx;background:var(--soft);border:1rpx solid var(--line);border-radius:15rpx}
+.history-lesson{padding:10rpx 0;border-bottom:1rpx solid #e3eaf3}
+.history-lesson:last-child{border-bottom:0;padding-bottom:2rpx}
+.history-lesson-top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:12rpx}
+.history-lesson-date{font-size:21rpx;font-weight:800;color:#344054;font-variant-numeric:tabular-nums;white-space:nowrap}
+.history-lesson-time{font-size:19rpx;color:#607087;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.history-lesson-amount{font-size:21rpx;font-weight:850;color:var(--accent);white-space:nowrap}
+.history-lesson-meta{display:flex;flex-wrap:wrap;gap:6rpx 14rpx;margin-top:5rpx}
+.history-lesson-meta text{font-size:18rpx;color:#8a95a5}
+
+/* 设置弹层滚动边界（原「顶部双操作」head-actions 规则已随层级整理删除） */
+.settings-dialog{height:76vh;max-height:76vh;overflow-x:hidden;box-sizing:border-box}
+.sandbox-entry{margin:18rpx 24rpx 0;padding:18rpx 24rpx;border:1rpx dashed #f59e0b;border-radius:18rpx;background:#fff8e7;color:#92400e;font-size:24rpx;text-align:center}
+
+/* ── 统计页层级整理（版式先在隔离项目 layout-lab 面板④ 验证）──
+   1) 月份切换：页首 .stats-head 大标题 + 「按月查看」胶囊，取代原卡片内「历史结算」按钮；
+   2) 紧凑数据卡：.stat-mini-row 四格取代原 3 列 attendance-summary + goal-line 进度条；
+   3) 统一入口：月份切换与「按日期查询」共用 .stats-head-entry；
+   4) 弱化设置：.settings-entry.ghost-entry 虚线轻量样式。
+   仅外观与层级，统计口径 / 数据源 / 各弹层逻辑均未改动。 */
+.stats-head{display:flex;align-items:center;justify-content:space-between;gap:16rpx;padding:4rpx 6rpx 18rpx}
+.stats-head-copy{min-width:0}
+.stats-month{font-size:36rpx;font-weight:850;color:var(--navy);letter-spacing:-.5rpx}
+.stats-month-sub{font-size:20rpx;color:var(--muted);margin-top:5rpx}
+/* 可点高度 = 34 + 15×2 = 64rpx，与旧「历史结算」同一可点标准；仍是浅色次级入口，不做成实心主按钮 */
+.stats-head-entry{flex:none;font-size:25rpx;font-weight:750;line-height:34rpx;padding:15rpx 22rpx;color:var(--accent2);background:#e8f0ff;border-radius:999rpx;white-space:nowrap;transition:transform .14s ease,opacity .14s ease}
+.stats-head-entry-on{transform:scale(.97);opacity:.72}
+.stat-mini-row{display:flex;gap:10rpx;margin-top:18rpx;padding-top:18rpx;border-top:1rpx solid var(--line)}
+.stat-mini{flex:1;min-width:0;text-align:center;background:var(--soft);border-radius:16rpx;padding:14rpx 6rpx}
+.stat-mini b{display:block;font-size:28rpx;font-weight:850;color:var(--accent2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat-mini text{display:block;font-size:18rpx;color:var(--muted);margin-top:3rpx;white-space:nowrap}
+.settings-entry.ghost-entry{background:transparent;border:1rpx dashed #d5dfec;box-shadow:none}
+.settings-entry.ghost-entry .title{font-size:26rpx;font-weight:750;color:#5f6d80}
+.settings-entry.ghost-entry .hint{font-size:19rpx;color:#9aa5b4}
+.settings-entry.ghost-entry .entry-arrow{color:#c3ccda}
+/* 不为窄屏（iPhone 6/7/8）单独缩字号：本页新规则全用 rpx，rpx 本身已按屏宽等比换算，
+   再叠一层 px 媒体查询只会把「按月查看」的可点高度压到 64rpx 以下，反而伤可用性。
+   最窄 375px 下实测算得到：页首 = 690rpx（副标题 ~400 + 胶囊 ~219），卡片内容 = 654rpx（四格各 ~156），均有余量。 */
+
+/* 📥 消息中心未读红点（2026-10-06） */
+.inbox-badge{color:#c9452f;font-weight:700}

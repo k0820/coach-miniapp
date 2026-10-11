@@ -1,0 +1,1 @@
+<view wx:if="{{sandbox}}" class="member-test-banner">TEST · 会员测试环境 · 假数据</view>

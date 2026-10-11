@@ -1,0 +1,18 @@
+<view class="page">
+  <view class="card">
+    <view class="title">CloudBase 隔离事务测试</view>
+    <view class="hint">只访问 coach_command_test_* 集合，不读取本机 coachDB。</view>
+    <button class="primary" loading="{{busy}}" disabled="{{busy}}" bindtap="reset">初始化我的测试数据</button>
+    <button disabled="{{busy}}" bindtap="completeAndRetry">完课 + 同 requestId 重试</button>
+    <button disabled="{{busy}}" bindtap="incomeRollback">模拟 income 失败回滚</button>
+    <button disabled="{{busy}}" bindtap="concurrentComplete">同 revision 并发完课</button>
+    <button disabled="{{busy}}" bindtap="reverseAndRollback">撤销销售失败/成功验证</button>
+    <button disabled="{{busy}}" bindtap="read">读取我的测试状态</button>
+    <button class="danger" disabled="{{busy}}" bindtap="cleanup">清理我的测试数据</button>
+  </view>
+  <view class="card" wx:if="{{state}}">
+    <view class="label">当前隔离 owner</view><text selectable>{{state.ownerCoachId}}</text>
+    <view class="label">dataRevision</view><text>{{state.dataRevision}}</text>
+  </view>
+  <view class="card"><view class="label">最近结果</view><text class="result" selectable>{{result}}</text></view>
+</view>
