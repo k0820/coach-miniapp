@@ -881,7 +881,8 @@ scenario('⑰ 【问题2】已完成窗口内再次点这门课：不得出现�
     assert.equal(world.counts.complete - base.complete, 0, '★ 绝不允许出现第二次完课事务')
     assert.equal(world.counts.content - base.content, 1, '训练内容只允许那一次提交，不得因再点一次而重复 flush')
     assert.equal(counters.modals.filter(item => String(item.title).includes('未完成')).length, 0, '⚠️ 真机根因：绝不允许弹「训练内容没有在云端确认保存」')
-    assert.equal(counters.modals.length, 0, '这条路径上不该有任何弹窗')
+    assert.equal(counters.modals.some(item=>String(item.title||'').includes('未完成')||String(item.title||'').includes('待确认')), false, '这条路径上不该有任何失败或待确认弹窗')
+    assert.equal(counters.modals.filter(item=>String(item.title||'')==='本节训练已记录').length, 1, '首次下课只显示一次关心提示，再点已完成课程不得重复弹')
     again.onHide(); await flush(4); again.onUnload(); await flush(4)
     assert.equal(world.counts.content - base.content, 1, '离开已完成课程也不得再 flush 一次')
     releaseComplete(); world.holdComplete = false

@@ -7,13 +7,10 @@
     "pages/stats/stats",
     "pages/session/session",
     "pages/attendance-history/attendance-history",
-    "pages/coach-migration-test/coach-migration-test",
-    "pages/coach-cloud-read-test/coach-cloud-read-test",
-    "pages/coach-command-test/coach-command-test",
     "pages/sandbox-control/sandbox-control",
     "pages/sandbox-shared-test/sandbox-shared-test",
-    "pages/diag-readonly/diag-readonly",
     "pages/member-login/member-login",
+    "pages/member-claim/member-claim",
     "pages/member-home/member-home",
     "pages/member-packages/member-packages",
     "pages/member-history/member-history",
@@ -27,7 +24,8 @@
     "pages/coach-add-member/coach-add-member",
     "pages/coach-contact-qr/coach-contact-qr",
     "pages/notification-inbox/notification-inbox",
-    "pages/coach-member-detail/coach-member-detail"
+    "pages/coach-member-detail/coach-member-detail",
+    "pages/coach-member-qr/coach-member-qr"
   ],
   "window": {
     "navigationBarTitleText": "教练日记",
@@ -51,7 +49,7 @@
       },
       {
         "pagePath": "pages/stats/stats",
-        "text": "统计"
+        "text": "我的"
       }
     ]
   },
@@ -60,17 +58,5 @@
     "sandbox-banner": "/components/sandbox-banner/sandbox-banner",
     "member-sandbox-banner": "/components/member-sandbox-banner/member-sandbox-banner"
   },
-  "sitemapLocation": "sitemap.json",
-  "subPackages": [
-    {
-      "root": "pkg-diag",
-      "name": "diagnostics",
-      "pages": [
-        "repair-orphan-tombstone/repair-orphan-tombstone",
-        "candidate-staging-test/candidate-staging-test",
-        "cloud-cutover/cloud-cutover",
-        "production-recovery-diagnostic/production-recovery-diagnostic"
-      ]
-    }
-  ]
+  "sitemapLocation": "sitemap.json"
 }

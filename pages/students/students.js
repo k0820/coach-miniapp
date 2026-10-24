@@ -2,7 +2,7 @@ const { TYPES } = require('../../utils/constants')
 const { getDB, saveDB, uid, timeStr } = require('../../utils/data-runtime')
 const { todayKey } = require('../../utils/beijing-date')
 const { initials } = require('../../utils/pinyin')
-const { validDateKey, resolveCourseSale, updateCourseSale, packageRemovalPlan, removePackageSafely, reverseSale } = require('../../utils/course-sales')
+const { validDateKey, resolveCourseSale, updateCourseSale } = require('../../utils/course-sales')
 const { currentStudent, deleteStudentAligned } = require('../../utils/local-business-rules')
 // ⭐ 开课时间窗口：**06:00–23:00 开课、每 30 分钟一档、且当天 24:00 前结束**（教练新建与会员自助同一条规则）。
 //   与云端 occupancy.js 同一把尺（本机孪生）。
@@ -50,7 +50,7 @@ Page(installAutoRefresh({
   //                （与课表页 `.schedule-page.with-banner` 同一条规则，同一个变量）；
   //   · scrollTarget 字母导航用的 `scroll-into-view` 目标（原来是 pageScrollTo，页面已不再自己滚）；
   //   · listRefreshing  滚动区内部下拉的状态（refresher-triggered 是**受控**属性，必须自己收）。
-  data:{students:[],groups:[],alphabet:[],modal:false,renewModal:false,detail:null,form:null,types:TYPES,saleTypes:TYPES.filter(t=>!t.gift),renewCount:0,renewPreview:'',renewList:[],profileEditing:false,packageEditing:{},saleEditor:null,sheetStyle:'',sheetClosing:false,cloudPrimary:false,finishedExpanded:false,finishedCount:0,authorizedDetail:null,booking:null,authorizedFailed:false,authorizedStale:false,inSandbox:false,sandboxHint:'',scrollTarget:'',listRefreshing:false,
+  data:{students:[],groups:[],alphabet:[],modal:false,renewModal:false,detail:null,form:null,types:TYPES,saleTypes:TYPES.filter(t=>!t.gift),renewCount:0,renewPreview:'',renewList:[],profileEditing:false,packageEditing:{},saleEditor:null,sheetStyle:'',sheetClosing:false,cloudPrimary:false,finishedExpanded:false,finishedCount:0,authorizedDetail:null,booking:null,authorizedFailed:false,authorizedStale:false,inSandbox:false,sandboxHint:'',scrollTarget:'',listRefreshing:false,qrPreparing:false,
   },
   noop(){},
   // 整屏保存与单笔保存共享同一把锁，点击当帧就反馈，直到表单回填完成才释放。
@@ -172,14 +172,52 @@ Page(installAutoRefresh({
       wx.showToast({title:'已移出，历史数据全部保留',icon:'none'})
     }finally{this._removingAuthorized=false}
   },
-  // ⭐ 2026-10-06：旧「多教练服务（授权其他教练）」页面已随认领方案一并下线。
-  //    ⇒ 谁能给这位会员上课，现在由**添加联系人**这一件事决定（添加即开通排课权）。
-  // ⭐ 新方案：这一颗按钮就是**添加会员**（手机号 / 扫码），跳到 coach-add-member。
-  addMemberFromEditor(){
+  // 为当前已经存在的学员资料生成固定专属二维码。
+  // 这里只把会员微信接到现有 studentId；不新建学员、不复制课包或预约。
+  async prepareOfficialStudentRef(localId,timeoutMs=12000){
+    const source=String(localId||'')
+    if(!source)return ''
+    const resolve=()=>typeof mutate.resolveLocalId==='function'?String(mutate.resolveLocalId(source)||''):source
+    let resolved=resolve()
+    if(resolved&&resolved.indexOf('loc_')!==0)return resolved
+    try{require('../../utils/sync-engine').resume()}catch(error){try{require('../../utils/sync-engine').schedule()}catch(ignore){}}
+    const started=Date.now()
+    while(Date.now()-started<timeoutMs){
+      await new Promise(done=>setTimeout(done,250))
+      resolved=resolve()
+      if(resolved&&resolved.indexOf('loc_')!==0)return resolved
+    }
+    return ''
+  },
+  prewarmMemberQr(localId){
+    const source=String(localId||'')
+    if(!source)return
+    const started=Date.now()
+    const observe=()=>{
+      const studentRef=typeof mutate.resolveLocalId==='function'?String(mutate.resolveLocalId(source)||''):source
+      if(studentRef&&studentRef.indexOf('loc_')!==0){directory.getMemberClaimQr(studentRef).catch(()=>{});return}
+      if(Date.now()-started>=12000)return
+      const timer=setTimeout(observe,400)
+      if(timer&&typeof timer.unref==='function')timer.unref()
+    }
+    observe()
+  },
+  async openDedicatedMemberQr(){
     const form=this.data.form
     if(!form||!form.id)return wx.showToast({title:'请先保存会员资料',icon:'none'})
+    // 新建学员会先得到一个 loc_student_… 本机临时编号，后台同步成功后再写入正式编号。
+    // 表单本身不会自动改掉旧编号，所以离开本页调用云端能力前必须从统一 idMap 现读现用。
+    // 绝不能把临时编号直接交给二维码云函数，否则云端只能误报“找不到这位学员”。
+    if(this.data.qrPreparing)return
+    this.setData({qrPreparing:true})
+    wx.showLoading({title:'正在准备二维码',mask:true})
+    const studentRef=await this.prepareOfficialStudentRef(form.id)
+    wx.hideLoading()
+    this.setData({qrPreparing:false})
+    if(!studentRef)return wx.showModal({title:'资料还在同步',content:'网络较慢，系统会继续自动同步。请保持联网后再点一次生成，不需要下拉刷新。',showCancel:false})
+    if(String(form.id).indexOf('loc_')===0)this.setData({'form.id':studentRef})
     this.finishClose()
-    wx.navigateTo({url:`/pages/coach-add-member/coach-add-member?studentKey=${encodeURIComponent(form.id)}`})
+    wx.navigateTo({url:`/pages/coach-member-qr/coach-member-qr?studentRef=${encodeURIComponent(studentRef)}`})
   },
   // ───────────────────────────────────────────────────────────────────────────
   // 给「已添加的会员」排一节课（2026-10-06：取代旧的「多教练服务」授权工作台）
@@ -392,7 +430,25 @@ Page(installAutoRefresh({
     return {ok:true,command:'createCourseSale',payload:{studentId,type:pkg.type,total,remaining,quantity:total,unitPrice:Number(pkg.price),amount:Number(pkg.saleAmount),date:pkg.saleDate,...(teachingPublicCodes.length?{teachingPublicCodes}:{})}}
   },
   async persistPackage(e){const index=+e.currentTarget.dataset.i,pkg=this.data.form.packages[index];if(!mutate.isCloudWritePath()||!pkg)return;const total=Number(pkg.total),remaining=Number(pkg.remaining);if(!Number.isInteger(total)||total<=0||!Number.isInteger(remaining)||remaining<0)return wx.showToast({title:'请填写有效课时数',icon:'none'});let built;if(pkg.isNew){built=this.newPackageCommand(pkg,this.data.form.id);if(!built.ok)return wx.showToast({title:built.message,icon:'none'})}else built={command:'updatePackage',payload:{packageId:pkg.id,total,remaining}};return mutate(null,null,{key:`${built.command}:${pkg.id}`,command:built.command,payload:built.payload,successTitle:pkg.isNew?'课程已新增':'赠送课已更新',onSuccess:async()=>{this.render();this.openEditor(this.data.form.id)}})},
-  removePkg(e){const index=+e.currentTarget.dataset.i,pkg=this.data.form.packages[index];if(!pkg)return;if(pkg.isNew){const packages=this.data.form.packages.filter((_,i)=>i!==index);return this.setData({'form.packages':packages,packageEditing:{}})}if(mutate.isCloudWritePath()){if(!pkg.canEditSale&&pkg.type!=='赠送课程')return wx.showModal({title:'历史只读',content:'这条旧课程没有唯一销售关系，不能撤销。',showCancel:false});const command=pkg.type==='赠送课程'?'deletePackage':'reverseCourseSale',payload=command==='deletePackage'?{packageId:pkg.id}:{saleId:pkg.saleId,packageId:pkg.id};return wx.showModal({title:command==='deletePackage'?'删除赠送课':'撤销这笔课程',content:command==='deletePackage'?'仅在没有预约和使用历史时可以删除。':'已完成课程和历史收入会保留，未完成预约会取消。',confirmColor:'#c7563d',success:async r=>{if(r.confirm)await mutate(null,null,{key:`${command}:${pkg.id}`,command,payload,successTitle:command==='deletePackage'?'赠送课已删除':'课程已撤销',onSuccess:async()=>{this.render();this.openEditor(this.data.form.id)}})}})}const db=getDB(),plan=packageRemovalPlan(db,this.data.form.id,pkg.id);if(plan.kind==='missing')return wx.showToast({title:'该课时包已不存在',icon:'none'});if(plan.kind==='blocked'||(plan.kind==='sale'&&plan.salePlan.kind==='blocked'))return wx.showModal({title:'无法安全撤销',content:plan.message||(plan.salePlan&&plan.salePlan.message),showCancel:false,confirmText:'知道了'});const removesSale=plan.kind==='sale',bookedCount=removesSale?(plan.salePlan.bookedCount||0):0,content=removesSale?`撤销后销售业绩失效，这笔课程将停用且剩余课时归零。${bookedCount?`\n这笔课程还有${bookedCount}个未完成预约，撤销后将同时取消。`:''}\n已经完成的课程和历史收入不会删除。`:'将删除这个没有销售和课程记录的课时包。';wx.showModal({title:removesSale?'撤销这笔课程':'删除课时包',content,confirmColor:'#c7563d',success:r=>{if(!r.confirm)return;const result=removesSale?reverseSale(plan.saleId,plan.salePlan.kind):removePackageSafely(this.data.form.id,pkg.id,plan.kind);if(!result.ok)return wx.showToast({title:result.message,icon:'none'});const packages=this.data.form.packages.filter(item=>item.id!==pkg.id);this.setData({'form.packages':packages,packageEditing:{},saleEditor:null});this.render();wx.showToast({title:removesSale?'这笔课程已撤销':'课时包已删除'})}})},
+  removePkg(e){
+    const index=+e.currentTarget.dataset.i,pkg=this.data.form.packages[index]
+    if(!pkg)return
+    if(pkg.isNew){const packages=this.data.form.packages.filter((_,i)=>i!==index);return this.setData({'form.packages':packages,packageEditing:{}})}
+    const content='将从当前会员资料中删除这个课时包，并先取消它所有未上预约。销售业绩、已经上完的课程、训练内容和历史收入都会保留。'
+    wx.showModal({title:'删除这个课时包？',content,confirmColor:'#c7563d',confirmText:'确认删除',success:async answer=>{
+      if(!answer.confirm)return
+      if(mutate.isCloudWritePath()){
+        await mutate(null,null,{key:`deletePackage:${pkg.id}`,command:'deletePackage',payload:{packageId:pkg.id},successTitle:'课时包已删除',onSuccess:async()=>{this.render();this.openEditor(this.data.form.id)}})
+        return
+      }
+      const db=getDB(),student=db.students.find(item=>item.id===this.data.form.id),target=student&&(student.packages||[]).find(item=>item.id===pkg.id)
+      if(!target)return wx.showToast({title:'该课时包已不存在',icon:'none'})
+      db.bookings=(db.bookings||[]).filter(booking=>!(booking.studentId===student.id&&booking.packageId===pkg.id&&booking.status!=='done'))
+      target.remaining=0;target.status='reversed';target.closedAt=Date.now();target.closedReason='package-deleted'
+      saveDB(db)
+      this.render();this.openEditor(this.data.form.id);wx.showToast({title:'课时包已删除',icon:'none'})
+    }})
+  },
   save(){return this.persistStudent(false)},
   // 失败必须说清楚：中途失败**绝不允许**报"全部成功"。
   reportSaveFailure(message,options){const detail=options&&options.detail,partial=!!(options&&options.partial),code=detail&&detail.code,reason=detail&&detail.message?`（${detail.message}）`:(code&&SAVE_FAILURE_HINTS[code]?`（${SAVE_FAILURE_HINTS[code]}）`:'');wx.showModal({title:partial?'部分保存成功':'保存失败',content:`${message}${reason}。${partial?'已保存的内容不会重复创建，请修正后重新点一次保存。':'请检查后重试。'}`,showCancel:false,confirmText:'知道了'})},
@@ -401,6 +457,7 @@ Page(installAutoRefresh({
   // 任何一步失败都如实告知并**原地保留她的输入**；重试只补没成功的那几笔，绝不建第二个学员。
   async saveStudentContents(confirmInconsistent){
     const f=this.data.form
+    const wasCreating=!f.id
     if(mutate.isCloudWritePath()){
       if(!f.name.trim())return wx.showToast({title:'请填写姓名',icon:'none'})
       // ① 先把所有"还没保存"的课时包校验完 —— 前置校验不通过时云端一个字节都不许动。
@@ -417,7 +474,7 @@ Page(installAutoRefresh({
         prepared.push({index:drafts[n].index,command:built.command})
       }
       // ★ 本机原子批次：**新增**与**新增失败后的重试**走同一条实现。
-      //   真机故障（「姜来」）：第一次保存课时包那几笔没成功 → form.id 已被写上 →
+      //   历史真机故障：第一次保存课时包那几笔没成功 → form.id 已被写上 →
       //   用户再点一次保存时 `!f.id` 不再成立 → 掉到下面那条旧路径 → 课时包继续走云端先行的
       //   createPackage / createCourseSale → 被 readActive 失败挡在出网之前，报了
       //   「最新数据暂时没读到」。**同一个动作，只因为失败过一次，就换了一套语义。**
@@ -441,6 +498,7 @@ Page(installAutoRefresh({
           this.render()
           this.openEditor(studentId)
           if(!f.id)this.setData({profileEditing:false})
+          if(wasCreating)this.prewarmMemberQr(studentId)
           // ★ 这里刻意**不弹**「已保存在本机，正在同步」。
           //   本机先行的意义就是"用户的操作已经完成了"：整批业务在本机事务里跑完、校验一次不少、
           //   事实立刻出现在投影里（表单与列表当场就是最新值）。再补一句"正在同步"，
@@ -482,6 +540,7 @@ Page(installAutoRefresh({
       this.render()
       if(creating)this.openEditor(studentId)
       else{this.openEditor(f.id);this.setData({profileEditing:false})}
+      if(creating)this.prewarmMemberQr(studentId)
       const months=[...new Set(savedDates.map(date=>{const [year,month]=date.split('-').map(Number);return `${year}年${month}月`}))]
       if(months.length)wx.showModal({title:'保存成功',content:`业绩已${months.length>1?'分别':''}计入${months.join('、')}`,showCancel:false})
       else wx.showToast({title:creating?'学员已创建':'资料已更新',icon:'none'})

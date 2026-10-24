@@ -13,7 +13,7 @@ const UI_COMMAND_BINDINGS = Object.freeze({
   createPackage: ['pages/students:savePackage'],
   createCourseSale: ['pages/students:savePackage'],
   updateCourseSale: ['pages/students:persistSaleEditor', 'pages/stats:editSaleDate'],
-  reverseCourseSale: ['pages/students:removePkg', 'pages/stats:deleteSale'],
+  reverseCourseSale: ['pages/stats:deleteSale'],
   updatePackage: ['pages/students:savePackage'],
   deletePackage: ['pages/students:removePkg'],
   createBooking: ['components/booking-modal:confirm'],

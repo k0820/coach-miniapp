@@ -1,26 +1,14 @@
-<view class="member-page member-shell" style="{{themeStyle}}">
-  <view class="member-row member-spread">
-    <view>
-      <view class="member-title">会员登录</view>
-      <view class="member-subtitle">用手机号找到你的专属会员资料</view>
-    </view>
+<view class="member-page member-shell login-page" style="{{themeStyle}}">
+  <view class="login-kicker">会员入口</view>
+  <view class="member-title">用当前微信领取训练资料</view>
+  <view class="member-subtitle">第一次使用时，请扫描教练在会员详情里生成的专属二维码。领取一次后，以后直接打开小程序就会自动进入会员首页。</view>
+
+  <view class="member-card login-guide">
+    <view class="guide-icon">码</view>
+    <view class="member-section-title">请向教练索取专属二维码</view>
+    <view class="guide-copy">二维码只负责把当前微信和教练已经录入的会员资料关联起来。手机号仍可作为联系资料保存，但不再用于登录。</view>
+    <button class="member-primary" bindtap="checkBinding" loading="{{busy}}" disabled="{{busy}}">我已领取，重新进入</button>
   </view>
 
-  <view wx:if="{{!available}}" class="member-card member-empty">{{note}}</view>
-
-  <block wx:else>
-    <view class="member-card">
-      <view class="member-section-title" style="margin-top:0">微信手机号一键登录</view>
-      <button class="member-primary" open-type="getPhoneNumber" bindgetphonenumber="onPhone" loading="{{busy}}" disabled="{{busy}}">使用微信手机号登录</button>
-      <view class="member-subtitle" style="margin-top:10rpx">授权后由云端核对你的会员资料，不会在本地留存手机号。</view>
-    </view>
-
-    <view wx:if="{{fallback}}" class="member-card">
-      <view class="member-section-title" style="margin-top:0">手动输入手机号（兜底）</view>
-      <input class="member-input" type="number" maxlength="11" placeholder="请输入注册时留的手机号" value="{{phone}}" bindinput="onPhoneInput" />
-      <button class="member-ghost" bindtap="onManualLogin" loading="{{busy}}" disabled="{{busy}}">用手机号登录</button>
-    </view>
-
-    <view wx:if="{{note}}" class="member-card member-empty">{{note}}</view>
-  </block>
+  <view wx:if="{{note}}" class="member-card member-empty">{{note}}</view>
 </view>

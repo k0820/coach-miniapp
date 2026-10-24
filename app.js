@@ -32,13 +32,16 @@ App({
       // ⭐ 冷启动 / 重新打开体验版：把持久化的会员环境（正式区 or 测试区）恢复回来。
       //   没有这一步，会员 Sandbox 会在重启后被静默退回 Production，读到空数据且不报错。
       const memberEnvironment = require('./utils/member-environment')
-      // 当前专属认领二维码只由隔离测试区签发。新微信扫码时本机还没有环境记录，
-      // 必须随二维码入口一起进入会员测试区；否则页面虽然打开，却不会执行认领。
-      if (appRole.isMemberBindingQr(options)) memberEnvironment.enterSandbox()
+      // 专属码自带环境前缀：正式码进入正式会员区，测试码继续留在隔离测试区。
+      const bindingScene = appRole.isMemberBindingQr(options) ? appRole.memberBindingScene(options) : ''
+      // 扫到一张新的专属码时，必须先预览这张码指向的资料。旧首页缓存只能用于
+      // “没有携带二维码”的普通冷启动，不能把新码短路回上一位会员。
+      const resumeClaimedMember = appRole.raw() === 'member' && !!bindingScene && memberEnvironment.isRememberedClaimScene(bindingScene)
+      if (bindingScene) memberEnvironment.enterFromClaimScene(appRole.memberBindingScene(options))
       else memberEnvironment.apply()
-      this.globalData.memberEntryScene = appRole.isMemberBindingQr(options) ? appRole.memberBindingScene(options) : ''
+      this.globalData.memberEntryScene = resumeClaimedMember ? '' : bindingScene
       const path = options && options.path || ''
-      if (path.indexOf('pages/member-') !== 0) setTimeout(() => wx.reLaunch({ url: '/pages/member-home/member-home' }), 0)
+      if (resumeClaimedMember || path.indexOf('pages/member-') !== 0) setTimeout(() => wx.reLaunch({ url: '/pages/member-home/member-home' }), 0)
       return
     }
 
@@ -105,13 +108,19 @@ App({
     if (appRole.isMemberPath(options)) {
       this.globalData.activeRole = 'member'
       const memberEnvironment = require('./utils/member-environment')
-      if (appRole.isMemberBindingQr(options)) memberEnvironment.enterSandbox()
+      const bindingScene = appRole.isMemberBindingQr(options) ? appRole.memberBindingScene(options) : ''
+      const resumeClaimedMember = appRole.raw() === 'member' && !!bindingScene && memberEnvironment.isRememberedClaimScene(bindingScene)
+      if (bindingScene) memberEnvironment.enterFromClaimScene(appRole.memberBindingScene(options))
       else memberEnvironment.apply()
-      this.globalData.memberEntryScene = appRole.isMemberBindingQr(options) ? appRole.memberBindingScene(options) : ''
+      this.globalData.memberEntryScene = resumeClaimedMember ? '' : bindingScene
       const targetPath = String(options && options.path || '')
-      const scene = appRole.memberBindingScene(options)
+      const scene = bindingScene
       const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : []
       const current = pages.length ? String(pages[pages.length - 1].route || '') : ''
+      if (resumeClaimedMember) {
+        if (current !== 'pages/member-home/member-home' && typeof wx.reLaunch === 'function') setTimeout(() => wx.reLaunch({ url: '/pages/member-home/member-home' }), 0)
+        return
+      }
       if (targetPath && current && current !== targetPath && typeof wx.reLaunch === 'function') {
         const suffix = scene ? `?scene=${encodeURIComponent(scene)}` : ''
         setTimeout(() => wx.reLaunch({ url: `/${targetPath}${suffix}` }), 0)

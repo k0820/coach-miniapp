@@ -113,7 +113,6 @@ Page(installAutoRefresh({
     //   它不是"行高之外的第二套数字"：卡片高 = （行区顶 − 卡片顶）+ 行数 × 行高，
     //   和行高**同一次量测、同一个来源**导出。没有它，卡片会被 flex-shrink 压回剩余空间 ⇒ 末行被裁。
     cardHeightStyle: '',
-    refreshAllowText: '刷新课表'
   },
   // 「已读」存本机（按 环境+账本 分开存，见 scheduleView.seenStorageKeyOf）。
   cancelSeenScope: '',

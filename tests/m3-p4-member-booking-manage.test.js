@@ -79,7 +79,8 @@ function buildPage(options = {}) {
     cloud: {
       callFunction: async option => {
         state.calls.push(option)
-        if (option.name === 'readMyMemberData' && option.data && option.data.action === 'availability') {
+        if ((option.name === 'readMyMemberData' && option.data && option.data.action === 'availability') ||
+            (option.name === 'coachBusinessCommand' && option.data && option.data.action === 'memberRead' && option.data.readAction === 'availability')) {
           if (readGate) await readGate               // ⛔ 卡住 ⇒ 读 Promise 不 resolve（模拟"云端还在读"）
           // ⭐ 真云端可用性投影**会返回 environment**（`readMyMemberData` 的 availabilityView 在 176 行带 environment）⇒
           //    缓存命中判定 `cachedAvailability` 依赖它，测试必须如实模拟，否则缓存永远不命中、P-1 测不出。
@@ -90,7 +91,7 @@ function buildPage(options = {}) {
           // ⭐ 允许"按第几次调用"返回不同结果 ⇒ 才能测 UNKNOWN 之后的幂等重放与最终裁决。
           const configured = state.coachResult
           const result = typeof configured === 'function'
-            ? configured(state.calls.filter(call => call.name === 'coachBusinessCommand').length, option)
+            ? configured(state.calls.filter(call => call.name === 'coachBusinessCommand' && call.data && call.data.action === 'memberBooking').length, option)
             : (configured || { ok: true })
           return { result }
         }
@@ -121,7 +122,7 @@ function buildPage(options = {}) {
   page.packagesById = view.packageNameIndex(options.packages || [])
   return {
     state, captured, page,
-    writes: () => state.calls.filter(call => call.name === 'coachBusinessCommand'),
+    writes: () => state.calls.filter(call => call.name === 'coachBusinessCommand' && call.data && call.data.action === 'memberBooking'),
     releaseCoach: () => { if (releaseGate) releaseGate() },
     releaseRead: () => { if (releaseRead) releaseRead() }
   }

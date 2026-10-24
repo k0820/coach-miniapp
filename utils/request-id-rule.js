@@ -5,7 +5,7 @@
 // 本模块把它抽出来，供**只读自检**与**受控迁移**共用同一份判定 —— 不允许任何地方再手抄一份正则
 // （历史上 `tbdContext` 那次就是因为两份口径不同步，白烧了一轮部署）。
 //
-// 为什么要有它：2026-09-22 真机上队首 `ob_29_l5cmqb` 查回执时被云端拒绝 `INVALID_REQUEST_ID`。
+// 为什么要有它：历史真机上曾有一条旧格式 requestId 查回执时被云端拒绝 `INVALID_REQUEST_ID`。
 // 根因是**历史生成规则**（不是数据损坏）：
 //   session.js 把「本机身份」拼成 commandKey → operationId(commandKey) → 持久化成 requestId，
 //   而本机身份在「预约尚未转正」时是 pending:<bookingKey>，

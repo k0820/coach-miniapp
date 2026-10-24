@@ -3,8 +3,7 @@
 // ⭐⭐ 与旧版的根本区别：这里**不再有**「训练档案 / 当前档案 / 切换档案」这几个概念。
 //    一位会员只有一份资料：当前微信 ⇒ 唯一的会员；他的课时、预约、训练记录都跟着这份资料走。
 //
-// ⭐ 三张卡（用户要求）：第一张「课时概况」/ 第二张「下一节课」/ 第三张「我的教练」。
-//    下面三个快捷按钮：约一节课 / 查看预约 / 消息中心。
+// ⭐ 首页只回答三件事：还剩多少课、下一节是什么、现在去预约。
 //
 // ⛔ 显示成功必须来自云端：这里的所有数字**只有一次来源** —— `member-directory.dashboard()`。
 //    ⛔ 读失败必须明说，⛔ 绝不让用户对着"0 课时"以为账号是空的。
@@ -16,15 +15,16 @@ const theme = require('../../utils/member-theme')
 const member = require('../../utils/member-runtime')
 const view = require('../../utils/member-view-model')
 const memberEnvironment = require('../../utils/member-environment')
+const archiveState = require('../../utils/member-archive-state')
+const trainingView = require('../../utils/member-training-view')
+const localAlias = require('../../utils/member-local-alias')
 // ⛔ 自动刷新总线：全项目共用一条广播（缺订阅者那次事故之后，每页都必须真的订阅）。
 const installAutoRefresh = require('../../utils/auto-refresh').installPage
-// 📥 站内消息中心（⛔ 正式区没有 ⇒ 入口整个藏起来）
-const inbox = require('../../utils/notification-inbox')
-
 Page(installAutoRefresh({
   data: {
     vm: directory.homeView(null), sandbox: false, busy: false, errorText: '', incompleteText: '', notice: [],
-    themeStyle: theme.cssVars(), inboxAvailable: false, inboxUnread: 0
+    themeStyle: theme.cssVars(), snapshotReady: false, refreshing: false,
+    trainingSummary: trainingView.recentSummary([]), displayName: '', aliasOpen: false, aliasDraft: ''
   },
   // ⛔ 异常不得静默：把「没读到 / 环境不一致 / 少读一份」翻成人话挂在首页顶部。
   renderNotice() {
@@ -35,24 +35,57 @@ Page(installAutoRefresh({
       incompleteText: view.incompleteTextOf(raw || {})
     })
   },
-  async loadInboxUnread() {
-    this.setData({ inboxAvailable: inbox.available() })
-    if (!inbox.available()) return this.setData({ inboxUnread: 0 })
-    this.setData({ inboxUnread: await inbox.unread('member') })
-  },
   onShow() {
     require('../../utils/auto-refresh').request('pageShow')
     this.setData({ sandbox: runtime.environment() === 'sandbox' })
     this.renderNotice()
-    this.load()
-    this.loadInboxUnread()
+    this.refreshAlias()
+    const cached = directory.cachedDashboard()
+    if (cached) this.applyDashboard(cached)
+    this.load({ silent: !!cached })
+    this.refreshTraining()
   },
+  refreshHome() {
+    if (this.data.refreshing) return Promise.resolve(false)
+    this.setData({ refreshing: true })
+    const dashboard = Promise.resolve(this.load({ silent: true })).catch(() => undefined)
+    const training = Promise.resolve(this.refreshTraining()).catch(() => undefined)
+    return Promise.all([dashboard, training]).then(() => true).finally(() => this.setData({ refreshing: false }))
+  },
+  onRefresherRefresh() { return this.refreshHome() },
+  // 保留页面级刷新入口给旧版基础库兜底；新版界面由无图标的 scroll-view 下拉触发。
   onPullDownRefresh() {
-    this.load().then(noop => (wx.stopPullDownRefresh && wx.stopPullDownRefresh()), () => (wx.stopPullDownRefresh && wx.stopPullDownRefresh()))
+    const done = () => { if (wx.stopPullDownRefresh) wx.stopPullDownRefresh() }
+    return this.refreshHome().then(done, done)
   },
-  async load() {
+  applyDashboard(result) {
+    const vm = directory.homeView(result)
+    this.setData({ vm, displayName: localAlias.read() || String((vm.member && vm.member.displayName) || ''), errorText: '', snapshotReady: true })
+  },
+  refreshAlias() {
+    const original = String((this.data.vm.member && this.data.vm.member.displayName) || '')
+    this.setData({ displayName: localAlias.read() || original })
+  },
+  openAlias() { this.setData({ aliasOpen: true, aliasDraft: this.data.displayName || '' }) },
+  closeAlias() { this.setData({ aliasOpen: false }) },
+  aliasInput(e) { this.setData({ aliasDraft: String((e && e.detail && e.detail.value) || '') }) },
+  saveAlias() {
+    const value = localAlias.write(this.data.aliasDraft)
+    const original = String((this.data.vm.member && this.data.vm.member.displayName) || '训练伙伴')
+    this.setData({ displayName: value || original, aliasOpen: false })
+    wx.showToast({ title: value ? '称呼已保存' : '已恢复原称呼', icon: 'success' })
+  },
+  applyTraining(raw) {
+    const scoped = archiveState.narrow(raw || {}) || {}
+    this.setData({ trainingSummary: trainingView.recentSummary(trainingView.rowsOf(scoped)) })
+  },
+  async refreshTraining() {
+    this.applyTraining(member.cached())
+    try { this.applyTraining(await member.read({ allowCache: true })) } catch (error) { /* 首页继续显示本机最近一次训练摘要 */ }
+  },
+  async load(options = {}) {
     if (this.data.busy) return
-    this.setData({ busy: true })
+    this.setData({ busy: true, ...(options.silent ? {} : { snapshotReady: false }) })
     try {
       const result = await directory.dashboard()
       if (!result || result.ok !== true) {
@@ -65,20 +98,13 @@ Page(installAutoRefresh({
         this.setData({ errorText: (result && result.message) || '暂时读不到你的课时，请下拉刷新重试。' })
         return
       }
-      this.setData({ vm: directory.homeView(result), errorText: '' })
+      this.applyDashboard(result)
     } finally {
       this.setData({ busy: false })
     }
   },
-  openInbox() { inbox.open('member') },
   go(url) { wx.navigateTo({ url }) },
   packages() { return this.go('/pages/member-packages/member-packages') },
   bookings() { return this.go('/pages/member-bookings/member-bookings') },
-  history() { wx.navigateTo({ url: '/pages/member-history/member-history' }) },
-  bookSlots() { return this.go('/pages/member-book-slots/member-book-slots') },
-  bookCoach(e) {
-    const contactKey = String((e && e.currentTarget && e.currentTarget.dataset.key) || '')
-    if (!contactKey) return
-    wx.navigateTo({ url: `/pages/member-book-slots/member-book-slots?coach=${encodeURIComponent(contactKey)}` })
-  }
-}, { refresh() { return this.load() } }))
+  history() { return this.go('/pages/member-history/member-history') }
+}, { refresh() { return this.load({ silent: true }) } }))

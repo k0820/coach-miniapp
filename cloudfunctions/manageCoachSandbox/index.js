@@ -3,6 +3,24 @@ const { sha, fixedId, sandboxHeadId, sandboxDatasetId, sandboxDatasetDocumentId,
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const BUSINESS = ['students','student_tombstones','packages','bookings','incomes','sales','settings','customExercises']
+const SANDBOX_BINDING_COLLECTIONS = Object.freeze({
+  members: 'member_sandbox_members',
+  directory: 'member_sandbox_directory',
+  contacts: 'member_sandbox_contacts',
+  tickets: 'member_sandbox_contact_tickets',
+  audit: 'member_sandbox_contact_audit',
+  accounts: 'member_sandbox_accounts',
+  claims: 'member_sandbox_student_claims',
+  claimTokens: 'member_sandbox_claim_tokens',
+  shortcuts: 'member_sandbox_coach_shortcuts',
+  memberInbox: 'member_sandbox_notification_inbox',
+  coachInbox: 'coach_sandbox_notification_inbox',
+  events: 'member_sandbox_notification_events',
+  reminders: 'coach_sandbox_class_reminders',
+  memberAuthorizations: 'coach_sandbox_member_authorizations',
+  packageGrants: 'coach_sandbox_package_grants',
+  packageShares: 'coach_sandbox_package_shares'
+})
 const coachIdFor = openId => sha(`coach:${openId}`).slice(0, 32)
 const put = (scope, name, id, data) => scope.collection(name).doc(id).set({ data })
 const one = async (scope, name, query) => { const r=await scope.collection(name).where(query).limit(1).get();return r.data&&r.data[0] }
@@ -12,6 +30,133 @@ const removeScoped = async (scope, name, ownerCoachId, datasetId) => {
     for(const row of rows) await scope.collection(name).doc(row._id).remove()
     if(rows.length<100)return
   }
+}
+const listSafe = async (name, query) => {
+  try {
+    const result = await db.collection(name).where(query).limit(100).get()
+    return result.data || []
+  } catch (error) {
+    const detail = `${error && error.code || ''} ${error && error.errCode || ''} ${error && error.message || ''} ${error && error.errMsg || ''}`.toLowerCase()
+    if (/(table not exist|collection.*not exist|db or table not exist|不存在)/.test(detail)) return []
+    throw error
+  }
+}
+const removeWhereSafe = async (name, query) => {
+  let removed = 0
+  for (;;) {
+    const rows = await listSafe(name, query)
+    for (const row of rows) {
+      await db.collection(name).doc(row._id).remove()
+      removed += 1
+    }
+    if (rows.length < 100) return removed
+  }
+}
+
+// Sandbox 历史假会员清理被拆成四个短阶段，避免云函数三秒上限造成半途超时。
+// 每个阶段都只从服务端可信 OPENID 推导当前教练，客户端不能指定任何身份或数据集。
+async function purgeLegacy(ownerCoachId, phase) {
+  const names = SANDBOX_BINDING_COLLECTIONS
+  const datasetId = sandboxDatasetId(ownerCoachId)
+  const members = await listSafe(names.members, { ownerCoachId })
+  const memberIds = [...new Set(members.map(row => String(row.memberId || '')).filter(Boolean))].sort()
+  const result = { ok: true, environment: 'sandbox', phase, memberCount: memberIds.length, removed: {} }
+  const remove = async (name, query) => { result.removed[name] = (result.removed[name] || 0) + await removeWhereSafe(name, query) }
+
+  const directSteps = [
+    [names.tickets, { coachId: ownerCoachId }], [names.contacts, { coachId: ownerCoachId }],
+    [names.directory, { coachId: ownerCoachId }], [names.audit, { actorKey: `coach:${ownerCoachId}` }],
+    [names.claims, { coachId: ownerCoachId }], [names.claimTokens, { coachId: ownerCoachId }],
+    [names.shortcuts, { coachId: ownerCoachId }], [names.coachInbox, { ownerId: ownerCoachId }],
+    [names.events, { ownerCoachId }], [names.reminders, { ownerCoachId }],
+    [names.memberAuthorizations, { ownerCoachId }], [names.packageGrants, { ownerCoachId }],
+    [names.packageShares, { ownerCoachId }]
+  ]
+  const memberSteps = memberId => [
+    [names.accounts, { memberId }], [names.tickets, { memberId }], [names.directory, { memberId }],
+    [names.audit, { actorKey: `member:${memberId}` }], [names.claims, { memberId }],
+    [names.claimTokens, { memberId }], [names.shortcuts, { memberId }], [names.memberInbox, { ownerId: memberId }]
+  ]
+  if (phase === 'discover') return result
+  if (/^direct-\d+$/.test(phase)) {
+    const step = directSteps[Number(phase.slice('direct-'.length))]
+    if (!step) return { ok: false, code: 'INVALID_PURGE_PHASE' }
+    await remove(step[0], step[1])
+    return result
+  }
+  if (/^member-\d+-\d+$/.test(phase)) {
+    const [, memberIndexText, stepIndexText] = phase.match(/^member-(\d+)-(\d+)$/)
+    const memberId = memberIds[Number(memberIndexText)]
+    const step = memberId ? memberSteps(memberId)[Number(stepIndexText)] : null
+    if (!step) return { ok: false, code: 'INVALID_PURGE_PHASE' }
+    await remove(step[0], step[1])
+    return result
+  }
+
+  if (phase === 'relations') {
+    const tickets = await listSafe(names.tickets, { coachId: ownerCoachId })
+    for (const memberId of memberIds) tickets.push(...await listSafe(names.tickets, { memberId }))
+    const fileList = [...new Set(tickets.map(row => String(row.fileID || '')).filter(fileID => /^cloud:\/\//.test(fileID)))]
+    await remove(names.tickets, { coachId: ownerCoachId })
+    for (const memberId of memberIds) await remove(names.tickets, { memberId })
+    await remove(names.contacts, { coachId: ownerCoachId })
+    await remove(names.directory, { coachId: ownerCoachId })
+    await remove(names.audit, { actorKey: `coach:${ownerCoachId}` })
+    if (fileList.length) {
+      try { await cloud.deleteFile({ fileList }) } catch (error) { result.fileCleanup = { ok: false, count: fileList.length } }
+    }
+    if (!result.fileCleanup) result.fileCleanup = { ok: true, count: fileList.length }
+    return result
+  }
+  if (phase === 'identity') {
+    await remove(names.claims, { coachId: ownerCoachId })
+    await remove(names.claimTokens, { coachId: ownerCoachId })
+    await remove(names.shortcuts, { coachId: ownerCoachId })
+    for (const memberId of memberIds) {
+      await remove(names.accounts, { memberId })
+      await remove(names.claims, { memberId })
+      await remove(names.claimTokens, { memberId })
+      await remove(names.shortcuts, { memberId })
+      await remove(names.directory, { memberId })
+      await remove(names.audit, { actorKey: `member:${memberId}` })
+    }
+    return result
+  }
+  if (phase === 'messages') {
+    await remove(names.coachInbox, { ownerId: ownerCoachId })
+    await remove(names.events, { ownerCoachId })
+    await remove(names.reminders, { ownerCoachId })
+    await remove(names.memberAuthorizations, { ownerCoachId })
+    await remove(names.packageGrants, { ownerCoachId })
+    await remove(names.packageShares, { ownerCoachId })
+    for (const memberId of memberIds) await remove(names.memberInbox, { ownerId: memberId })
+    return result
+  }
+  if (phase === 'members') {
+    await remove(names.members, { ownerCoachId })
+    return result
+  }
+  if (phase === 'receipt-batch') {
+    const name = 'coach_sandbox_receipts'
+    const rows = await db.collection(name).where({ ownerCoachId, datasetId }).limit(10).get()
+    const page = rows.data || []
+    for (const row of page) await db.collection(name).doc(row._id).remove()
+    result.datasetId = datasetId
+    result.removed[name] = page.length
+    result.more = page.length === 10
+    return result
+  }
+  if (/^business-\d+$/.test(phase)) {
+    const targets = [...BUSINESS, 'coach_sandbox_receipts']
+    const index = Number(phase.slice('business-'.length))
+    const name = targets[index]
+    if (!name) return { ok: false, code: 'INVALID_PURGE_PHASE' }
+    await removeScoped(db, name, ownerCoachId, datasetId)
+    result.datasetId = datasetId
+    result.removed[name] = true
+    return result
+  }
+  return { ok: false, code: 'INVALID_PURGE_PHASE' }
 }
 const businessId = (name, owner, dataset, id) => fixedId(`coach-business-${name}`, owner, `${dataset}:${id}`)
 function fixture(ownerCoachId,datasetId,now){
@@ -63,5 +208,6 @@ exports.main=async event=>{
     const head=await one(db,'coach_sandbox_heads',{_id:sandboxHeadId(ownerCoachId),ownerCoachId,environment:'sandbox'})
     return{ok:true,environment:'sandbox',exists:!!(head&&head.activeDatasetId),datasetId:head&&head.activeDatasetId||null}
   }
+  if(event.action==='purgeLegacySandbox')return purgeLegacy(ownerCoachId,String(event.phase||''))
   return{ok:false,code:'INVALID_ACTION'}
 }

@@ -1,0 +1,5 @@
+{
+  "navigationBarTitleText": "专属会员二维码",
+  "enablePullDownRefresh": false,
+  "usingComponents": { "member-sheet": "/components/member-sheet/member-sheet" }
+}

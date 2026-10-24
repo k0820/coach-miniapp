@@ -39,6 +39,7 @@ const seedWithItems = () => {
 const pending = () => completionCopy.list(scope.environment, scope.datasetId)
 const commandsOf = () => outbox.list(scope).map(row => row.command)
 const toastTitles = world => world.counters.toasts.map(row => String(row.title || ''))
+const modalTexts = world => world.counters.modals.map(row => `${String(row.title || '')} ${String(row.content || '')}`)
 
 async function driveCompletion(world) {
   const page = loadSessionPage()
@@ -58,15 +59,15 @@ async function onceClickCompletesAndCopies() {
   const world = createWorld(); world.seed(seed()); world.online = false
   const timeline = [], copied = []
   global.wx.setClipboardData = options => { timeline.push('clipboard'); copied.push(String(options.data)); if (options && options.success) options.success({}) }
-  const pushToast = global.wx.showToast
-  global.wx.showToast = options => { if (String(options && options.title).includes('已下课')) timeline.push('success'); pushToast(options) }
+  const pushModal = global.wx.showModal
+  global.wx.showModal = options => { if (String(options && options.title).includes('本节训练已记录')) timeline.push('success'); pushModal(options) }
 
   const { result } = await driveCompletion(world)
   assert.equal(result.code, 'COMPLETED_LOCAL_FIRST', '本机先行完课必须成功')
   assert.equal(result.copy.ok, true, '复制阶段必须成功')
   assert.deepStrictEqual(timeline, ['clipboard', 'success'],
     '成功提示必须出现在剪贴板确认**之后**（顺序反了就等于"先报成功、再复制"）')
-  assert.ok(toastTitles(world).some(title => title.includes('已下课，课程内容已复制')), '必须明确告诉用户这次完整操作成功了')
+  assert.ok(modalTexts(world).some(text => text.includes('本节训练已记录') && text.includes('课程内容已复制')), '必须用关心弹窗明确告诉用户这次完整操作成功了')
 
   // 复制文本：**逐字等于事务算出来的那一份**课程内容（不许有第二套摘要格式），且**不含学员姓名**
   assert.equal(copied.length, 1, '一次点击只写一次剪贴板')
@@ -107,7 +108,7 @@ async function clipboardFirstFailureIsRetriedInternally() {
   const { result } = await driveCompletion(world)
   assert.ok(calls >= 2, '第一次异常必须**内部**重试，而不是把补救动作甩给用户（实得尝试 ' + calls + ' 次）')
   assert.equal(result.copy.ok, true, '重试成功之后这次操作才算完整成功')
-  assert.ok(toastTitles(world).some(title => title.includes('已下课，课程内容已复制')))
+  assert.ok(modalTexts(world).some(text => text.includes('课程内容已复制')))
   assert.equal(delivered, 1, '只有一次真的写进去了')
   assert.deepStrictEqual(commandsOf(), ['updateBookingContent', 'completeBooking'], '复制重试不得产生任何新命令')
 
@@ -125,10 +126,10 @@ async function clipboardNeverWorksKeepsOperationPending() {
   global.wx.setClipboardData = options => { if (options && options.fail) options.fail({ errMsg: 'CLIPBOARD_FAIL' }) }
   const { result } = await driveCompletion(world)
   assert.equal(result.copy.ok, false, '复制没成功就绝不允许把这次操作报成成功')
-  const titles = toastTitles(world)
-  assert.equal(titles.some(title => title.includes('已下课')), false, '绝不能显示"已下课，课程内容已复制"')
-  assert.ok(titles.some(title => title.includes('复制中')), '要如实告诉用户：课程已完成、内容还在复制，实得 ' + JSON.stringify(titles))
-  assert.equal(world.counters.modals.length, 0, '复制没成功不得弹任何"课程未完成"这类误报框')
+  const prompts = modalTexts(world)
+  assert.equal(prompts.some(text => text.includes('课程内容已复制')), false, '复制失败绝不能说已经复制成功')
+  assert.ok(prompts.some(text => text.includes('后台复制')), '要如实告诉用户：课程已完成、内容还在复制，实得 ' + JSON.stringify(prompts))
+  assert.equal(prompts.some(text => text.includes('课程未完成')), false, '复制没成功不得弹任何"课程未完成"这类误报框')
 
   // 「正在完成下课操作」的状态必须留在磁盘上 —— 它就是"这次下课还没完整完成"
   const rows = pending()
@@ -277,7 +278,7 @@ async function existingIntentIsReusedInsteadOfResent() {
   const result = await handle.settled
   assert.equal(result.code, 'REUSED_RECEIPT_SUCCEEDED', '回执已成功 → 复用必须收敛成成功，实得 ' + result.code)
   assert.ok(result.copy && result.copy.ok === true, '复用之后必须把复制阶段补完（用户不需要再点任何东西）')
-  assert.ok(toastTitles(world).some(title => title.includes('已下课，课程内容已复制')), '两者都完成后才显示成功')
+  assert.ok(modalTexts(world).some(text => text.includes('课程内容已复制')), '两者都完成后才显示成功关心弹窗')
   assert.equal(pendingCompletion.get(scope.environment, scope.datasetId, bookingId), null, '回执确认成功之后意图才清掉')
   assert.ok(writes.length >= 1 && writes[0].includes('高位下拉'), '复用补的是同一份课程内容')
 

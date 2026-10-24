@@ -13,8 +13,8 @@
 //    · 候选数据 / 割接 / 迁移 / 只读诊断 / 救援冻结（candidate-*、cutover-*、pre-activation-*、
 //      production-recovery-*、cloud-migration、cloud-shadow-read）
 //    · 幂等号、receipt、持久 Outbox、本机投影、本机先行写链路
-//    这些页面**仍在 app.json 注册**、代码**仍在仓库**，所以以后要重新开发，把这里改回 false 即可，
-//    不需要重新接线、也不会出现「navigateTo 找不到页面」。
+//    诊断 / 迁移 / 救援源码仍保留在仓库，但正式 app.json 不注册、发布包也明确排除；
+//    Sandbox 维护页继续注册，只在 develop / trial 环境显示入口。
 //
 // 与 utils/mutate.js 的 `LOCAL_FIRST_ENABLED` 分工：
 //    LOCAL_FIRST_ENABLED 控制**写链路走哪条**（本机先行 / 云端先行）；

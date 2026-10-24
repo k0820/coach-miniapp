@@ -1,0 +1,34 @@
+<view class="member-shell qr-page">
+  <view class="qr-head">
+    <view class="qr-kicker">会员资料领取</view>
+    <view class="title">{{member.displayName||'会员'}}的专属二维码</view>
+    <view class="hint">长期有效 · 扫码后自动进入会员端</view>
+  </view>
+
+  <view wx:if="{{loading && !imageUrl}}" class="card center hint">正在生成专属二维码…</view>
+  <view wx:if="{{errorText}}" class="card error">{{errorText}}</view>
+
+  <view wx:if="{{imageUrl}}" class="qr-panel">
+    <view class="qr-frame"><image class="qr" src="{{imageUrl}}" mode="aspectFit" show-menu-by-longpress="{{true}}"/></view>
+    <view class="hint center">长按二维码也可以直接转发或保存</view>
+    <view class="qr-actions">
+      <button class="qr-action primary" open-type="share">转发给会员</button>
+      <button class="qr-action ghost" bindtap="saveImage">保存图片</button>
+    </view>
+    <view class="rotate-link" bindtap="openRotate">旧码泄露？换一张二维码</view>
+  </view>
+
+  <view class="status-section">
+    <view class="binding-row">
+    <view class="status-mark {{bound?'is-bound':''}}"></view><view class="binding-copy"><view class="binding-title">{{bound?'已绑定会员微信':'等待会员领取'}}</view><view class="hint">{{bound?'再次打开会直接进入这份资料':'把二维码发给会员即可'}}</view></view>
+    <view wx:if="{{bound}}" class="unbind-action" bindtap="openUnbind">解除绑定</view>
+    </view>
+    <view class="safe-note">二维码不包含姓名、手机号、课时或数据库编号。主动换码后，旧码会立即失效。</view>
+  </view>
+</view>
+<member-sheet visible="{{confirmRotate}}" title="换一张专属二维码" desc="新码生成后，之前保存或转发的旧码会立即失效。" confirm-text="确认换码" cancel-text="先不换" danger="{{true}}" bind:confirm="rotateCode" bind:cancel="closeRotate" bind:close="closeRotate">
+  <view class="rotate-copy">只有旧码已经发错人或泄露时才需要换码。会员已经领取的资料和登录状态不会受影响。</view>
+</member-sheet>
+<member-sheet visible="{{confirmUnbind}}" title="解除这位会员的微信绑定" desc="解除后，原微信将不能再进入这份资料；会员课包、销售业绩、预约和训练记录都不会删除。" confirm-text="确认解除" cancel-text="先不解除" danger="{{true}}" bind:confirm="unbindWechat" bind:cancel="closeUnbind" bind:close="closeUnbind">
+  <view class="rotate-copy">适合录错微信或测试后重新领取。解除后，可以让同一个微信扫描另一位会员的专属二维码。</view>
+</member-sheet>

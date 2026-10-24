@@ -306,6 +306,9 @@ let page = null
   const wxml = fs.readFileSync(path.join(PROJ, 'pages', 'students', 'students.wxml'), 'utf8')
   assert.ok(!/wx:if="\{\{form\.id \|\| !cloudPrimary\}\}"/.test(wxml), '课时包区块不允许再被 form.id 挡着（否则新增学员又得先存空学员）')
   assert.ok(wxml.includes('packages-section'), '课时包区块必须保留')
+  assert.ok(!/wx:if="\{\{cloudPrimary\}\}"\s+class="package-save"[^>]*>\{\{item\.isNew\?/.test(wxml),
+    '新会员录入不许再出现「保存这笔课程」：底部总保存会一次保存资料与全部新课时包')
+  assert.ok(/保存资料与课程/.test(wxml), '唯一主保存按钮必须明确说明会同时保存资料与课程')
   assert.ok((source.match(/newPackageCommand/g) || []).length >= 3, '新课时包的 payload 必须只有一个构造入口（保存这笔课程 / 保存资料 共用）')
   assert.ok(!/wx\.cloud\.callFunction/.test(source), '页面不许绕过统一写入口直连云函数')
   assert.ok(!/adapter\.execute/.test(source), '页面不许绕过统一写入口直接发命令')

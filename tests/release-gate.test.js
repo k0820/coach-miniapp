@@ -123,31 +123,31 @@ function devEntriesHiddenInRelease() {
   }
 }
 
-function devPagesStayRegistered() {
+function diagnosticsStayLocalAndOutOfReleasePackage() {
   const config = JSON.parse(read('app.json'))
-  // 隐藏的是**入口**，不是页面。页面注册与代码都在 ⇒ 开关改回 false 就能立刻恢复，
-  // 而且永远不会出现「navigateTo 找不到页面」。
-  // ⭐ 2026-10-04 主包分包：低频诊断/救援页已迁到**普通分包** pkg-diag。
-  //    判据本意不变——「页面必须仍处于已注册状态」（隐藏入口 ≠ 删除能力），
-  //    只是合法注册位置从「只有主包 pages[]」扩到「主包 pages[] 或任意分包的 pages[]」。
+  // 诊断和救援源码要保留给维护人员，但不得注册或打进普通用户的正式安装包。
   const subPkgPages = (config.subPackages || []).reduce((acc, sp) => {
     for (const p of (sp.pages || [])) acc.push(sp.root ? `${sp.root}/${p}` : p)
     return acc
   }, [])
   const registered = new Set([].concat(config.pages || [], subPkgPages))
-  const devPages = [
+  const diagnosticPages = [
     'pages/coach-migration-test/coach-migration-test',
     'pages/coach-cloud-read-test/coach-cloud-read-test',
     'pages/coach-command-test/coach-command-test',
     'pkg-diag/candidate-staging-test/candidate-staging-test',
     'pkg-diag/cloud-cutover/cloud-cutover',
-    'pages/sandbox-control/sandbox-control',
-    'pkg-diag/production-recovery-diagnostic/production-recovery-diagnostic'
+    'pkg-diag/production-recovery-diagnostic/production-recovery-diagnostic',
+    'pkg-diag/repair-orphan-tombstone/repair-orphan-tombstone',
+    'pages/diag-readonly/diag-readonly'
   ]
-  for (const page of devPages) {
-    assert.ok(registered.has(page), `${page} 必须仍在 app.json 注册（主包 pages[] 或分包 pages[] 任一即可；隐藏入口 ≠ 删除能力）`)
+  for (const page of diagnosticPages) {
+    assert.ok(!registered.has(page), `${page} 不得在正式 app.json 注册`)
     assert.ok(fs.existsSync(path.join(PROJ, `${page}.js`)), `${page}.js 必须仍然存在`)
     assert.ok(fs.existsSync(path.join(PROJ, `${page}.wxml`)), `${page}.wxml 必须仍然存在`)
+  }
+  for (const page of ['pages/sandbox-control/sandbox-control', 'pages/sandbox-shared-test/sandbox-shared-test']) {
+    assert.ok(registered.has(page), `${page} 是长期 Sandbox 维护能力，必须继续注册`)
   }
   // 正常业务页面一个都不能少。
   for (const page of ['pages/schedule/schedule', 'pages/students/students', 'pages/stats/stats', 'pages/session/session', 'pages/attendance-history/attendance-history']) {
@@ -160,13 +160,25 @@ function packageIgnoresOnlyTestFiles() {
   const ignore = (config.packOptions && config.packOptions.ignore) || []
   const values = ignore.map(rule => String(rule && rule.value || ''))
   assert.ok(values.includes('tests'), 'tests/ 是纯自动测试代码，不得进入正式小程序包')
+  for (const target of ['pkg-diag', 'pages/coach-migration-test', 'pages/coach-cloud-read-test', 'pages/coach-command-test', 'pages/diag-readonly', 'utils/diag-readonly-probe.js', 'utils/request-id-migration.js']) {
+    assert.ok(values.includes(target), `${target} 必须明确排除出正式安装包`)
+  }
   // 运行时真正依赖的东西绝不能被顺手排除。
-  const runtimePaths = ['utils', 'components', 'pages', 'cloudfunctions', 'app.js', 'app.json', 'app.wxss', 'sitemap.json']
+  const runtimePaths = ['utils', 'components', 'cloudfunctions', 'app.js', 'app.json', 'app.wxss', 'sitemap.json']
   for (const target of runtimePaths) {
     assert.ok(!values.includes(target), `${target} 是运行时依赖，绝不能被 packOptions.ignore 排除`)
   }
   for (const rule of ignore) {
     assert.ok(rule && typeof rule.type === 'string' && typeof rule.value === 'string', 'ignore 规则必须是微信开发者工具支持的 {type,value} 形式')
+  }
+}
+
+function memberVendorStylesStayUploadSafe() {
+  const file = path.join(PROJ, 'styles/vendor/weui-2.6.26.wxss')
+  const source = fs.readFileSync(file, 'utf8')
+  assert.ok(fs.statSync(file).size < 20 * 1024, '会员端 WeUI 子集必须小于 20KB，避免主包再次超过微信 2MB 限制')
+  for (const token of ['WeUI v2.6.26', '--weui-BRAND', '.weui-cells', '.weui-cell', '.weui-cell_access', '.weui-panel']) {
+    assert.ok(source.includes(token), `会员端 WeUI 子集必须保留 ${token}`)
   }
 }
 
@@ -181,11 +193,22 @@ function releaseUiHasNoDevJargon() {
   }
 }
 
+function productionDeliveryTargetsRelease() {
+  const identity = read('cloudfunctions/memberIdentityCommand/index.js')
+  const sandboxIdentity = read('cloudfunctions/memberIdentitySandboxCommand/index.js')
+  const business = read('cloudfunctions/coachBusinessCommand/index.js')
+  assert.ok(/QRCODE_ENV_VERSION\s*=\s*'release'/.test(identity), '正式会员码必须打开 release 小程序')
+  assert.ok(/QRCODE_ENV_VERSION\s*=\s*'trial'/.test(sandboxIdentity), 'Sandbox 会员码必须继续打开 trial，不能污染正式入口')
+  assert.ok(/NOTIFY_DELIVERY_ENABLED\s*=\s*true/.test(business), '正式部署不得把已经保留的微信通知能力静默关闭')
+}
+
 async function main() {
   devEntriesHiddenInRelease()
-  devPagesStayRegistered()
+  diagnosticsStayLocalAndOutOfReleasePackage()
   packageIgnoresOnlyTestFiles()
+  memberVendorStylesStayUploadSafe()
   releaseUiHasNoDevJargon()
+  productionDeliveryTargetsRelease()
   await cleanDeviceIsNotFrozen()
   console.log('release gate: PASS')
 }

@@ -20,6 +20,7 @@ const flags = require('../../utils/release-flags')
 // ⭐⭐ 当前这位会员的资料（2026-10-06 新方案：**始终只有一份**）：约课页的教练与课时包**必须**都属于它。
 //   ⛔ 全站唯一的会员资料状态出口，⛔ 本页不许自己写第二套 filter。
 const archiveState = require('../../utils/member-archive-state')
+const fitTheme = () => theme.cssVars() + '--member-primary:#17221c;--member-primary-deep:#101813;--member-accent:#2f9f67;--member-soft:#e8f7ee;--member-page-bg:#f7f8f6;--member-surface-alt:#f0f7f2;--member-border:#dce8df;--member-border-strong:#bad8c5;--member-text:#17221c;--member-text-sub:#708078;--member-tag-bg:#e8f7ee;--member-tag-text:#285d44;--member-success:#2f9f67;--member-success-soft:#e8f7ee;--member-nav-active:#17221c;--member-hero-label:#85e5ad;--member-sheet-mask:rgba(10,31,20,.42);--member-sheet-handle:#cfe3d6;'
 
 // 还没有会员资料时说的那句人话（⛔ 不许显示成"没有可预约的教练" —— 那是另一件事）。
 const NO_ARCHIVE_TEXT = '还没有会员资料，请先从会员入口填写昵称创建账号。'
@@ -43,7 +44,7 @@ Page({
     slots: [], coaches: [], coachIndex: 0, packages: [], selected: null,
     // ⭐ 2026-10-01 真机阻断 Bug 修复：会员有多份档案 ⇒ 多个课时包**必须能点选**，
     //   确认框与提交都**只能用用户实际选中的那一个**（原来写死 `packages[0]`）。
-    packageIndex: 0, packagesSelectable: false, packageHint: '', confirmPackage: null,
+    packageIndex: 0, packagesSelectable: false, packageHint: '', confirmPackage: null, choiceOpen: false,
     confirmOpen: false, loading: true, refreshing: false, error: '', notice: '', hint: '', degraded: false, canPrev: false, canNext: true,
     submitting: false, submitNote: '',
     // ⭐ 2026-10-06 档案维度：当前档案（空 = 还没认领 / 多份但没选过）
@@ -72,7 +73,7 @@ Page({
     // ⭐ 可约天数**不写死**：来自 `occupancy.MEMBER_BOOKING_MAX_DAYS`（今天 + 30 天 = 31 个选项）。
     const dates = view.dateOptions(today, view.MEMBER_DATE_COUNT)
     this.setData({
-      themeStyle: theme.cssVars(),
+      themeStyle: fitTheme(),
       dates, dateIndex: 0, dateKey: dates[0].key, dateLabel: dates[0].label,
       canPrev: false, canNext: dates.length > 1
     })
@@ -88,12 +89,18 @@ Page({
   //   ⛔ 只有一份 ⇒ 与 `member-archive-state` 的「单份自动选中」同口径；多份 ⇒ 空（不替用户决定）。
   currentArchiveId(live) {
     const archives = Array.isArray(live && live.archives) ? live.archives : []
+    const liveIds = new Set(archives.map(row => String(row && row.archiveId || '')).filter(Boolean))
     try {
       const cached = member.cached()
       if (cached) {
         const state = archiveState.current(cached)
-        if (state && state.archiveId) return { id: state.archiveId, count: archives.length || archiveState.archivesOf(cached).length }
-        if (state && state.mode === 'none') return { id: '', count: 0 }
+        // Sandbox 被清理并重新认领后，手机里可能还留着上一代 archiveId。
+        // 当前服务端已经明确下发 archives 时，只接受仍存在于本次响应里的缓存选择；
+        // 否则旧 id 会把刚领取的真实课时包全部筛成“暂无可用课时包”。
+        if (state && state.archiveId && (!liveIds.size || liveIds.has(String(state.archiveId)))) {
+          return { id: String(state.archiveId), count: archives.length || archiveState.archivesOf(cached).length }
+        }
+        if (state && state.mode === 'none' && !archives.length) return { id: '', count: 0 }
       }
     } catch (error) { /* 读不到缓存 ⇒ 退回 live.archives 那一份 */ }
     if (archives.length === 1) return { id: String(archives[0].archiveId || ''), count: 1 }
@@ -202,6 +209,15 @@ Page({
   },
   // ⛔ 取值规则只有**一处**（`view.selectedPackageOf`）⇒ 提交、确认框、选中态不可能各说一套。
   currentPackage() { return view.selectedPackageOf(this.data.packages, this.data.packageIndex) },
+  openChoice() { this.setData({ choiceOpen: true }) },
+  closeChoice() { this.setData({ choiceOpen: false }) },
+  choosePackage(e) {
+    const index = Number(e.currentTarget.dataset.index)
+    const row = (this.data.packages || [])[index]
+    if (!row) return
+    if (this.data.packagesSelectable) this.pickPackage(e)
+    this.setData({ choiceOpen: false })
+  },
   pickPackage(e) {
     const index = Number(e.currentTarget.dataset.index)
     const row = (this.data.packages || [])[index]

@@ -42,9 +42,9 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 //      教练页面显示"请用分享或复制8位认领码" —— 分享与短码**不受影响**（有测试钉死）。
 const QRCODE_ENABLED = true
 
-// ⭐ 体验版 / 开发版阶段扫码要能打开 ⇒ envVersion 用 'trial'；
-//    ⚠ 正式发布之后记得改成 'release'（否则已发布的码会把用户指向体验版）。
-const QRCODE_ENV_VERSION = 'trial'
+// ⭐ 正式区专属码必须打开已经正式发布的小程序。
+//    Sandbox 的孪生入口继续使用 'trial'，两边绝不共用二维码落点。
+const QRCODE_ENV_VERSION = 'release'
 
 const qr = require('./claim-qrcode')
 

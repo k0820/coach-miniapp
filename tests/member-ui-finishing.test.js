@@ -1,0 +1,32 @@
+const assert = require('assert')
+const fs = require('fs')
+const path = require('path')
+
+const ROOT = path.join(__dirname, '..')
+const read = file => fs.readFileSync(path.join(ROOT, file), 'utf8')
+
+const claimCss = read('pages/member-claim/member-claim.wxss')
+const homeCss = read('pages/member-home/member-home.wxss')
+const bookings = read('pages/member-bookings/member-bookings.wxml')
+const stats = read('pages/stats/stats.wxml')
+const statsJs = read('pages/stats/stats.js')
+const navWxml = read('components/member-nav/member-nav.wxml')
+const navCss = read('components/member-nav/member-nav.wxss')
+const profileWxml = read('pages/member-profile/member-profile.wxml')
+const homeWxml = read('pages/member-home/member-home.wxml')
+
+assert.ok(/\.primary\{[^}]*display:flex[^}]*align-items:center[^}]*justify-content:center[^}]*text-align:center/.test(claimCss), '领取资料主按钮文字必须水平、垂直居中')
+assert.ok(/\.next-card\{[^}]*display:flex[^}]*align-items:center/.test(homeCss) && !homeWxml.includes('action-symbol') && !homeWxml.includes('预约课程'), '会员首页只保留紧凑的下一节课入口，不再显示装饰字块或重复预约按钮')
+assert.ok(!/booking-detail-btn[^>]*>关闭<\/button>/.test(bookings), '预约详情已有右上角关闭，底部不应再出现“关闭”按钮')
+
+const overview = stats.slice(stats.indexOf('<view class="card overview-section">'), stats.indexOf('<view class="card attendance-section">'))
+assert.ok(!/openSalesDetail|bindtap="openSale"/.test(overview), '业绩明细与其他业绩入口不应单独悬在首页中间')
+assert.ok(/<view class="title">按月查看<\/view>/.test(stats), '按月查看弹层标题必须与入口一致')
+assert.ok(/history-section-head[^>]*>[\s\S]*history-add-sale[^>]*bindtap="openSale"[^>]*>＋ 记录其他业绩/.test(stats), '其他业绩入口必须收进按月查看的销售页')
+assert.ok(/openHistory\(\)\{const p=dateParts\(todayKey\(\)\),month=monthDateKey\(p\.year,p\.month,1\)\.slice\(0,7\)/.test(statsJs), '按月查看必须默认打开本月，不能先跳到上个月')
+assert.ok(navWxml.indexOf('member-nav-shield') >= 0 && navWxml.indexOf('member-nav-shield') < navWxml.indexOf('class="member-nav"'), '会员底部导航必须先用遮挡层盖住下方内容')
+assert.ok(/\.member-nav-shield\{[^}]*position:fixed[^}]*bottom:0[^}]*z-index:19[^}]*background:var\(--member-page-bg/.test(navCss), '导航以下必须是不透明页面底色，不能再透出时间格')
+assert.ok(/wx:if="\{\{canRename\}\}"[^>]*class="profile-rename"/.test(profileWxml) && !/sandboxHint|该功能尚在安全测试中/.test(profileWxml), '会员“我的”页不得用安全测试文案占据编辑昵称位置')
+assert.ok(!/下次直接打开|不用再次扫码/.test(homeWxml), '会员首页不得常驻显示领取成功说明')
+
+console.log('member UI finishing tests: PASS')

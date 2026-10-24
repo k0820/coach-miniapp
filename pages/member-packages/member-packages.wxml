@@ -3,7 +3,7 @@
        ① 顶部总剩余只是**一行摘要**（不占用整屏首屏）；
        ② 每份**独立**课时包一屏说全七件事：类型 / 教练 / 购买日期 / 初始节数 / 已使用 / 剩余 / 状态；
        ③ 状态读 `{{item.statusText}}`（人话），⛔ 本页任何地方都别渲染英文枚举 `{{item.status}}`。 -->
-<view class="member-page member-shell" style="{{themeStyle}}">
+<view class="member-page member-shell packages-page" style="{{themeStyle}}">
   <view wx:if="{{notice.length}}" class="member-notice">
     <view wx:for="{{notice}}" wx:key="*this" class="member-notice-line">· {{item}}</view>
   </view>

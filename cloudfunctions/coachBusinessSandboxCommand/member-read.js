@@ -2,6 +2,7 @@ const crypto = require('crypto')
 // ⭐⭐ 会员域权威契约（孪生副本，与 `memberIdentityCommand/member-contract.js` 逐字节相同，
 //   由 tests/member-archive-contract.test.js 钉死）。集合名 / 档案视图 ID 算法**只允许有一个出处**。
 const contract = require('./member-read-contract')
+const memberIdentity = require('./member-identity')
 
 const sha = value => crypto.createHash('sha256').update(String(value)).digest('hex')
 const memberIdFor = openId => sha(`member:${openId}`).slice(0, 32)
@@ -114,22 +115,24 @@ async function memberRowOf(db, memberId) {
 // ⭐ 把"这位会员在哪"解析成一个可以直接用的组合。
 //   ⛔ 三个字段缺任何一个都不算找到了 —— 缺一个就退回老链路，
 //      ⛔ 绝不拿"两个字段推第三个"（那正是以前会长出第二套真相的地方）。
-async function resolveMemberPlace(db, memberId) {
-  const member = await memberRowOf(db, memberId)
+async function resolveMemberPlace(db, memberId, knownMember = null) {
+  const member = knownMember || await memberRowOf(db, memberId)
   if (!member) return null
   const ownerCoachId = String(member.ownerCoachId || '')
   const datasetId = String(member.ownerDatasetId || '')
   const studentId = String(member.studentId || '')
   if (!ownerCoachId || !datasetId || !studentId) return null
   // ⛔ claimId 沿用绑定时写好的那个 ⇒ 写路径 `memberBooking.resolveMemberTarget` 能算出同一个不透明 ID。
-  return { ownerCoachId, datasetId, studentId, claimId: String(member.claimId || fixedId('member-sandbox-place', memberId)) }
+  // 专属二维码从既有学员资料建立会员时没有旧 claim 行；读写两端仍必须从同一公式
+  // 生成不透明课包标识，否则会出现“看得见课包，点击预约却说不属于你”。
+  return { ownerCoachId, datasetId, studentId, claimId: String(member.claimId || fixedId('member-directory-claim', memberId)) }
 }
 
 // ⭐ 对外只暴露这一个：把「会员 ⇒ 服务关系」一次解析到位。
 //   ⛔ 返回的每一项都**自带 datasetId**（新分支因此不再需要查 head 表）；
 //      旧兼容分支没有 datasetId ⇒ 下游照旧走 head（一个字节的行为都不变）。
-async function memberScopes(db, n, memberId) {
-  const place = await resolveMemberPlace(db, memberId)
+async function memberScopes(db, n, memberId, knownMember = null) {
+  const place = await resolveMemberPlace(db, memberId, knownMember)
   if (place) {
     return {
       kind: 'member',
@@ -153,6 +156,12 @@ function minutesOf(row) {
   const hour = Number(data.hour), minute = Number(data.minute || 0)
   if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null
   return { start: hour * 60 + minute, end: hour * 60 + minute + (Number.isInteger(Number(data.plannedMinutes)) && Number(data.plannedMinutes) > 0 ? Number(data.plannedMinutes) : (Number.isInteger(Number(data.duration)) && Number(data.duration) > 0 ? Number(data.duration) : BUSY_FALLBACK_MINUTES)) }
+}
+// 与教练课表的占用口径一致：取消只保留历史记录，不再占用时间。
+// 这里不写任何具体小时，只根据数据库中当前有效的预约动态生成 busy。
+function blocksTimeSlot(row) {
+  const data = row && row.data || row || {}
+  return String(data.status || '') !== 'cancelled'
 }
 function dateOf(row) {
   const data = row && row.data || row || {}
@@ -282,6 +291,7 @@ async function availabilityView(db, n, claims, profileByCoach, dateKey) {
       const viewId = `${bookingView.historyId}:${rowDate}`
       if (!bookingSeen.has(viewId)) { bookingSeen.add(viewId); bookings.push(bookingView) }
       if (!dated || rowDate !== date) continue
+      if (!blocksTimeSlot(row)) continue
       const span = minutesOf(row)
       if (!span) continue
       own.push({ coachKey: fixedId('member-coach-view', row.ownerCoachId || claim.coachId), start: span.start, end: span.end })
@@ -296,6 +306,7 @@ async function availabilityView(db, n, claims, profileByCoach, dateKey) {
         if (dateOf(row) !== date) continue
         // ⛔ 会员自己的课已经在 own 里了，这里只投影**别人**占用的时段。
         if (String(row.studentId || '') === String(scope.studentId || '')) continue
+        if (!blocksTimeSlot(row)) continue
         const span = minutesOf(row)
         if (!span) continue
         busy.push({ coachKey: scope.coachKey, start: span.start, end: span.end })
@@ -411,7 +422,9 @@ function createService({ db, getOpenId }) {
     if (bad) return { ok: false, code: 'FORBIDDEN_IDENTITY_INPUT', message: `客户端不得提交身份或数据定位字段：${bad}` }
     const openId = getOpenId()
     if (!openId) return { ok: false, code: 'IDENTITY_MISSING', message: '未能确认当前微信身份。' }
-    const n = names(event.environment), memberId = memberIdFor(openId)
+    const n = names(event.environment)
+    const identity = await memberIdentity.resolveMemberIdentity({ db, environment: n.environment, openId })
+    const memberId = identity.memberId
     // ⭐⭐ 2026-10-07：这是"两个真相源"的**第二处**（条件矩阵探针实证，见 hxc/_probe-1336-matrix.js）：
     //   旧写法只看**派生索引** `member_sandbox_accounts` ⇒ 这张索引表漏写 / 集合不在 / status 不是 active
     //   ⇒ 一个明明已经在首页看到"张三 + 10 节 + 教练"的会员，在这里被判成 `unregistered`
@@ -420,7 +433,7 @@ function createService({ db, getOpenId }) {
     //   它缺不缺**不再改变**"这位会员已经存在"这个事实。
     const [account, row] = await Promise.all([
       one(db, n.accounts, { _id: fixedId(n.accounts, memberId), memberId }),
-      memberRowOf(db, memberId)
+      identity.memberRow ? Promise.resolve(identity.memberRow) : memberRowOf(db, memberId)
     ])
     if (!((account && account.status === 'active') || row)) return { ok: true, environment: n.environment, state: 'unregistered', member: null, summary: { remaining: 0, completedThisMonth: 0 }, packages: [], nextBooking: null, recentTraining: [], coaches: [], archives: [], archiveCount: 0, warnings: [] }
     // ⭐⭐ M3-P1 性能（会员约课页"正在读取可约时间…"停留 1–2 秒的云端一侧）：
@@ -430,7 +443,7 @@ function createService({ db, getOpenId }) {
     // ⭐⭐ 定位统一走 `memberScopes`（原理见本文件顶部「唯一真相源」那段注释）：
     //    新会员方案 ⇒ 用会员资料行里绑定时锁定的那三个字段；读不到新资料才退回旧认领表。
     const [scopes, profiles] = await Promise.all([
-      memberScopes(db, n, memberId),
+      memberScopes(db, n, memberId, identity.memberRow),
       all(db, n.profiles, { discoverable: true })
     ])
     const profileByCoach = new Map(profiles.map(row => [row.coachId, row]))

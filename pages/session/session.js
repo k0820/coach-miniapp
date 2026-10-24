@@ -10,12 +10,13 @@ const pendingDraft = require('../../utils/pending-training-draft')
 const pendingCompletion = require('../../utils/pending-completion')
 const completionCopy = require('../../utils/completion-copy')
 const completionTrace = require('../../utils/completion-trace')
-const phoneCalendar = require('../../utils/phone-calendar')
+const notifyConsent = require('../../utils/notify-consent')
 // ★ §110：`draft_${draftKey}_…` 里的 draftKey 对未转正预约是 `pending:stu|pkg|date|h|m`，
 //   含 `|` ⇒ 云端拒收。走同一份契约拿到确定性别名（同业务键永远同号，幂等不丢）。
 const releaseFlags = require('../../utils/release-flags')
 // M2 课时占用规则（plannedMinutes / 待确认）本机孪生 —— 与云端 occupancy.js 同口径。
 const occupancy = require('../../utils/package-occupancy')
+const trainingInsights = require('../../utils/training-insights')
 function draftScope(){const cache=wx.getStorageSync(cacheKey());return{environment:environment(),datasetId:(cache&&cache.datasetId)||(adapter.getState&&adapter.getState().datasetId)}}
 function classify(items){const gs=items.map(i=>i.group).filter(g=>g&&g!=='自定义'),d={};gs.forEach(g=>d[g]=(d[g]||0)+1);if(!gs.length)return'综合训练';const ks=Object.keys(d);if(ks.length===1)return GROUP_TITLE[ks[0]]||'综合训练';if((d['拉伸']||0)>gs.length/2)return'拉伸恢复';const top=ks.sort((a,b)=>d[b]-d[a])[0];return d[top]>gs.length-d[top]?(GROUP_TITLE[top]||'综合训练'):'综合训练'}
 // 正式 bookingId → 这门课在「本机临时 id」阶段用过的草稿键。取不到就返回空串（绝不猜）。
@@ -408,8 +409,18 @@ Page({
     //    显式把 summary 清空：要的是"现在这一版内容"，不是 booking 上可能残留的旧摘要。
     return completionCopy.buildCopyText({...booking,summary:'',duration:this.data.duration,items:this.data.items,notes:this.data.notes,category:this.data.isStretch?'拉伸恢复':this.data.category},student.name||booking.studentName)
   },
+  completionCareText(){
+    const booking=this.data.booking||{}
+    return trainingInsights.completionCare(this.data.items,this.data.isStretch?'拉伸恢复':this.data.category,`${booking.id||this.id||''}:${booking.date||''}:${booking.hour||''}`)
+  },
+  showCompletionCare(copyNote){
+    if(this.completionCareShown)return
+    this.completionCareShown=true
+    wx.showModal({title:'本节训练已记录',content:`${this.completionCareText()}\n\n${copyNote}`,showCancel:false,confirmText:'知道了',success:()=>{}})
+  },
   // 复制阶段。返回 {ok, copied, code}；**不改动**任何业务状态。
   async settleCompletionCopy({environment,datasetId,localId,requestId}){
+    const showCare=this.data.completing===true
     const text=this.completionCopyText()
     if(!text){
       // 没有可复制的内容（理论上到不了这里：没有训练动作根本不允许完课）。
@@ -422,12 +433,12 @@ Page({
     if(this.data.completing)this.setData({completing:false})
     if(result&&result.ok){
       // ★ 只有走到这里，UI 才显示"这次完整操作成功"。
-      wx.showToast({title:'已下课，课程内容已复制',icon:'none',duration:2200})
+      if(showCare)this.showCompletionCare('课程内容已复制，可以直接粘贴发送给会员。')
       return{ok:true,copied:true,called:true,code:'COMPLETED_AND_COPIED'}
     }
     // 复制暂时没确认成功：如实说"已完成、内容在复制中"，**不显示成功**、**不要求用户动手**。
     // 恢复轮会在下一次页面显示时自动补上（只试剪贴板）。
-    try{wx.showToast({title:'课程已完成，内容复制中',icon:'none',duration:2400})}catch(error){}
+    if(showCare)this.showCompletionCare('课程已经安全完成，训练内容会继续在后台复制。')
     return{ok:false,copied:false,called:!!(result&&result.called),code:(result&&result.code)||'CLIPBOARD_WRITE_FAILED'}
   },
   // 乐观完课的后台链。返回句柄：UI 不等它，测试/诊断可以 await handle.settled。
@@ -579,7 +590,7 @@ Page({
     try{notifyPendingBookings()}catch(error){}
     wx.showModal({title,content,showCancel:false,confirmText:'知道了'})
   },
-  completeLocally(){const db=getDB(),b=db.bookings.find(x=>x.id===this.id);if(!b||b.status==='done')return;const s=db.students.find(x=>x.id===b.studentId),p=s&&b.packageId&&(s.packages||[]).find(x=>x.id===b.packageId);if(!p||p.status==='reversed'||Number(p.remaining||0)<=0)return wx.showToast({title:'当前所选课时包剩余课时不足，请重新选择课时包',icon:'none'});const completedAt=Date.now(),studentName=s.name;b.duration=this.data.duration;b.studentName=b.studentName||studentName;b.consumedPackageIndex=s.packages.indexOf(p);const category=this.data.isStretch?'拉伸恢复':this.data.category,summary=buildSummary(studentName,b,this.data.items,category,this.data.notes,completedAt);Object.assign(b,{status:'done',items:this.data.items,notes:this.data.notes,category,duration:this.data.duration,completedAt,summary});p.used=Number(p.used||0)+1;p.remaining=Number(p.remaining||0)-1;db.incomes.push({id:uid(),bookingId:b.id,date:b.date,time:timeStr(b),studentId:b.studentId,studentName:b.studentName,typeName:b.typeName,category:b.category,amount:b.typeName==='赠送课程'?80:Number(b.price)});saveDB(db);this.setData({done:true,booking:{...b,time:timeStr(b)},summary,category});wx.setClipboardData({data:summary,success:()=>wx.showModal({title:'本节训练已记录',content:'课程记录已保存，训练内容也已复制。现在可以直接粘贴发送给学员。',showCancel:false,confirmText:'知道了'})})},
+  completeLocally(){const db=getDB(),b=db.bookings.find(x=>x.id===this.id);if(!b||b.status==='done')return;const s=db.students.find(x=>x.id===b.studentId),p=s&&b.packageId&&(s.packages||[]).find(x=>x.id===b.packageId);if(!p||p.status==='reversed'||Number(p.remaining||0)<=0)return wx.showToast({title:'当前所选课时包剩余课时不足，请重新选择课时包',icon:'none'});const completedAt=Date.now(),studentName=s.name;b.duration=this.data.duration;b.studentName=b.studentName||studentName;b.consumedPackageIndex=s.packages.indexOf(p);const category=this.data.isStretch?'拉伸恢复':this.data.category,summary=buildSummary(studentName,b,this.data.items,category,this.data.notes,completedAt);Object.assign(b,{status:'done',items:this.data.items,notes:this.data.notes,category,duration:this.data.duration,completedAt,summary});p.used=Number(p.used||0)+1;p.remaining=Number(p.remaining||0)-1;db.incomes.push({id:uid(),bookingId:b.id,date:b.date,time:timeStr(b),studentId:b.studentId,studentName:b.studentName,typeName:b.typeName,category:b.category,amount:b.typeName==='赠送课程'?80:Number(b.price)});saveDB(db);this.setData({done:true,booking:{...b,time:timeStr(b)},summary,category});wx.setClipboardData({data:summary,success:()=>this.showCompletionCare('课程记录已保存，训练内容也已复制，可以直接粘贴发送给会员。'),fail:()=>this.showCompletionCare('课程记录已保存，训练内容暂时没有复制成功，可以稍后在本页重新复制。')})},
   copySummary(){const booking={...this.data.booking,duration:this.data.duration},text=buildSummary(this.data.student.name,booking,this.data.items,this.data.category,this.data.notes,this.data.booking.completedAt||Date.now()),db=getDB(),b=db.bookings.find(x=>x.id===this.id);if(b&&!this.data.legacyReadonly){if(mutate.isCloudWritePath())mutate(null,null,{key:`updateBookingSummary:${this.id}`,command:'updateBookingContent',payload:{bookingId:this.id,summary:text,duration:this.data.duration},successTitle:'',onRefresh:()=>this.load()});else{b.summary=text;b.duration=this.data.duration;saveDB(db)}}this.setData({summary:text});wx.setClipboardData({data:text,success:()=>wx.showToast({title:'已复制，可发给学员'})})},
   showCancel(){this.setData({cancelSheet:true})},hideCancel(){this.setData({cancelSheet:false})},
   openReschedule(){const b=this.data.booking;this.setData({reschedule:true,editDate:b.date,editHour:b.hour,editMinute:b.minute||0})},closeReschedule(){this.setData({reschedule:false})},
@@ -597,7 +608,7 @@ Page({
         if(gate)return wx.showModal({title:'这个时间排不了',content:gate.message,showCancel:false})
       }
     }
-    if(this.data.legacyReadonly)return;const db=getDB(),b=db.bookings.find(x=>x.id===this.id),start=this.data.editHour*60+this.data.editMinute,occupied=db.bookings.some(x=>x.id!==this.id&&x.date===this.data.editDate&&start<(x.hour*60+(x.minute||0)+60)&&(start+60)>x.hour*60+(x.minute||0));if(occupied)return wx.showToast({title:'该时段与其他课程重叠',icon:'none'});if(mutate.isCloudWritePath())return mutate(null,null,{key:`rescheduleBooking:${this.id}`,command:'rescheduleBooking',payload:{bookingId:this.id,date:this.data.editDate,hour:this.data.editHour,minute:this.data.editMinute},successTitle:'时间已修改',onSuccess:()=>{this.setData({reschedule:false});this.load()},onRefresh:()=>this.load()});const result=rescheduleBookingAligned(db,this.id,{date:this.data.editDate,hour:this.data.editHour,minute:this.data.editMinute},booking=>buildSummary(this.data.student.name,booking,this.data.items,this.data.category,this.data.notes,booking.completedAt||Date.now()));if(!result.ok)return wx.showModal({title:'无法安全改期',content:result.message,showCancel:false,confirmText:'知道了'});saveDB(db);this.setData({reschedule:false,booking:{...result.booking,time:timeStr(result.booking)},summary:result.booking.summary||this.data.summary});wx.showToast({title:result.income?'时间与收入已同步':'时间已修改'})},
+    if(this.data.legacyReadonly)return;const db=getDB(),b=db.bookings.find(x=>x.id===this.id),start=this.data.editHour*60+this.data.editMinute,occupied=db.bookings.some(x=>x.id!==this.id&&x.date===this.data.editDate&&start<(x.hour*60+(x.minute||0)+60)&&(start+60)>x.hour*60+(x.minute||0));if(occupied)return wx.showToast({title:'该时段与其他课程重叠',icon:'none'});notifyConsent.requestNextAfterAction('coach',{quiet:true});if(mutate.isCloudWritePath())return mutate(null,null,{key:`rescheduleBooking:${this.id}`,command:'rescheduleBooking',payload:{bookingId:this.id,date:this.data.editDate,hour:this.data.editHour,minute:this.data.editMinute},successTitle:'时间已修改',onSuccess:()=>{this.setData({reschedule:false});this.load()},onRefresh:()=>this.load()});const result=rescheduleBookingAligned(db,this.id,{date:this.data.editDate,hour:this.data.editHour,minute:this.data.editMinute},booking=>buildSummary(this.data.student.name,booking,this.data.items,this.data.category,this.data.notes,booking.completedAt||Date.now()));if(!result.ok)return wx.showModal({title:'无法安全改期',content:result.message,showCancel:false,confirmText:'知道了'});saveDB(db);this.setData({reschedule:false,booking:{...result.booking,time:timeStr(result.booking)},summary:result.booking.summary||this.data.summary});wx.showToast({title:result.income?'时间与收入已同步':'时间已修改'})},
   // 取消预约：和预约、完课同一套即时交互 —— 第一帧就让课表上的块消失并回到课表，
   // 云端在后台安全落实。正式 cache 一个字都不改（只写本机 tombstone），所以任何统计口径都不受影响。
   // 关键排序：若这条预约的 create 还在路上，协调器会先把 create 的结果问清楚（receipt），
@@ -636,12 +647,7 @@ Page({
     else if(officialId)mutate(null,null,{key:`cancelBooking:${officialId}`,command:'cancelBooking',payload:{bookingId:officialId},successTitle:'已取消预约',onRefresh:()=>this.load()})
     if(typeof setTimeout==='function')setTimeout(()=>{this.returnToSchedule()},0)
   },
-  cancelOnly(){if(this.data.done)return;return this.cancel(false)},
-  addToCalendar(){
-    const booking=this.data.booking||{},student=this.data.student||{}
-    if(!booking.date||!booking.time)return wx.showToast({title:'课程时间还没读全',icon:'none'})
-    return phoneCalendar.addCourse({date:booking.date,startText:booking.time,typeText:booking.typeName||'训练课程',coachName:student.name||'会员'})
-  },
+  cancelOnly(){if(this.data.done)return;notifyConsent.requestNextAfterAction('coach',{quiet:true});return this.cancel(false)},
   cancelReturn(){this.deleteCompleted()},
   deleteCompleted(){if(this.data.legacyReadonly)return;const db=getDB(),b=db.bookings.find(x=>x.id===this.id);if(!b||b.status!=='done')return wx.showToast({title:'本节记录已不存在',icon:'none'});const s=db.students.find(x=>x.id===b.studentId),p=s&&b.packageId&&(s.packages||[]).find(x=>x.id===b.packageId),active=!!(p&&p.status!=='reversed'),reversed=!!(p&&p.status==='reversed');let effect='原课时包已不存在，本次不会向其他课时包返还课时。';if(active)effect='对应课时包将返还1节课时。';else if(reversed)effect='原课时包已撤销，本次删除不会返还可用课时。';wx.showModal({title:'删除本节记录',content:`确定删除这节已完成课程吗？\n\n删除后：\n- 本节上课记录将删除\n- 对应上课收入将删除\n- 本月课时统计和预计提成将重新计算\n\n${effect}\n\n此操作不可撤销。`,confirmText:'确认删除',confirmColor:'#c7563d',success:r=>{if(!r.confirm)return;if(mutate.isCloudWritePath())return mutate(null,null,{key:`deleteCompletedBooking:${this.id}`,command:'deleteCompletedBooking',payload:{bookingId:this.id},successTitle:'本节记录已删除',onSuccess:()=>setTimeout(()=>wx.navigateBack(),500),onRefresh:()=>this.load()});const latest=getDB(),result=deleteCompletedBookingAligned(latest,this.id);if(!result.ok)return wx.showModal({title:'无法安全删除',content:result.message,showCancel:false,confirmText:'知道了'});saveDB(latest);wx.showToast({title:'本节记录已删除'});setTimeout(()=>wx.navigateBack(),500)}})},
   back(){wx.navigateBack()}

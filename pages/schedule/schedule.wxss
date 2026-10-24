@@ -192,5 +192,11 @@
    否则 `.calendar` 分到的高度会被挤掉（`.schedule-page` 是纵向 flex，课表吃剩余高度）。 */
 .member-claim-entry{flex:none;margin:12rpx 10rpx 0;padding:16rpx 20rpx;border-radius:16rpx;background:#26354a;color:#fff;font-size:24rpx;font-weight:700;text-align:center;box-shadow:0 7rpx 16rpx rgba(38,53,74,.16)}
 
-/* 手动刷新课表 */
-.refresh-allow{margin:12rpx 24rpx 0;padding:16rpx 20rpx;border-radius:16rpx;background:#fff;border:2rpx solid var(--line,#e6e2d8);color:var(--navy,#132b4f);font-size:24rpx;text-align:center}
+/* 2026-10-23 · 教练课表统一样板色板；课表几何与点击规则不变。 */
+.schedule-page{background:linear-gradient(180deg,#edf9f4 0,#fffaf3 420rpx,#fbfaf5 100%);color:#102a2b}.top{margin:0 18rpx;padding:18rpx 22rpx;border-radius:28rpx;background:linear-gradient(135deg,#2f8278,#61b49e);box-shadow:0 12rpx 30rpx rgba(47,130,120,.16)}.top-title,.top-action{color:#fff}.view-toolbar{margin:14rpx 18rpx;padding:7rpx;border:1rpx solid #e3ebe7;border-radius:22rpx;background:#fff;box-shadow:0 8rpx 22rpx rgba(16,63,59,.04)}.mode-tabs view.on{background:#28786f!important;color:#fff!important}.tool-link.share-date-link{margin-left:auto;background:#e9f8f3;color:#176e68;border-color:#cceade;font-weight:760;padding-left:18rpx;padding-right:18rpx}.calendar{margin-left:18rpx!important;margin-right:18rpx!important;border:1rpx solid #e3ebe7!important;border-radius:28rpx!important;background:#fff!important;box-shadow:0 10rpx 28rpx rgba(16,63,59,.05)!important;overflow:hidden}.grid.header,.day-view-head,.month-week{background:#edf7f3!important;color:#176e68!important}.cell.today-column,.day-cell.today-column,.month-day.today-month{background:#fff8df!important}.booking,.day-booking{border-radius:14rpx!important;background:linear-gradient(135deg,#4c76df,#6f8ce8)!important;color:#fff!important;box-shadow:none!important}.month-count{background:#eafaf4!important;color:#176e68!important}.late-bar{background:#fff8df!important;border-color:#f1dfaa!important}.cancel-notice{background:#fff1ec!important;border-color:#f7d7cc!important}.share-sheet{background:#fbfaf5!important}.share-date-row,.share-preview{border-radius:22rpx!important}.share-copy{background:#103f3b!important}
+
+/* 2026-10-23 · 真机视觉收尾：页头改成与下方浅色卡片一致的柔和色层。 */
+.schedule-page .top{background:linear-gradient(135deg,#dff5ed 0%,#dceafb 100%);border:1rpx solid #d2e8e1;box-shadow:0 10rpx 26rpx rgba(35,91,96,.08)}
+.schedule-page .top-title>view{color:#14385a!important}
+.schedule-page .top-title text{color:#6b7f88!important}
+.schedule-page .top-action{background:#173b66;color:#fff;box-shadow:none}

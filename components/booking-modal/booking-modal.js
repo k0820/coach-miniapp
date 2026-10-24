@@ -14,6 +14,7 @@ const mutate = require('../../utils/mutate')
 const memberView = require('../../utils/member-booking-view')
 const coachAuthorization = require('../../utils/coach-authorization')
 const { todayKey } = require('../../utils/beijing-date')
+const notifyConsent = require('../../utils/notify-consent')
 Component({
   properties: { visible: Boolean, presetDate: String, presetHour: Number },
   data: { step: 1, q: '', students: [], student: null, packages: [], packageIndex: -1, date: '', hour: 6, minute: 0, hours: [], timeEdit:false,
@@ -99,16 +100,29 @@ Component({
       const slot = (this.data.slots || []).find(s => s.start === start)
       if (!slot) return
       if (slot.reason === 'booked') return wx.showToast({ title: '这个时段已经排了课', icon: 'none' })
-      this.setData({ hour: Math.floor(start / 60), minute: start % 60 })
+      // 选中后立即回到确认态：顶部时间摘要会同步刷新，确认约课按钮也重新露出。
+      // 过去这里只改 hour/minute，整块时间网格仍展开，按钮被推到屏幕下方，
+      // 用户会误以为点击没有生效。
+      this.setData({ hour: Math.floor(start / 60), minute: start % 60, timeEdit: false, preciseOpen: false })
     },
     togglePrecise() { this.setData({ preciseOpen: !this.data.preciseOpen }) },
     search(e) { const q=e.detail.value.trim().toLowerCase(),letter=/^[a-z]+$/.test(q); this.setData({ q, students: this.data.allStudents.filter(s => {const name=s.name.toLowerCase(),abbr=(s.abbr||'').toLowerCase(),phone=s.phone||'';return !q||(letter?abbr.startsWith(q):name.includes(q)||phone.includes(q))}) }) },
     chooseStudent(e) { const student = this.data.allStudents.find(s => s.id === e.currentTarget.dataset.id),packages=(student.packages||[]).map((p,sourceIndex)=>({p,sourceIndex})).filter(x=>x.p.status!=='reversed').map(({p,sourceIndex})=>{const t=TYPES.find(t=>t.name===p.type)||TYPES[0];return {...p,sourceIndex,left:student.authorized?Number(p.availableToBook||0):Number(p.remaining||0),color:t.color,light:t.light,gift:!!t.gift,emoji:t.emoji}}).sort((a,b)=>(a.gift?1:0)-(b.gift?1:0)||a.sourceIndex-b.sourceIndex); this.setData({ student, packages, step: 2,timeEdit:false }) },
-    choosePackage(e) { if (!e.currentTarget.dataset.disabled) this.setData({ packageIndex: +e.currentTarget.dataset.index }) },
+    choosePackage(e) {
+      const dataset = e && e.currentTarget && e.currentTarget.dataset || {}
+      const disabled = dataset.disabled === true || dataset.disabled === 'true' || dataset.disabled === 1 || dataset.disabled === '1'
+      if (disabled) return wx.showToast({ title: '这份课程目前没有可约课时', icon: 'none' })
+      const packageIndex = Number(dataset.index)
+      if (!Number.isInteger(packageIndex) || !this.data.packages[packageIndex]) return
+      // 从课表点进来时，日期和时间已经确定。选课程只负责确定要消耗哪一份课包，
+      // 不再把时间表重复展开；只有教练主动点「预约时间（点击修改）」才进入时间编辑。
+      // 同一会员有常规课、拉伸课等多份课包时，每一张卡仍走完全相同的选择流程。
+      this.setData({ packageIndex, timeEdit: false, preciseOpen: false })
+    },
     // 改日期 ⇒ 三态必须重算（"已过时间"和"已排课"都是按这一天的数据算出来的，不是写死的）
     onDate(e) { this.setData({ date: e.detail.value }, () => this.buildSlots()) },
     onHour(e) { this.setData({ hour: this.data.hours[e.detail.value] }) }, onMinute(e) { this.setData({ minute: this.data.minutes[e.detail.value] }) },
-    onTime(e){const [hour,minute]=e.detail.value.split(':').map(Number);this.setData({hour,minute})},
+    onTime(e){const [hour,minute]=e.detail.value.split(':').map(Number);this.setData({hour,minute,timeEdit:false,preciseOpen:false})},
     pickHour(e){this.setData({hour:+e.currentTarget.dataset.value})},pickMinute(e){this.setData({minute:+e.currentTarget.dataset.value})},
     // 展开时间编辑时重算三态（"已过时间"随时间走，隔一会儿回来点开必须是最新的）
     toggleTime(){const open=!this.data.timeEdit;this.setData({timeEdit:open},()=>{if(open)this.buildSlots()})},
@@ -119,6 +133,8 @@ Component({
       // BOOKING_TIME_CONFLICT —— 它与云端跑的是同一份 handlers）。
       if (this.submitting) return
       const i = this.data.packageIndex; if (i < 0) return wx.showToast({ title: '请选择课程类型', icon: 'none' })
+      // 这次点击同时为教练本人申请下一条提醒；不等待结果，不让通知阻断排课。
+      notifyConsent.requestNextAfterAction('coach', { quiet: true })
       const db = getDB()
       const selectedStudent = this.data.student
       if (selectedStudent && selectedStudent.authorized) {

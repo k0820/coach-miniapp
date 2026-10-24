@@ -90,6 +90,12 @@ function minutesOf(row) {
   if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null
   return { start: hour * 60 + minute, end: hour * 60 + minute + (Number.isInteger(Number(data.plannedMinutes)) && Number(data.plannedMinutes) > 0 ? Number(data.plannedMinutes) : (Number.isInteger(Number(data.duration)) && Number(data.duration) > 0 ? Number(data.duration) : BUSY_FALLBACK_MINUTES)) }
 }
+// 与教练课表的占用口径一致：取消只保留历史记录，不再占用时间。
+// 时间完全来自真实预约数据，不存在任何写死的禁约时段。
+function blocksTimeSlot(row) {
+  const data = row && row.data || row || {}
+  return String(data.status || '') !== 'cancelled'
+}
 function dateOf(row) {
   const data = row && row.data || row || {}
   return String(data.date || row && row.date || '')
@@ -207,6 +213,7 @@ async function availabilityView(db, n, claims, profileByCoach, dateKey) {
       const viewId = `${bookingView.historyId}:${rowDate}`
       if (!bookingSeen.has(viewId)) { bookingSeen.add(viewId); bookings.push(bookingView) }
       if (!dated || rowDate !== date) continue
+      if (!blocksTimeSlot(row)) continue
       const span = minutesOf(row)
       if (!span) continue
       own.push({ coachKey: fixedId('member-coach-view', row.ownerCoachId || claim.coachId), start: span.start, end: span.end })
@@ -221,6 +228,7 @@ async function availabilityView(db, n, claims, profileByCoach, dateKey) {
         if (dateOf(row) !== date) continue
         // ⛔ 会员自己的课已经在 own 里了，这里只投影**别人**占用的时段。
         if (String(row.studentId || '') === String(scope.studentId || '')) continue
+        if (!blocksTimeSlot(row)) continue
         const span = minutesOf(row)
         if (!span) continue
         busy.push({ coachKey: scope.coachKey, start: span.start, end: span.end })

@@ -50,6 +50,38 @@
       },
       {
         "type": "folder",
+        "value": "pkg-diag"
+      },
+      {
+        "type": "folder",
+        "value": "pages/coach-migration-test"
+      },
+      {
+        "type": "folder",
+        "value": "pages/coach-cloud-read-test"
+      },
+      {
+        "type": "folder",
+        "value": "pages/coach-command-test"
+      },
+      {
+        "type": "folder",
+        "value": "pages/diag-readonly"
+      },
+      {
+        "type": "file",
+        "value": "utils/diag-readonly-probe.js"
+      },
+      {
+        "type": "file",
+        "value": "utils/request-id-migration.js"
+      },
+      {
+        "type": "file",
+        "value": "utils/phone-calendar.js"
+      },
+      {
+        "type": "folder",
         "value": "_p19"
       },
       {
@@ -795,6 +827,10 @@
       {
         "type": "file",
         "value": "_upload-1.3.22.txt"
+      },
+      {
+        "type": "file",
+        "value": "_upload-1.3.62.json"
       }
     ],
     "include": []

@@ -1,4 +1,5 @@
 .stats-page{padding-top:24rpx}.overview-section,.attendance-section{padding:30rpx 26rpx}.section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18rpx}.section-head>view:first-child{min-width:0}.section-head .title{font-size:35rpx;color:var(--navy)}.text-entry{margin:0}.text-entry::after{border:0}
+.coach-insight-section{padding:28rpx;background:#fff;color:#172b3a;border:1rpx solid #e4ece8;box-shadow:0 10rpx 28rpx rgba(23,59,87,.06)}.coach-insight-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20rpx}.coach-insight-kicker{color:#6c7bd9;font-size:17rpx;font-weight:850;letter-spacing:2rpx}.coach-insight-title{margin-top:6rpx;font-size:32rpx;line-height:1.3;font-weight:850}.coach-insight-total{display:flex;align-items:baseline;gap:5rpx;padding:10rpx 17rpx;border-radius:18rpx;background:#edf1ff;color:#4055c7}.coach-insight-total b{font-size:34rpx;line-height:1;font-variant-numeric:tabular-nums}.coach-insight-total text{font-size:18rpx;font-weight:700}.coach-insight-grid{display:grid;grid-template-columns:1fr 1fr;gap:14rpx;margin-top:22rpx}.coach-insight-tile{min-width:0;padding:20rpx;border-radius:22rpx;box-sizing:border-box}.coach-insight-tile text,.coach-insight-tile b,.coach-insight-tile small{display:block}.coach-insight-tile text{font-size:18rpx;font-weight:700;opacity:.74}.coach-insight-tile b{margin-top:5rpx;font-size:27rpx;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.coach-insight-tile small{margin-top:5rpx;font-size:18rpx;opacity:.7}.coach-insight-member{grid-column:1/-1;display:flex;align-items:center;gap:18rpx;background:linear-gradient(135deg,#e8f8f1,#f5fcf8);color:#176c5b}.coach-insight-icon{display:flex;align-items:center;justify-content:center;width:62rpx;height:62rpx;flex:none;border-radius:19rpx;background:#c9f0df;font-size:23rpx;font-weight:900}.coach-insight-member>view:last-child{min-width:0}.coach-insight-busy{background:#fff0e8;color:#b54a2f}.coach-insight-calm{background:#eef1ff;color:#4c5fc4}.coach-insight-care{display:flex;align-items:flex-start;gap:14rpx;margin-top:16rpx;padding:20rpx;border-radius:22rpx;background:#fff8df;color:#65501d;font-size:21rpx;line-height:1.65}.coach-insight-spark{display:flex;align-items:center;justify-content:center;width:42rpx;height:42rpx;flex:none;border-radius:50%;background:#ffdb67;color:#7b5c00;font-size:20rpx}.coach-insight-care text{flex:1;min-width:0}
 .overview-numbers{margin-top:30rpx}.overview-number{display:inline-flex;width:50%;box-sizing:border-box;vertical-align:top;flex-direction:column;padding:0 20rpx 24rpx 0}.overview-number:nth-child(2){padding-left:24rpx;padding-right:0;border-left:1rpx solid var(--line)}.overview-number>text,.commission-total text{font-size:22rpx;color:var(--muted)}.overview-number>b{display:block;max-width:100%;margin-top:8rpx;font-size:43rpx;line-height:1.2;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:-1.5rpx}.overview-number .adaptive-money{font-size:clamp(31rpx,5.4vw,43rpx)}.overview-number small,.commission-total small{display:block;margin-top:7rpx;font-size:19rpx;color:var(--muted)}.commission-total{display:flex;align-items:center;justify-content:space-between;gap:20rpx;padding:22rpx 0;border-top:1rpx solid var(--line);border-bottom:1rpx solid var(--line)}.commission-total>view{min-width:0}.commission-total>b{font-size:39rpx;color:var(--accent2);font-variant-numeric:tabular-nums;white-space:nowrap}
 .breakdown-area{display:grid;grid-template-columns:1fr 1fr;gap:30rpx;padding:23rpx 0 5rpx}.breakdown-group{min-width:0}.breakdown-title,.settings-title{font-size:22rpx;font-weight:800;color:#344054;margin-bottom:10rpx}.breakdown-row{display:flex;align-items:center;justify-content:space-between;gap:10rpx;padding:7rpx 0;color:#667085;font-size:20rpx}.breakdown-row>view{display:flex;align-items:center;min-width:0}.breakdown-row i{width:10rpx;height:10rpx;border-radius:50%;margin-right:8rpx;flex:none}.breakdown-row text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.breakdown-row b{font-size:20rpx;color:#344054;white-space:nowrap}.gift-row{border-top:1rpx solid #edf1f6;margin-top:5rpx;padding-top:10rpx}.breakdown-empty{font-size:20rpx;color:#9aa4b2;padding:7rpx 0}.text-entry{width:100%;padding:0;background:transparent;color:var(--accent2);font-size:22rpx;font-weight:750;line-height:68rpx;border-top:1rpx solid var(--line);border-radius:0;text-align:left}.text-entry text{float:right;font-size:30rpx;color:#91a0b4}
 .compact-head{align-items:center}.rank{padding:18rpx 2rpx;border-bottom:1rpx solid #e8edf4}.rank-index{display:inline-flex;width:36rpx;color:#9aa4b2;font-variant-numeric:tabular-nums}.count{font-weight:800;color:var(--accent2);font-size:21rpx}.detail{font-size:21rpx;color:#526071;background:var(--soft);border-radius:15rpx;padding:14rpx;margin-top:10rpx}.ranking-more{border-top:0;text-align:center}.ranking-more text{float:none;margin-left:8rpx}.empty-small{text-align:center;color:#8590a0;padding:28rpx}
@@ -115,3 +116,166 @@
 
 /* 📥 消息中心未读红点（2026-10-06） */
 .inbox-badge{color:#c9452f;font-weight:700}
+
+/* ──「我的」首页样板：轻量、克制、统一的系统界面 ─────────────────────
+   数据和弹层逻辑保持原样；这里只重新安排首屏的信息层级与触感。 */
+.stats-page{min-height:100vh;padding:0 32rpx 148rpx;box-sizing:border-box;background:linear-gradient(180deg,#eaf5f6 0,#f5f7fa 300rpx,#f5f7fa 100%);color:#172033}
+.my-identity{display:flex;align-items:center;gap:20rpx;padding:30rpx 2rpx 28rpx;border-bottom:1rpx solid rgba(23,32,51,.09);transition:transform .14s ease,opacity .14s ease}
+.my-identity-on{transform:scale(.985);opacity:.72}
+.coach-avatar{display:flex;align-items:center;justify-content:center;width:92rpx;height:92rpx;flex:none;border-radius:28rpx;background:linear-gradient(145deg,#183153,#2dacb5);box-shadow:0 12rpx 28rpx rgba(24,49,83,.16);font-size:38rpx;font-weight:760;color:#fff}
+.coach-copy{min-width:0;flex:1}
+.coach-kicker{font-size:20rpx;line-height:28rpx;color:#667085}
+.coach-name{margin-top:2rpx;font-size:34rpx;line-height:44rpx;font-weight:760;letter-spacing:-.4rpx;color:#172033;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.coach-note{margin-top:3rpx;font-size:20rpx;line-height:30rpx;color:#667085}
+.identity-action{flex:none;padding:14rpx 18rpx;border-radius:999rpx;background:rgba(255,255,255,.74);font-size:21rpx;line-height:28rpx;font-weight:650;color:#1677ff}
+.stats-head{padding:32rpx 2rpx 22rpx}
+.stats-month{font-size:40rpx;line-height:50rpx;font-weight:760;letter-spacing:-1rpx;color:#172033}
+.stats-month-sub{margin-top:4rpx;font-size:21rpx;line-height:31rpx;color:#667085}
+.stats-head-entry{min-height:64rpx;box-sizing:border-box;padding:16rpx 20rpx;background:rgba(255,255,255,.7);color:#1677ff;font-size:25rpx;line-height:32rpx;font-weight:650}
+.dashboard-section,.stats-page>.card.overview-section,.stats-page>.card.attendance-section{margin:0;padding:30rpx 2rpx;background:transparent;border:0;border-top:1rpx solid rgba(23,32,51,.08);border-radius:0;box-shadow:none}
+.overview-section{border-top:0;padding-top:8rpx}
+.overview-number{padding:2rpx 20rpx 24rpx}
+.overview-number:first-child{padding-left:2rpx;border-right:1rpx solid rgba(23,32,51,.09)}
+.overview-number:last-child{padding-right:2rpx}
+.overview-number>text:first-child{font-size:21rpx;line-height:30rpx;color:#667085}
+.overview-number b{margin-top:4rpx;font-size:42rpx;line-height:52rpx;font-weight:650;letter-spacing:-1rpx;color:#172033}
+.metric-note{font-size:19rpx;line-height:28rpx;color:#98a2b3}
+.commission-total{padding:22rpx 2rpx;border-top:1rpx solid rgba(23,32,51,.08);border-bottom:1rpx solid rgba(23,32,51,.08)}
+.commission-total b{font-size:36rpx;line-height:46rpx;font-weight:680;color:#1677ff}
+.breakdown-area{gap:34rpx;padding:24rpx 2rpx 4rpx}
+.breakdown-title{font-size:23rpx;line-height:32rpx;font-weight:680;color:#344054}
+.breakdown-row,.breakdown-empty{font-size:20rpx;line-height:30rpx;color:#667085}
+.stat-mini-row{gap:0;margin-top:24rpx;padding:22rpx 0;border-top:1rpx solid rgba(23,32,51,.08);border-bottom:1rpx solid rgba(23,32,51,.08)}
+.stat-mini{padding:4rpx 8rpx;background:transparent;border-radius:0;border-left:1rpx solid rgba(23,32,51,.08)}
+.stat-mini:first-child{border-left:0}
+.stat-mini b{font-size:30rpx;line-height:38rpx;font-weight:700;color:#172033}
+.stat-mini text{margin-top:4rpx;font-size:18rpx;line-height:26rpx;color:#667085}
+.text-entry{min-height:88rpx;padding:24rpx 2rpx;border-bottom:1rpx solid rgba(23,32,51,.08);background:transparent!important;border-radius:0!important;color:#1677ff!important;font-size:23rpx!important;font-weight:650!important;text-align:left!important}
+.attendance-section{margin-top:12rpx;padding-top:32rpx}
+.compact-head .title{font-size:30rpx;line-height:40rpx;font-weight:740;color:#172033}
+.compact-head .hint{font-size:20rpx;line-height:30rpx;color:#667085}
+.rank{padding:24rpx 2rpx;border-bottom:1rpx solid rgba(23,32,51,.08)}
+.empty-small{padding:34rpx 2rpx;color:#98a2b3}
+.utility-section{margin-top:14rpx;border-top:1rpx solid rgba(23,32,51,.09);border-bottom:1rpx solid rgba(23,32,51,.09)}
+.utility-section .settings-entry.ghost-entry{display:flex;align-items:center;justify-content:space-between;min-height:108rpx;margin:0;padding:18rpx 2rpx;border:0;border-bottom:1rpx solid rgba(23,32,51,.08);border-radius:0;background:transparent;box-shadow:none;transition:background .14s ease,opacity .14s ease}
+.utility-section .settings-entry.ghost-entry:last-child{border-bottom:0}
+.utility-row-on{background:rgba(255,255,255,.56);opacity:.72}
+.utility-section .title{font-size:25rpx;line-height:34rpx;font-weight:680;color:#344054}
+.utility-section .hint{margin-top:3rpx;font-size:19rpx;line-height:28rpx;color:#98a2b3}
+.entry-arrow{font-size:32rpx;color:#98a2b3}
+.coach-name-dialog{height:auto;max-height:none;padding-top:14rpx}
+.dialog-handle{width:72rpx;height:8rpx;margin:0 auto 24rpx;border-radius:999rpx;background:#d0d5dd}
+.coach-name-input{height:92rpx;margin:30rpx 0 22rpx;padding:0 24rpx;border:1rpx solid #d0d5dd;border-radius:18rpx;background:#f9fafb;font-size:28rpx;color:#172033;box-sizing:border-box}
+.coach-name-input:focus{border-color:#1677ff}
+
+/* 最终收尾：把「我的」压缩成一条清晰的数据阅读路径，去掉表格式密集分栏。 */
+.stats-page{background:linear-gradient(180deg,#eef3fb 0,#f7f8fa 300rpx,#f7f8fa 100%)}
+.coach-avatar{background:linear-gradient(145deg,#233b62,#5b7cfa)}
+.overview-section{display:block!important;padding-top:4rpx!important}
+.overview-primary{padding:28rpx 2rpx 30rpx;border-bottom:1rpx solid rgba(23,32,51,.09)}
+.overview-primary>text,.overview-primary>b{display:block}
+.overview-primary>text:first-child{font-size:21rpx;line-height:30rpx;color:#667085}
+.overview-primary>b{margin-top:8rpx;font-size:58rpx;line-height:68rpx;font-weight:700;letter-spacing:-2rpx;color:#2764d8;font-variant-numeric:tabular-nums}
+.overview-primary .metric-note{margin-top:5rpx}
+.overview-support{display:grid;grid-template-columns:1fr 1fr;padding:24rpx 0;border-bottom:1rpx solid rgba(23,32,51,.09)}
+.overview-support>view{min-width:0;padding:0 24rpx 0 2rpx}
+.overview-support>view+view{padding:0 2rpx 0 24rpx;border-left:1rpx solid rgba(23,32,51,.09)}
+.overview-support text,.overview-support b{display:block}
+.overview-support>view>text:first-child{font-size:20rpx;line-height:29rpx;color:#667085}
+.overview-support b{margin-top:5rpx;font-size:34rpx;line-height:43rpx;font-weight:680;letter-spacing:-1rpx;color:#172033;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.month-activity{display:grid;grid-template-columns:repeat(3,1fr);padding:22rpx 0;border-bottom:1rpx solid rgba(23,32,51,.09)}
+.month-activity>view{text-align:center;border-left:1rpx solid rgba(23,32,51,.08)}
+.month-activity>view:first-child{border-left:0}
+.month-activity b,.month-activity text{display:block}
+.month-activity b{font-size:29rpx;line-height:38rpx;font-weight:700;color:#172033;font-variant-numeric:tabular-nums}
+.month-activity text{margin-top:2rpx;font-size:18rpx;line-height:27rpx;color:#667085}
+.cloud-sync-summary{margin:10rpx 0 14rpx;padding:20rpx 22rpx;border-radius:18rpx;background:#eef4ff}
+.cloud-sync-summary b,.cloud-sync-summary text{display:block}
+.cloud-sync-summary b{font-size:24rpx;line-height:34rpx;color:#233b62}
+.cloud-sync-summary text{margin-top:4rpx;font-size:19rpx;line-height:29rpx;color:#667085}
+.safety-toggle{border-top:1rpx solid var(--line)}
+.advanced-safety-list{margin-top:2rpx;background:#fafbfc}
+
+/* 2026-10-17 · 教练端「我的」视觉升级
+   仅调整首屏层级与配色；收入、课时、排行和所有入口继续使用原数据与原事件。 */
+.stats-page{padding:24rpx 28rpx 154rpx;background:#f3f6f5;color:#102a2b}
+.my-identity{gap:18rpx;margin:0;padding:28rpx 26rpx 20rpx;border:0;border-radius:34rpx 34rpx 0 0;background:linear-gradient(145deg,#102f46 0%,#164f55 58%,#176f68 100%)}
+.coach-avatar{width:86rpx;height:86rpx;border:2rpx solid rgba(255,255,255,.34);border-radius:26rpx;background:linear-gradient(145deg,#f8fffd,#bff4e7);box-shadow:0 10rpx 24rpx rgba(0,0,0,.13);color:#0d4f4b;font-size:36rpx;font-weight:800}
+.coach-kicker{color:rgba(255,255,255,.64);font-size:20rpx;letter-spacing:1rpx}
+.coach-name{color:#fff;font-size:34rpx;font-weight:800}
+.coach-note{display:none}
+.identity-action{padding:13rpx 18rpx;border:1rpx solid rgba(255,255,255,.22);border-radius:20rpx;background:rgba(255,255,255,.1);color:#dff8f3;font-size:21rpx}
+.stats-head{margin:0;padding:8rpx 26rpx 20rpx;background:linear-gradient(145deg,#102f46 0%,#164f55 58%,#176f68 100%)}
+.stats-head-copy{flex:1}
+.stats-month{color:#fff;font-size:32rpx;line-height:40rpx;font-weight:750;letter-spacing:0}
+.stats-month-sub{display:none}
+.stats-head-entry{min-height:64rpx;padding:16rpx 18rpx;border:1rpx solid rgba(255,255,255,.18);border-radius:22rpx;background:rgba(255,255,255,.1);color:#fff;font-size:25rpx;line-height:32rpx;font-weight:650}
+.stats-page>.card.overview-section{margin:0 0 28rpx;padding:0!important;border:0;background:transparent;box-shadow:none}
+.overview-primary{padding:2rpx 26rpx 28rpx;border:0;border-radius:0 0 34rpx 34rpx;background:linear-gradient(145deg,#102f46 0%,#164f55 58%,#176f68 100%);box-shadow:0 18rpx 42rpx rgba(15,62,66,.18)}
+.overview-primary>text:first-child{color:rgba(255,255,255,.65);font-size:22rpx}
+.overview-primary>b{margin-top:5rpx;color:#fff;font-size:58rpx;line-height:64rpx;font-weight:800}
+.overview-primary .metric-note{color:rgba(255,255,255,.55)}
+.goal-brief{margin-top:22rpx;padding:18rpx 20rpx 20rpx;border:1rpx solid rgba(255,255,255,.16);border-radius:24rpx;background:rgba(5,31,39,.24)}
+.goal-brief-head{display:grid;grid-template-columns:1fr auto;align-items:center;gap:3rpx 12rpx}
+.goal-brief-head>text:first-child{color:rgba(255,255,255,.62);font-size:20rpx}
+.goal-brief-head>b{grid-row:2;color:#fff;font-size:25rpx;line-height:34rpx;font-weight:750}
+.goal-brief-head>text:last-child{grid-column:2;grid-row:1/3;padding:7rpx 12rpx;border-radius:999rpx;background:#dff5ef;color:#176e68;font-size:18rpx;font-weight:700}
+.goal-track{height:10rpx;margin-top:14rpx;overflow:hidden;border-radius:999rpx;background:rgba(255,255,255,.16)}
+.goal-fill{height:100%;min-width:8rpx;border-radius:999rpx;background:#35c5a3;transition:width .25s ease}
+.overview-support{gap:16rpx;margin-top:24rpx;padding:0;border:0}
+.overview-support>view,.overview-support>view+view{min-height:120rpx;padding:22rpx 22rpx;border:1rpx solid #e2e9e7;border-radius:24rpx;background:#fff;box-shadow:0 10rpx 26rpx rgba(26,62,61,.05)}
+.overview-support>view>text:first-child{color:#728481;font-size:21rpx}
+.overview-support b{color:#102f34;font-size:34rpx;font-weight:800}
+.overview-support .metric-note{color:#9aa7a4}
+.month-activity{gap:12rpx;margin-top:14rpx;padding:0;border:0}
+.month-activity>view,.month-activity>view:first-child{padding:18rpx 6rpx;border:1rpx solid #e2e9e7;border-radius:22rpx;background:#fff;box-shadow:0 8rpx 22rpx rgba(26,62,61,.04)}
+.month-activity b{color:#143436;font-size:29rpx;font-weight:800}
+.month-activity text{color:#7a8c89}
+.text-entry{min-height:82rpx;margin-top:14rpx;padding:20rpx 22rpx;border:1rpx solid #dfe8e5!important;border-radius:22rpx!important;background:#fff!important;color:#176e68!important;box-shadow:0 8rpx 22rpx rgba(26,62,61,.04);line-height:40rpx}
+.text-entry text{color:#9aa7a4}
+.stats-page>.card.attendance-section{margin:0;padding:26rpx 22rpx 10rpx;border:1rpx solid #e1e9e7;border-radius:28rpx;background:#fff;box-shadow:0 10rpx 30rpx rgba(26,62,61,.05)}
+.compact-head .title{color:#142c2d;font-size:30rpx;font-weight:800}
+.compact-head .hint{color:#7c918e}
+.attendance-section .stats-head-entry{border:0;background:#eaf7f3;color:#176e68}
+.rank{padding:22rpx 4rpx;border-color:#edf1f0}
+.rank-index{align-items:center;justify-content:center;width:40rpx;height:40rpx;margin-right:12rpx;border-radius:14rpx;background:#eaf7f3;color:#176e68;font-weight:800}
+.count{color:#176e68;font-size:22rpx}
+.detail{background:#f2f7f5;color:#526b68}
+.utility-section{margin-top:20rpx;border:1rpx solid #e1e9e7;border-radius:26rpx;background:#fff;box-shadow:0 8rpx 24rpx rgba(26,62,61,.04);overflow:hidden}
+.utility-section .settings-entry.ghost-entry{min-height:96rpx;padding:16rpx 22rpx;border:0;border-bottom:1rpx solid #edf1f0;background:#fff}
+.utility-section .title{color:#173233;font-size:24rpx}
+.utility-section .hint{color:#91a19e}
+.entry-arrow{color:#9aa7a4}
+@media (max-width:350px){.stats-page{padding-left:20rpx;padding-right:20rpx}.my-identity{padding-left:22rpx;padding-right:22rpx}.stats-head,.overview-primary{padding-left:22rpx;padding-right:22rpx}.overview-support{gap:12rpx}.overview-support>view,.overview-support>view+view{padding-left:18rpx;padding-right:18rpx}.overview-primary>b{font-size:52rpx}}
+
+/* 2026-10-17 · 最终扁平版：首屏只保留一块主信息区，其他数据使用连续列表与分隔线。 */
+.stats-page{padding-left:28rpx;padding-right:28rpx;background:#f5f7f5}
+.my-identity,.stats-head,.overview-primary{background:#123f45}
+.my-identity{border-radius:30rpx 30rpx 0 0}
+.overview-primary{border-radius:0 0 30rpx 30rpx;box-shadow:none}
+.goal-brief{border:0;border-top:1rpx solid rgba(255,255,255,.14);border-radius:0;background:transparent;padding-left:0;padding-right:0}
+.overview-support{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:18rpx 0 0;background:#fff;border:1rpx solid #e2e9e7;border-radius:24rpx 24rpx 0 0;overflow:hidden}
+.overview-support>view,.overview-support>view+view{min-height:106rpx;padding:22rpx;border:0;border-radius:0;box-shadow:none}
+.overview-support>view+view{border-left:1rpx solid #e7edeb}
+.month-activity{gap:0;margin:0;background:#fff;border:1rpx solid #e2e9e7;border-top:0;border-radius:0;overflow:hidden}
+.month-activity>view,.month-activity>view:first-child{padding:20rpx 6rpx;border:0;border-left:1rpx solid #edf1f0;border-radius:0;box-shadow:none}
+.month-activity>view:first-child{border-left:0}
+.text-entry{margin:0;padding:20rpx 22rpx;border:1rpx solid #e2e9e7!important;border-top:0!important;border-radius:0!important;box-shadow:none}
+.text-entry:last-of-type{border-radius:0 0 24rpx 24rpx!important}
+.stats-page>.card.attendance-section{padding:28rpx 24rpx 8rpx;border-radius:24rpx;box-shadow:none}
+.attendance-section .stats-head-entry{padding:12rpx 16rpx;border-radius:18rpx}
+.utility-section{border-radius:24rpx;box-shadow:none}
+
+.history-section-head{display:flex;align-items:center;justify-content:space-between;gap:16rpx;margin-bottom:12rpx}.history-add-sale{flex:none;margin:0;padding:0 18rpx;min-height:58rpx;line-height:58rpx;border:0;border-radius:18rpx;background:#eaf7f3;color:#176e68;font-size:21rpx;font-weight:750}.history-add-sale::after{border:0}
+
+/* 2026-10-23 · 经确认的 Minimalist 样板：一张主卡、四色数据卡、清晰月度观察。 */
+.stats-page{padding:26rpx 28rpx 156rpx;background:linear-gradient(180deg,#edf9f4 0,#fffaf3 520rpx,#f8f8f4 100%)}
+.my-identity{margin:0;padding:24rpx 8rpx 22rpx;border-radius:0;background:transparent}.coach-avatar{width:88rpx;height:88rpx;border:0;border-radius:26rpx;background:linear-gradient(145deg,#e6fff6,#bdf1df);color:#103f3b;box-shadow:none}.coach-kicker{color:#71837f}.coach-name{color:#102a2b}.stats-head{margin:0 0 0;padding:6rpx 26rpx 16rpx;border-radius:32rpx 32rpx 0 0;background:linear-gradient(145deg,#103f3b,#176e68)}.stats-month{color:#fff}.stats-head-entry{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.2)}
+.overview-primary{padding:2rpx 26rpx 28rpx;border-radius:0 0 32rpx 32rpx;background:linear-gradient(145deg,#103f3b,#176e68);box-shadow:0 16rpx 38rpx rgba(16,63,59,.16)}.overview-primary>b{font-size:62rpx}.goal-brief{border:1rpx solid rgba(255,255,255,.13);border-radius:22rpx;background:rgba(0,0,0,.09);padding:16rpx 18rpx}.goal-fill{background:#54ddb4}
+.overview-support{gap:14rpx;margin-top:18rpx;border:0;background:transparent;overflow:visible}.overview-support>view,.overview-support>view+view{min-height:126rpx;padding:22rpx;border:1rpx solid #d7eee5;border-radius:26rpx;box-shadow:0 10rpx 24rpx rgba(16,63,59,.05)}.overview-support>view:first-child{background:linear-gradient(145deg,#eafaf4,#fff)}.overview-support>view+view{background:linear-gradient(145deg,#fff1ec,#fff);border-color:#f6d8cf}.overview-support>view+view b{color:#d95d43}
+.month-activity{gap:14rpx;margin-top:14rpx;border:0;background:transparent}.month-activity>view,.month-activity>view:first-child{padding:20rpx 8rpx;border:1rpx solid #d8e5fa;border-radius:24rpx;background:linear-gradient(145deg,#edf3ff,#fff)}.month-activity>view:nth-child(2){border-color:#f1dfaa;background:linear-gradient(145deg,#fff8df,#fff)}.month-activity>view:nth-child(3){border-color:#d7eee5;background:linear-gradient(145deg,#eafaf4,#fff)}
+.coach-insight-section{margin:24rpx 0!important;padding:28rpx 24rpx!important;border:1rpx solid #dce8fb!important;border-radius:30rpx!important;background:linear-gradient(145deg,#fff,#f2f7ff)!important;box-shadow:0 12rpx 28rpx rgba(76,118,223,.07)!important}.coach-insight-tile{border-radius:22rpx!important}.coach-insight-member{background:#eafaf4!important}.coach-insight-busy{background:#fff1ec!important}.coach-insight-calm{background:#edf3ff!important}.coach-insight-care{background:#fff8df!important;border-color:#f1dfaa!important}
+.stats-page>.card.attendance-section{border-radius:28rpx;background:#fff;box-shadow:0 10rpx 28rpx rgba(16,63,59,.05)}.attendance-section .stats-head-entry{background:#eafaf4;color:#176e68}.utility-section{border-radius:28rpx;background:#fff;box-shadow:0 8rpx 24rpx rgba(16,63,59,.04)}
+
+/* 2026-10-23 · 教练姓名不再单独占据页首，收进月度业绩主卡。 */
+.stats-coach-name{display:inline-flex;align-items:center;margin-top:8rpx;padding:5rpx 12rpx;border-radius:999rpx;background:rgba(255,255,255,.13);color:rgba(255,255,255,.82);font-size:19rpx;font-weight:650;line-height:28rpx}

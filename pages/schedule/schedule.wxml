@@ -3,7 +3,7 @@
   <!-- ⭐ 2026-10-03 · 页面级下拉刷新的**紧凑加载提示**（1.3.11 真机反馈的修法之一）。
        ⛔ 它替换掉的是原来 `scroll-view` 自带的 refresher 区域（默认一整块 45px 的三点空白，
           只有时间网格下移、页头一动不动）。
-       现在整页是**唯一**的刷新容器 ⇒ 下拉时月份标题 / 月周日 / 选择日期 / 分享可约 / 星期标题 /
+       现在整页是**唯一**的刷新容器 ⇒ 下拉时月份标题 / 月周日 / 分享日期 / 星期标题 /
        时间网格**一起**下移；松手后就地展开这一条（44rpx，不占大块高度），同步完成自动收回。
        ⛔ height 不做 transition（瞬时就位）⇒ 占流高度一次到位，syncRowHeight 量到的就是终值，
           不会量到动画中间态（那会让行高算小、底部被裁）。只有 opacity 过渡。
@@ -12,11 +12,9 @@
   <view class="top"><view class="top-title"><view style="font-size:34rpx">{{year}} 年 {{month}} 月</view><text style="font-size:21rpx">{{viewMode==='week'?weekRange:selectedLabel}}</text></view><view class="top-action" style="font-size:22rpx" bindtap="today">回到今天</view></view>
   <view class="view-toolbar">
     <view class="mode-tabs"><view style="font-size:23rpx" data-mode="month" class="{{viewMode==='month'?'on':''}}" bindtap="setView">月</view><view style="font-size:23rpx" data-mode="week" class="{{viewMode==='week'?'on':''}}" bindtap="setView">周</view><view style="font-size:23rpx" data-mode="day" class="{{viewMode==='day'?'on':''}}" bindtap="setView">日</view></view>
-    <view class="tool-link" style="font-size:23rpx" bindtap="openDateCalendar">选择日期</view>
-    <view class="tool-link" style="font-size:23rpx" bindtap="openShareAvailable">分享可约</view>
+    <view class="tool-link share-date-link" style="font-size:23rpx" bindtap="openShareAvailable">分享日期</view>
   </view>
 
-  <view class="refresh-allow" bindtap="refreshScheduleNow">{{refreshAllowText}}</view>
 
   <!-- ⭐ 会员取消了预约：这些课不再出现在课表上，但**必须**让教练看见是谁取消了哪几节
        （不静默隐藏）。点击列出明细；没有任何"恢复/撤销"入口 —— 取消是会员的权利。 -->

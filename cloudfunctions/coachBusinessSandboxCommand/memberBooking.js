@@ -56,6 +56,7 @@ const teaching = require('./teaching')
 const notify = require('./notify')
 // ⭐⭐ 2026-10-07（1.3.38）：预约变动的**统一通知分发器**（会员侧与教练侧共用一套）。
 const notifyBooking = require('./notify-booking')
+const memberIdentity = require('./member-identity')
 const { handlers, createBookingOnForeignPackage, bookingMoment, businessData, bookingPackageSpace, writableRow } = require('./handlers')
 
 const sha = value => crypto.createHash('sha256').update(String(value)).digest('hex')
@@ -178,7 +179,7 @@ function beijingDateKey(nowMs) {
 async function resolveMemberTarget({ db, environment, memberId, coachKey, packageViewId }) {
   const names = authorization.collectionsFor(environment)
   const auths = authorization.authScope(db, environment)
-  const claims = await listWhere(db, names.claims, { memberId, status: 'verified' })
+  const claims = await memberIdentity.resolveMemberScopes({ db, environment, memberId, claimsCollection: names.claims })
   // ⛔ 没有认领 = 没有档案 ⇒ 失败。**绝不**自动建档（规则 3，禁止自助建档）。
   if (!claims.length) throw commandError('MEMBER_CLAIM_NOT_FOUND', '还没有认领你的学员档案，暂时不能自助约课。请让你的教练生成认领码。')
   // ⭐ 2026-10-01 性能专项：**同一次请求内**的备忘录。
@@ -204,7 +205,9 @@ async function resolveMemberTarget({ db, environment, memberId, coachKey, packag
   }
   for (const claim of claims) {
     if (!claim || !claim.coachId || !claim.studentId) continue
-    const place = await placeOf(claim.coachId)
+    const place = claim.datasetId
+      ? { ownerCoachId: claim.coachId, datasetId: claim.datasetId }
+      : await placeOf(claim.coachId)
     if (!place) continue
     const claimId = claim.claimId || fixedId(names.claims, claim.coachId, claim.studentId)
     // ① 账本所有者：自己账里的会员，天然可约（旧数据零迁移的支点）。
@@ -260,7 +263,7 @@ async function resolveOwnBooking({ db, environment, memberId, bookingViewId }) {
   const wanted = String(bookingViewId == null ? '' : bookingViewId).trim()
   if (!wanted) throw commandError('INVALID_PAYLOAD', '缺少预约标识。')
   const names = authorization.collectionsFor(environment)
-  const claims = await listWhere(db, names.claims, { memberId, status: 'verified' })
+  const claims = await memberIdentity.resolveMemberScopes({ db, environment, memberId, claimsCollection: names.claims })
   if (!claims.length) throw commandError('MEMBER_CLAIM_NOT_FOUND', '还没有认领你的学员档案，暂时不能自助调整预约。请让你的教练生成认领码。')
   // ⛔ 集合名**只从 core 的元集合推导**，⛔ 绝不在这里写死任何集合名字面量
   //    （连注释里都不许抄一份）：写死正式区那张账本清单的名字，会让**测试区那份镜像里
@@ -530,7 +533,8 @@ async function runMemberBooking({ db, getOpenId, now, event, policy, delivery = 
     if (!resolvedPolicy) return fail('MEMBER_BOOKING_POLICY_NOT_SELECTED', '会员自助预约的规则尚未确定，暂不开放提交。')
     const payload = event.payload || {}
     // ⭐ 会员身份：**只**从服务端可信 OPENID 推导（三条命令共用这一段，没有第二条身份来源）。
-    const memberId = memberIdFor(openId)
+    const identity = await memberIdentity.resolveMemberIdentity({ db, environment, openId })
+    const memberId = identity.memberId
     if (command === CANCEL_COMMAND || command === RESCHEDULE_COMMAND) {
       return await runManage({ db, environment, memberId, command, payload, requestId, now, delivery })
     }

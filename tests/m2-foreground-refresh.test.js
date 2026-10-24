@@ -176,7 +176,9 @@ test('④ 下拉刷新是兜底：页面自己的下拉不被覆盖，没下拉�
 
   // 关键页面的 json 必须真的开了下拉刷新
   ;['pages/schedule/schedule.json', 'pages/students/students.json', 'pages/stats/stats.json', 'pages/member-home/member-home.json'].forEach(file => {
-    assert.equal(JSON.parse(read(file)).enablePullDownRefresh, true, `${file} 必须支持下拉刷新`)
+    const config = JSON.parse(read(file))
+    const customMemberRefresh = file.includes('member-home') && config.enablePullDownRefresh === false && /refresher-enabled/.test(read('pages/member-home/member-home.wxml'))
+    assert.ok(config.enablePullDownRefresh === true || customMemberRefresh, `${file} 必须支持原生或无图标的内容跟手下拉刷新`)
   })
   ;['pages/schedule/schedule.js', 'pages/students/students.js', 'pages/stats/stats.js', 'pages/member-home/member-home.js'].forEach(file => {
     assert.ok(/onPullDownRefresh/.test(read(file)), `${file} 必须有下拉刷新处理`)

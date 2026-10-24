@@ -33,11 +33,14 @@ const SLOTS_WXML = path.join(ROOT, 'pages', 'member-book-slots', 'member-book-sl
 const sha = value => crypto.createHash('sha256').update(String(value)).digest('hex')
 const fixedId = (...parts) => sha(parts.join(':')).slice(0, 32)
 
-const OPENID_ZHANG = 'o-member-zhang-real'
-const MEMBER_ZHANG = sha(`member:${OPENID_ZHANG}`).slice(0, 32)
 const COACH_A = 'coach-a-owner'
 const DATASET_A = 'dataset-a-owner'
 const STUDENT_ZHANG = 'student-zhang-real'
+const OPENID_ZHANG = 'o-member-zhang-real'
+// 专属二维码会员沿用教练已经建立的学员资料，因此 memberId 与旧 OPENID 哈希故意不同。
+// 这一条如果又改回 hash(openId)，本专项就无法复现邱一一真机故障。
+const MEMBER_ZHANG = fixedId('member-by-student', COACH_A, DATASET_A, STUDENT_ZHANG)
+const LEGACY_MEMBER_ZHANG = sha(`member:${OPENID_ZHANG}`).slice(0, 32)
 const CONTACT_KEY_A = fixedId('member-contact-view', 'coach', COACH_A)
 const futureDate = days => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(Date.now() + days * 86400000))
 const BOOKED_DATE = futureDate(1)          // 明天已被占用 ⇒ 始终验证"真的算过冲突"，不会随日历过期
@@ -122,6 +125,14 @@ function seedRealDevice(opts = {}) {
     bookingId: 'bk-zhang-existing', ownerCoachId: COACH_A, datasetId: DATASET_A, studentId: STUDENT_ZHANG,
     date: BOOKED_DATE, hour: 14, minute: 0, plannedMinutes: 60, status: 'booked', typeName: '常规训练'
   }]
+  if (opts.withOtherMemberBookings) {
+    // 这里只是内存测试数据：验证“实际存在的别人课程占位、已取消课程释放”。
+    // 15:00 / 16:00 不会写入业务代码，更不会变成固定禁约时间。
+    stores['bookings'].push(
+      { bookingId: 'bk-other-active', ownerCoachId: COACH_A, datasetId: DATASET_A, studentId: 'student-other', date: BOOKED_DATE, hour: 15, minute: 0, plannedMinutes: 60, status: 'booked', typeName: '常规训练' },
+      { bookingId: 'bk-other-cancelled', ownerCoachId: COACH_A, datasetId: DATASET_A, studentId: 'student-other', date: BOOKED_DATE, hour: 16, minute: 0, plannedMinutes: 60, status: 'cancelled', typeName: '常规训练' }
+    )
+  }
   return stores
 }
 
@@ -135,6 +146,7 @@ function serviceWith(stores, openId = OPENID_ZHANG) {
 // ─────────────────── 真页面（只替换 wx / Page / 云调用）───────────────────────────────
 function openBookingPage(stores, options = {}) {
   const storage = {}
+  Object.assign(storage, options.storage || {})
   const calls = []
   for (const key of Object.keys(require.cache)) delete require.cache[key]
   const { createService } = require(MEMBER_READ)
@@ -189,6 +201,7 @@ function test(name, fn) {
 }
 
 async function main() {
+  assert.notStrictEqual(MEMBER_ZHANG, LEGACY_MEMBER_ZHANG, '前置必须复现：专属资料编号与旧微信哈希编号不同')
   await test('① head 表完全查不到 ⇒ 约课链路**仍然**读到同一份张三 · 10 节 · A 教练', async () => {
     const service = serviceWith(seedRealDevice({ noHead: true }))
     const result = await service({ action: 'availability', date: FREE_DATE, environment: 'sandbox' })
@@ -198,6 +211,13 @@ async function main() {
     assert.strictEqual((result.packages || []).length, 1, '张三的 10 节课包必须在')
     assert.strictEqual(result.packages[0].typeName, '常规训练')
     assert.strictEqual(result.packages[0].remaining, 10)
+  })
+
+  await test('①b 专属二维码会员没有任何旧 claim ⇒ 仍按会员目录读到教练和课包', async () => {
+    const result = await serviceWith(seedRealDevice({ noClaims: true }))({ action: 'availability', date: FREE_DATE, environment: 'sandbox' })
+    assert.strictEqual(result.availability, true)
+    assert.strictEqual(result.coaches.length, 1)
+    assert.strictEqual(result.packages.length, 1)
   })
 
   await test('② head 表出现两条（账本不确定）⇒ 结果逐字相同（不许再被判成"不确定"跳过）', async () => {
@@ -250,11 +270,26 @@ async function main() {
     assert.ok(page.data.slots.length > 0, '必须算出可约时段（不是空课表）')
   })
 
+  await test('⑥b Sandbox 清理后手机残留旧 archiveId ⇒ 必须采用本次服务端的新档案与课包', async () => {
+    const stale = {
+      environment: 'sandbox',
+      archives: [{ archiveId: 'archive-from-previous-sandbox', displayName: '旧测试会员' }]
+    }
+    const { page } = openBookingPage(seedRealDevice({ noHead: true }), {
+      storage: { 'coachMemberActiveCache:sandbox': stale, 'coachMemberCurrentArchive:sandbox': 'archive-from-previous-sandbox' }
+    })
+    await page.load({ force: true })
+    assert.strictEqual(page.data.coaches.length, 1, '旧缓存不能盖掉本次服务端下发的教练')
+    assert.strictEqual(page.data.packages.length, 1, '旧 archiveId 不能把新领取的真实课时包筛空')
+    assert.strictEqual(page.data.packages[0].remaining, 10)
+  })
+
   await test('⑦ 页面始终显示唯一「授课教练」，不再提供多教练选择器', async () => {
     const wxml = renderWxml()
     assert.ok(wxml.includes('授课教练'), '模板里必须有"授课教练"这一块')
     assert.ok(!wxml.includes('选择教练'), '⛔ 单教练产品仍显示"选择教练"')
     assert.ok(!/bindtap="pickCoach"/.test(wxml), '⛔ 单教练产品仍能切换教练')
+    assert.ok(!/wx:if="\{\{coaches\.length\}\}"[^>]*class="member-section-title"/.test(wxml), '读取失败时授课教练标题也必须保留')
     // 没有教练时要明说原因
     assert.ok(wxml.includes('{{archiveEmpty'), '没有教练时必须显示人话原因，不留一片空白')
   })
@@ -269,6 +304,21 @@ async function main() {
     assert.ok(slot, '必须算出 14:00 这一格')
     assert.strictEqual(slot.available, false, '张三自己 14:00 有课 ⇒ 不许显示成可约')
     assert.strictEqual(slot.reason, 'booked')
+  })
+
+  await test('⑧b 只同步真实课程占用：别人已预约会禁约，已取消课程立即释放', async () => {
+    const stores = seedRealDevice({ noHead: true, withOtherMemberBookings: true })
+    const service = serviceWith(stores)
+    const projection = await service({ action: 'availability', date: BOOKED_DATE, environment: 'sandbox' })
+    assert.ok(projection.busy.some(row => row.start === 15 * 60 && row.end === 16 * 60), '实际存在的 15:00 课程必须同步为占用')
+    assert.ok(!projection.busy.some(row => row.start === 16 * 60), '已取消的 16:00 课程不能继续占位')
+
+    const { page } = openBookingPage(stores)
+    await page.load({ force: true })
+    const index = page.data.dates.findIndex(row => row.key === BOOKED_DATE)
+    await page.pickDate({ currentTarget: { dataset: { index } } })
+    assert.strictEqual(page.data.slots.find(row => row.startText === '15:00').available, false, '真实占用必须在会员端显示不可约')
+    assert.strictEqual(page.data.slots.find(row => row.startText === '16:00').available, true, '取消后必须恢复可约')
   })
 
   await test('⑨ 技术失败不许伪装成"没有可约时间"', async () => {

@@ -117,9 +117,11 @@ function studentsContract(source) {
   out.push(item('row-state-empty',
     /wx:else/.test(w) && /未购课时包/.test(w),
     '没有课时包时必须显示「未购课时包」，不能留空白'))
-  out.push(item('row-warn',
-    /\{\{student\.rowWarn\?'warn':''\}\}/.test(w) && /wx:if="\{\{student\.rowWarn\}\}"/.test(w) && /\{\{student\.rowWarnText\}\}/.test(w),
-    '快用完的课时包必须有独立标记：warn 类名 + rowWarnText 文案'))
+  out.push(item('renewal-consolidated',
+    count(w, 'bindtap="showRenewDetails"') === 1
+    && /class="renew-entry"/.test(w) && /需要续费/.test(w) && /\{\{renewCount\}\} 人/.test(w)
+    && !/student\.rowWarn/.test(w) && !/student-row-flag/.test(w) && !/renewPreview/.test(w),
+    '续费提醒必须合并为顶部唯一入口，并移除每位学员行内的重复提醒和姓名预览'))
   out.push(item('row-arrow', /class="student-row-arrow"/.test(w), '缺少右侧箭头 student-row-arrow（"能点进去"的可供性）'))
 
   // ③ 旧结构不许回潮
@@ -228,15 +230,15 @@ function studentsContract(source) {
     '⛔ padding-bottom 不许超过下拉余量（多出来的一律是"给某个悬浮物让位"，正是被否掉的形状）。'
     + '实测 padding-bottom:' + padBottomNow + 'rpx / 下拉余量 ' + PULLDOWN_ROOM + 'rpx'))
 
-  // ⑦ 课时包横向紧凑卡
-  const pkgParts = ['pkg-card-icon', 'pkg-card-name', 'pkg-card-facts', 'pkg-card-left', 'pkg-card-left-num', 'pkg-card-bar', 'pkg-card-bar-fill', 'pkg-card-price', 'pkg-card-manage']
+  // ⑦ 课时包两行超紧凑卡：名称一行、余额/业绩一行；不再放大图标和进度条。
+  const pkgParts = ['pkg-card-name', 'pkg-card-facts', 'pkg-card-left', 'pkg-card-left-num', 'pkg-card-price', 'pkg-card-manage']
   const missing = pkgParts.filter(cls => !hasClass(w, cls))
   out.push(item('pkg-card-shape', count(w, 'class="pkg-card"') === 1 && missing.length === 0,
-    '横向课时包卡必须一行内放下图标/名称/剩余/进度/单价/管理入口，缺：' + (missing.join('、') || '无')))
+    '紧凑课时包卡必须保留名称、余额、业绩摘要与编辑入口，缺：' + (missing.join('、') || '无')))
   out.push(item('pkg-card-facts',
-    /<text class="pkg-card-left"><text class="pkg-card-left-num">\{\{item\.remaining\}\}<\/text> \/ \{\{item\.total\}\} 节/.test(w)
-    && /item\.type==='赠送课程'\?'赠送':\(item\.price\?\('¥'\+item\.price\+'\/节'\):'未定价'\)/.test(w),
-    '默认态必须给出「剩余 N / 总量 节」与「赠送 / ¥单价/节 / 未定价」'))
+    /class="pkg-card-left">剩余 <text class="pkg-card-left-num">\{\{item\.remaining\}\}<\/text> \/ \{\{item\.total\}\} 节/.test(w)
+    && /item\.saleAmount!==null\?\('业绩 ¥'\+item\.saleAmount\)/.test(w),
+    '默认态必须给出「剩余 N / 总量 节」和紧凑业绩摘要'))
   out.push(item('pkg-manage-branches',
     /class="pkg-card-manage"[^>]*(bindtap|catchtap)="openSaleEditor"/.test(w)
     && /class="pkg-card-manage"[^>]*(bindtap|catchtap)="togglePackageEdit"/.test(w),
@@ -324,13 +326,14 @@ function statsContract(source) {
     /background\s*:\s*(?:#e8f0ff|var\(--soft\)|#eef4ff)/.test(merged) && !/background\s*:\s*var\(--accent\)(?![0-9a-zA-Z-])/.test(merged),
     '入口是浅色胶囊（次级），不得改成实心主按钮'))
 
-  // ④ 紧凑数据卡：四格，值与口径必须还是原来那四个
-  out.push(item('mini-row', count(w, 'class="stat-mini"') === 4 && count(w, 'class="stat-mini-row"') === 1,
-    '必须恰好一个 .stat-mini-row 且内含 4 个 .stat-mini，实测 ' + count(w, 'class="stat-mini"') + ' 个'))
-  const labels = ['完成课时', '上课会员', '本月目标', '目标进度']
-  const labelHit = labels.every((label, index) => w.includes('class="stat-mini"><b>' + ['{{monthSessions}}', '{{ranking.length}}', '{{monthlyGoalSessions}}', '{{monthSessions}}/{{monthlyGoalSessions}}'][index] + '</b><text>' + label + '</text>'))
+  // ④ 极简数据路径：预计提成是主数字；收入双列；课时、会员、目标只保留三项摘要。
+  out.push(item('mini-row', count(w, 'class="overview-primary"') === 1 && count(w, 'class="overview-support"') === 1 && count(w, 'class="month-activity"') === 1,
+    '必须各有一个 .overview-primary / .overview-support / .month-activity，避免退回表格式密集卡片'))
+  const labels = ['完成课时', '上课会员', '本月目标']
+  const labelHit = labels.every((label, index) => w.includes('<b>' + ['{{monthSessions}}', '{{ranking.length}}', '{{monthlyGoalSessions}}'][index] + '</b><text>' + label + '</text>'))
+    && w.includes('class="overview-primary"><text>本月预计提成</text><b>¥{{estimatedCommission}}</b>')
   out.push(item('mini-values', labelHit,
-    '四格的 (值, 标签) 必须精确是 (monthSessions,完成课时) (ranking.length,上课会员) (monthlyGoalSessions,本月目标) (monthSessions/monthlyGoalSessions,目标进度)'))
+    '主数字必须绑定 estimatedCommission，三项摘要必须绑定 monthSessions / ranking.length / monthlyGoalSessions'))
 
   // ⑤ 被替换掉的旧结构：wxml 与 wxss 都不许留下
   const deadWxml = ['attendance-summary', 'goal-line', 'ranking-title'].filter(name => w.includes(name))
@@ -341,7 +344,7 @@ function statsContract(source) {
 
   // ⑥ 弱化设置入口
   out.push(item('ghost-settings',
-    /class="card settings-entry ghost-entry"/.test(w)
+    /class="card settings-entry ghost-entry"[^>]*bindtap="openSettings"/.test(w)
     && /\.settings-entry\.ghost-entry\s*\{[^}]*background\s*:\s*transparent[^}]*\}/.test(s)
     && /\.settings-entry\.ghost-entry\s*\{[^}]*border\s*:\s*1rpx dashed[^}]*\}/.test(s)
     && /\.settings-entry\.ghost-entry\s*\{[^}]*box-shadow\s*:\s*none[^}]*\}/.test(s),
@@ -352,8 +355,9 @@ function statsContract(source) {
     ghostTitle !== null && monthSize !== null && ghostTitle < monthSize,
     '弱化后设置标题必须明显小于页首月份标题，实测 ' + ghostTitle + 'rpx < ' + monthSize + 'rpx'))
 
-  // ⑦ 功能入口与弹层一个都不能少（只改外观，不许改功能）
-  const entries = ['openHistory', 'openAttendanceHistory', 'openSettings', 'openSalesDetail', 'openSale']
+  // ⑦ 功能入口一个都不能少。原「本月业绩明细」已并入按月查看，
+  //    因此首页不再单列 openSalesDetail；明细由 openHistory 承担，其他业绩仍由 openSale 承担。
+  const entries = ['openHistory', 'openAttendanceHistory', 'openSettings', 'openSale']
   const lostEntries = entries.filter(name => !new RegExp('bindtap="' + name + '"').test(w))
   out.push(item('entries-intact', lostEntries.length === 0, '丢失的入口：' + (lostEntries.join('、') || '无')))
   const modals = ['historyModal', 'salesDetailModal', 'settingsModal', 'saleModal']

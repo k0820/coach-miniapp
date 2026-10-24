@@ -303,9 +303,11 @@ const handlers = {
   deletePackage(state, payload, context) {
     requireOnly('deletePackage', payload)
     const { student, pkg } = findPackageById(state, text(payload.packageId, 'packageId'))
-    if (pkg.saleId || state.sales.some(sale => sale.packageId === pkg.id)) throw commandError('PACKAGE_HAS_SALE', '有销售关联的课时包不能直接删除。')
-    if (Number(pkg.used || 0) !== 0 || state.bookings.some(booking => booking.packageId === pkg.id) || state.incomes.some(income => income.packageId === pkg.id || state.bookings.some(booking => booking.id === income.bookingId && booking.packageId === pkg.id))) throw commandError('PACKAGE_HAS_HISTORY', '课时包已有历史关系，不能删除。')
-    student.packages = student.packages.filter(item => item.id !== pkg.id); context.step('package-deleted'); return { packageId: pkg.id }
+    const cancelledBookingIds = state.bookings.filter(booking => booking.studentId === student.id && booking.packageId === pkg.id && booking.status !== 'done').map(booking => booking.id)
+    state.bookings = state.bookings.filter(booking => !(booking.studentId === student.id && booking.packageId === pkg.id && booking.status !== 'done'))
+    pkg.remaining = 0; pkg.status = 'reversed'; pkg.closedAt = context.now(); pkg.closedReason = 'package-deleted'
+    context.step('package-deleted')
+    return { packageId: pkg.id, deleted: true, archived: true, historyPreserved: true, salePreserved: true, cancelledBookingIds }
   },
   updateCourseSale(state, payload, context) {
     requireOnly('updateCourseSale', payload)

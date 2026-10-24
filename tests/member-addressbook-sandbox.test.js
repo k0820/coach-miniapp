@@ -205,12 +205,12 @@ async function main() {
     assert.equal(r.code, 'FORBIDDEN_IDENTITY_INPUT')
   })
 
-  await check('会员入口页提供微信手机号按钮与手动输入兜底，且无旧认领词', () => {
+  await check('会员入口页只使用当前微信扫描专属二维码，不再要求手机号', () => {
     const js = read('pages/member-login/member-login.js'), wxml = read('pages/member-login/member-login.wxml')
-    assert.ok(wxml.includes('open-type="getPhoneNumber"') && wxml.includes('bindgetphonenumber="onPhone"'), '缺少微信手机号按钮')
-    assert.ok(/手机号|手动/.test(wxml), '缺少手动输入兜底')
-    assert.equal(/认领码|训练档案|绑定会员微信/.test(wxml), false)
-    assert.equal(/认领码|训练档案|绑定会员微信/.test(js), false)
+    assert.ok(wxml.includes('专属二维码') && wxml.includes('当前微信'), '缺少专属二维码微信身份说明')
+    assert.equal(/getPhoneNumber|手动输入手机号|用手机号登录/.test(wxml), false)
+    assert.ok(js.includes('directory.dashboard'))
+    assert.equal(/loginByPhone|resolvePhoneCode/.test(js), false)
   })
 
   await check('新联系人页面存在且不含旧认领入口（会员加教练 / 我的二维码 / 教练加会员）', () => {
@@ -230,8 +230,13 @@ async function main() {
     assert.equal(/openBindingFromEditor|member-bind-invite/.test(strip(js)), false)
   })
 
-  await check('正式区没有测试区绑定模块', () => {
-    assert.equal(fs.existsSync(path.join(ROOT, 'cloudfunctions/coachBusinessCommand/member-directory.js')), false)
+  await check('正式区已经接入独立会员目录，且集合名与测试区隔离', () => {
+    const productionPath = path.join(ROOT, 'cloudfunctions/coachBusinessCommand/member-directory.js')
+    assert.equal(fs.existsSync(productionPath), true)
+    const production = fs.readFileSync(productionPath, 'utf8')
+    assert.ok(production.includes("members: 'member_members'"))
+    assert.equal(production.includes("members: 'member_sandbox_members'"), false)
+    assert.ok(production.includes("environmentOf(source.environment) !== 'production'"))
   })
 
   await check('测试区云函数入口能正确路由到新会员动作', () => {

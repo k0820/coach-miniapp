@@ -1,0 +1,24 @@
+<view class="wrap">
+  <view class="brand">训练伙伴</view>
+  <view class="title">领取你的会员资料</view>
+  <view class="subtitle">请核对姓名和课时，再由本人确认领取</view>
+
+  <view wx:if="{{loading}}" class="card center muted">正在读取会员资料…</view>
+  <view wx:if="{{errorText}}" class="card error">{{errorText}}</view>
+
+  <view wx:if="{{member}}" class="card profile">
+    <view class="avatar">{{member.initial||'会'}}</view>
+    <view class="name">{{member.displayName}}</view>
+    <view class="code">会员编号 · {{member.publicCode||'——'}}</view>
+    <view class="stats">
+      <view><b>{{summary.available||0}}</b><text>可用课时</text></view>
+      <view><b>{{summary.occupied||0}}</b><text>已占用</text></view>
+      <view><b>{{summary.packageCount||0}}</b><text>课时包</text></view>
+    </view>
+    <view wx:if="{{state==='claimed'}}" class="warning">这份资料已经由其他微信领取。请联系教练核对，不要重复注册。</view>
+    <view wx:if="{{state!=='claimed'}}" class="notice">确认后会自动进入会员端。以后直接打开小程序，就能查看课时、预约和上课记录，无需再次注册登录。</view>
+    <button class="primary" loading="{{busy}}" disabled="{{busy||state==='claimed'}}" bindtap="confirm">{{busy?'正在确认…':actionText}}</button>
+  </view>
+
+  <view class="privacy">确认后，当前微信将成为这份资料唯一的会员账号。二维码里不包含手机号和课时数据。</view>
+</view>

@@ -7,9 +7,9 @@ function isMemberPath(options) { const path = options && options.path || ''; ret
 function memberBindingScene(options) {
   const path = String(options && options.path || '')
   const query = options && options.query || {}
-  // ⭐ 2026-10-10 新方案：会员扫码 = 扫教练的联系人二维码 → 进「添加教练」确认页。
+  // 会员扫码入口：联系人二维码进入添加教练；专属会员二维码进入领取本人资料。
   //   小程序码（wxacode.getUnlimited）的 scene 在顶层 options.scene，不在 query.scene。
-  if (path !== 'pages/member-add-coach/member-add-coach') return ''
+  if (path !== 'pages/member-add-coach/member-add-coach' && path !== 'pages/member-claim/member-claim') return ''
   const raw = (options && options.scene) || query.scene || query.ticket || ''
   try { return decodeURIComponent(String(raw).trim()) } catch (error) { return String(raw).trim() }
 }

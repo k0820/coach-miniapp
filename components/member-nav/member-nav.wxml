@@ -1,5 +1,7 @@
-<member-sandbox-banner wx:if="{{sandbox && active!=='profile'}}"/><view class="member-nav">
+<member-sandbox-banner wx:if="{{sandbox && active!=='profile'}}"/>
+<!-- 底部遮挡层：导航以下不再透出时间格或其他页面内容。 -->
+<view class="member-nav-shield"></view>
+<view class="member-nav">
   <view class="member-nav-item {{active==='home'?'active':''}}" data-target="home" bindtap="go"><view class="nav-mark">⌂</view><text>首页</text></view>
   <view class="member-nav-item {{active==='book'?'active':''}}" data-target="book" bindtap="go"><view class="nav-mark">＋</view><text>约课</text></view>
-  <view class="member-nav-item {{active==='profile'?'active':''}}" data-target="profile" bindtap="go"><view class="nav-mark">○</view><text>我的</text></view>
 </view>

@@ -1,6 +1,8 @@
-<view class="member-page member-shell" style="{{themeStyle}}">
-  <view class="member-title">我的预约</view>
-  <view class="member-subtitle">已经排好的课，和一起流过的汗</view>
+<view class="member-page member-shell bookings-page weui-page" data-weui-theme="light" style="{{themeStyle}}">
+  <view class="bookings-hero">
+    <view class="bookings-hero-copy"><view class="bookings-kicker">课程安排</view><view class="bookings-title">你的预约</view><view class="bookings-sub">已经排好的课，和一起流过的汗</view></view>
+    <view class="bookings-count"><b>{{upcoming.length}}</b><text>节待上</text></view>
+  </view>
 
   <view wx:if="{{notice}}" class="member-notice">
     <view class="member-notice-line">· {{notice}}</view>
@@ -102,14 +104,12 @@
       <!-- ⛔ 只有「待上课」才出现管理区：历史课 / 已取消的课一个按钮都不给。
            ⚠️ M3-P6 起这两颗按钮是**真的会写云端**的（旧版那句"现在点只会告诉你怎么做"已经不再成立，故删除）。 -->
       <block wx:if="{{detail.canManage}}">
-        <button class="member-ghost booking-manage-btn" bindtap="addToCalendar">加入手机日历</button>
         <view class="booking-manage-actions">
           <button class="member-ghost booking-manage-btn" bindtap="openReschedule">修改时间</button>
           <button class="member-ghost booking-manage-btn danger" bindtap="requestCancel">取消预约</button>
         </view>
       </block>
 
-      <button class="member-ghost booking-detail-btn" bindtap="closeDetail">关闭</button>
     </view>
   </view>
 
@@ -167,5 +167,5 @@
     <view class="reschedule-tip">点一下可约时间即可直接改期</view>
   </member-sheet>
 
-  <member-nav active="profile"/>
+  <member-nav active="home"/>
 </view>

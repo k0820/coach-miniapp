@@ -4,36 +4,39 @@
 //    那些东西整套拿掉了 —— 一位会员只有一份资料，不需要"选档案"。
 //
 // ⭐ 当前产品为单教练：会员资料直接归属唯一教练，不再展示添加 / 切换教练入口。
-// 菜单保留课时、预约、训练记录，以及测试区可用的站内消息入口。
+// 菜单只保留课包与训练记录；预约已在首页，消息卡片按产品决定撤下。
 //
 // ⛔ memberId / 手机号全文都不出现在页面上：这里只显示昵称与手机号**尾号**。
 const directory = require('../../utils/member-directory')
 const theme = require('../../utils/member-theme')
 const runtime = require('../../utils/data-runtime')
-const { switchEnvironment } = require('../../utils/ui-cloud-command')
-const memberEnvironment = require('../../utils/member-environment')
-const routing = require('../../utils/sandbox-cloud-functions')
-// 📥 站内消息中心（⛔ 正式区没有 ⇒ 入口整个藏起来）
-const inbox = require('../../utils/notification-inbox')
-
+const memberRuntime = require('../../utils/member-runtime')
+const archiveState = require('../../utils/member-archive-state')
+const trainingView = require('../../utils/member-training-view')
 Page({
   data: {
     member: {}, initial: '我', publicCode: '', busy: false, themeStyle: theme.cssVars(),
-    nameOpen: false, nameDraft: '', nameBusy: false, sandboxHint: '',
-    inboxAvailable: false, inboxUnread: 0, directoryAvailable: directory.available(), errorText: ''
-  },
-  async loadInboxUnread() {
-    this.setData({ inboxAvailable: inbox.available() })
-    if (!inbox.available()) return this.setData({ inboxUnread: 0 })
-    this.setData({ inboxUnread: await inbox.unread('member') })
+    nameOpen: false, nameDraft: '', nameBusy: false, canRename: false,
+    directoryAvailable: directory.available(), errorText: '', snapshotReady: false,
+    trainingSummary: trainingView.recentSummary([])
   },
   onShow() {
     require('../../utils/auto-refresh').request('pageShow')
-    this.setData({ sandboxHint: routing.hint(runtime.environment()), themeStyle: theme.cssVars(), directoryAvailable: directory.available() })
-    this.load()
-    this.loadInboxUnread()
+    this.setData({ canRename: runtime.isSandbox(), themeStyle: theme.cssVars(), directoryAvailable: directory.available() })
+    const cached = directory.cachedDashboard()
+    if (cached) this.applyDashboard(cached)
+    this.load({ silent: !!cached })
+    this.refreshTraining()
   },
-  async load() {
+  applyDashboard(result) {
+    const member = result.member || {}
+    this.setData({
+      member, initial: (String(member.displayName || '我')).slice(0, 1), publicCode: String(member.publicCode || ''),
+      errorText: '', snapshotReady: true
+    })
+  },
+  async load(options = {}) {
+    if (!options.silent) this.setData({ snapshotReady: false })
     const result = await directory.dashboard()
     if (!result || result.ok !== true) {
       if (result && (result.code === 'MEMBER_NOT_FOUND' || result.code === 'ACTOR_UNKNOWN' || result.code === 'MEMBER_BINDING_REQUIRED')) {
@@ -42,20 +45,23 @@ Page({
       }
       return this.setData({ errorText: (result && result.message) || '暂时读不到你的资料，请下拉刷新重试。' })
     }
-    const member = result.member || {}
-    this.setData({
-      member, initial: (String(member.displayName || '我')).slice(0, 1), publicCode: String(member.publicCode || ''),
-      errorText: ''
-    })
+    this.applyDashboard(result)
   },
-  openInbox() { inbox.open('member') },
+  applyTraining(raw) {
+    const scoped = archiveState.narrow(raw || {}) || {}
+    this.setData({ trainingSummary: trainingView.recentSummary(trainingView.rowsOf(scoped)) })
+  },
+  async refreshTraining() {
+    this.applyTraining(memberRuntime.cached())
+    try { this.applyTraining(await memberRuntime.read({ allowCache: true })) } catch (error) { /* 首页资料仍可正常显示，训练记录保留本机最近一次内容 */ }
+  },
   go(url) { wx.navigateTo({ url }) },
   packages() { return this.go('/pages/member-packages/member-packages') },
-  bookings() { return this.go('/pages/member-bookings/member-bookings') },
   history() { wx.navigateTo({ url: '/pages/member-history/member-history' }) },
 
   // ── 编辑昵称（⛔ 只能改昵称；手机号会不会错位是你这个会员的唯一标识，改不得） ──
   openName() {
+    if (!this.data.canRename) return
     if (!directory.available()) return wx.showToast({ title: directory.SANDBOX_ONLY_NOTE, icon: 'none' })
     this.setData({ nameOpen: true, nameDraft: String((this.data.member && this.data.member.displayName) || '') })
   },
@@ -76,19 +82,6 @@ Page({
       await this.load()
       wx.showToast({ title: '已改好', icon: 'none' })
     } finally { this.setData({ nameBusy: false }) }
-  },
-  async coachMode() {
-    if (this.data.busy) return
-    this.setData({ busy: true })
-    try {
-      const switched = await switchEnvironment(runtime.ENVIRONMENTS.PRODUCTION)
-      if (!switched.ok) return wx.showToast({ title: '正式区暂时无法加载', icon: 'none' })
-      memberEnvironment.exitToCoach()
-      getApp().globalData.activeRole = 'coach'
-      require('../../utils/sync-engine').resume()
-      require('../../utils/cloud-bootstrap').maybeRun('member-switch')
-      wx.reLaunch({ url: '/pages/schedule/schedule' })
-    } finally { this.setData({ busy: false }) }
   }
 })
 

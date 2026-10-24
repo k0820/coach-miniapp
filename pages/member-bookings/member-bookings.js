@@ -31,12 +31,12 @@
 //   ② `member.read()` —— M1 已在跑的读取，只给「下一节预约」+「已完成训练」（今天的兜底）。
 // ⚠️ ① 拿不到就退回 ②，并且**明说**只看得到下一节；绝不把「只看到一节」包装成「只有一节」。
 const member = require('../../utils/member-runtime')
-const phoneCalendar = require('../../utils/phone-calendar')
 const theme = require('../../utils/member-theme')
 const view = require('../../utils/member-booking-view')
 const manage = require('../../utils/member-booking-manage')
 const beijingDate = require('../../utils/beijing-date')
 const flags = require('../../utils/release-flags')
+const fitTheme = () => theme.cssVars() + '--member-primary:#17221c;--member-primary-deep:#101813;--member-accent:#2f9f67;--member-soft:#e8f7ee;--member-page-bg:#f7f8f6;--member-surface-alt:#f0f7f2;--member-border:#dce8df;--member-border-strong:#bad8c5;--member-text:#17221c;--member-text-sub:#708078;--member-tag-bg:#e8f7ee;--member-tag-text:#285d44;--member-success:#2f9f67;--member-success-soft:#e8f7ee;--member-nav-active:#17221c;--member-hero-label:#85e5ad;--member-sheet-mask:rgba(10,31,20,.42);--member-sheet-handle:#cfe3d6;'
 
 function nowBeijingMinutes() {
   const at = new Date(Date.now() + 8 * 60 * 60 * 1000)
@@ -140,7 +140,7 @@ Page({
     this.archivesById = view.archiveNameIndex(live.archives)
     const split = view.splitBookings(this.rows, this.packagesById, this.archivesById)
     this.setData({
-      themeStyle: theme.cssVars(),
+      themeStyle: fitTheme(),
       upcoming: split.upcoming, history: split.history, partial: false,
       ...historyViewOf(split.history, this.data.historyFilter),
       notice: live.warnings && live.warnings.length ? '部分教练的数据暂时读不完整，已跳过。' : ''
@@ -156,7 +156,7 @@ Page({
     this.archivesById = view.archiveNameIndex((data && data.archives) || [])
     const split = view.splitBookings(merged, this.packagesById, this.archivesById)
     this.setData({
-      themeStyle: theme.cssVars(),
+      themeStyle: fitTheme(),
       upcoming: split.upcoming, history: split.history, partial: true,
       ...historyViewOf(split.history, this.data.historyFilter),
       notice: data && data.state === 'needs-claim'
@@ -255,11 +255,6 @@ Page({
     if (resolve) return resolve(true)
   },
 
-  addToCalendar() {
-    const detail = this.data.detail
-    if (!detail || !detail.canManage) return
-    return phoneCalendar.addCourse(detail)
-  },
 
   // 按「再想想」/ 点右上 × / 点遮罩 ⇒ 放弃，且**保留详情与用户的位置**（她可以再点一次别的课）。
   closeCancel() {

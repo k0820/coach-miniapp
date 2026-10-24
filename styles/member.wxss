@@ -32,22 +32,22 @@
 .member-shell{
   /* 间距 */
   --member-gap-xs: 8rpx;      /* 图标与文字之间 */
-  --member-gap-sm: 14rpx;     /* 小卡片内元素 */
-  --member-gap-md: 18rpx;     /* 卡片之间 */
-  --member-gap-lg: 26rpx;     /* 卡片内边距 */
-  --member-gap-xl: 34rpx;     /* 页面左右边距 */
+  --member-gap-sm: 16rpx;
+  --member-gap-md: 24rpx;
+  --member-gap-lg: 32rpx;
+  --member-gap-xl: 36rpx;
   /* 圆角 */
-  --member-radius-card: 30rpx;
-  --member-radius-hero: 34rpx;
-  --member-radius-control: 22rpx;
+  --member-radius-card: 34rpx;
+  --member-radius-hero: 42rpx;
+  --member-radius-control: 24rpx;
   --member-radius-pill: 999rpx;
   /* 字号层级（⛔ 只有这五档；页面里不许出现 25rpx / 23rpx 这种"顺手写的"） */
   --member-font-display: 86rpx;  /* 头图大数字 */
-  --member-font-title: 34rpx;    /* 页面标题 */
-  --member-font-section: 28rpx;  /* 卡片小节标题 */
+  --member-font-title: 42rpx;
+  --member-font-section: 30rpx;
   --member-font-body: 27rpx;     /* 正文 / 主按钮 */
-  --member-font-sub: 24rpx;      /* 次要文字 */
-  --member-font-cap: 21rpx;      /* 标签 / 提示 */
+  --member-font-sub: 24rpx;
+  --member-font-cap: 21rpx;
   /* 控件高度（⛔ 按钮高度必须统一：三个页面三种高度时"确认"按钮会上下跳动） */
   --member-button-height: 84rpx;
   --member-button-height-sm: 76rpx;
@@ -56,24 +56,24 @@
   /* 底部安全距离：底部导航 / 弹层按钮都要用它垫 */
   --member-safe-gap: 40rpx;
 
-  /* —— 颜色兜底（= 唯一那套灰白简约界面的值）。真实值由 cssVars() 注入，这里只是"没注入也不至于裸奔"。
+  /* —— 颜色兜底（= 唯一的暖白 / 深蓝 / 青绿色板）。真实值由 cssVars() 注入，这里只是"没注入也不至于裸奔"。
        ⭐ 2026-10-05：这里曾经是「元气绿」三套皮肤中的一套，三套主题已撤回 ⇒ 只保留这一份。
        ⛔ 改这两处时必须同步改 `utils/member-theme.js`（测试会比对兜底值与色板逐字一致）。—— */
-  --member-primary:#3a454e;--member-primary-deep:#252d34;--member-accent:#5f7a86;--member-soft:#eef1f3;
-  --member-hero:linear-gradient(135deg,#eff2f4,#ffffff);--member-hero-label:#5c6770;--member-hero-ink:#1d2429;
-  --member-page-bg:#f6f7f8;--member-surface:#ffffff;--member-surface-alt:#fafbfb;
-  --member-border:#e6e8ea;--member-border-strong:#d2d6da;
-  --member-shadow:0 8rpx 24rpx rgba(37,45,52,.05);
-  --member-text:#22282e;--member-text-sub:#757e86;--member-tag-bg:#eef1f3;--member-tag-text:#414c55;
-  --member-success:#4f7a5c;--member-warning:#8a6f34;--member-danger:#a8453c;
-  --member-success-soft:#ecf1ed;--member-warning-soft:#f3eee2;--member-danger-soft:#f4e9e8;
-  --member-nav-active:#3a454e;--member-nav-idle:#939ba1;
-  --member-deco-primary:#c3cace;--member-deco-secondary:#9aa3a9;
-  --member-deco-sun-radius:8rpx;--member-deco-leaf-radius:0;
-  --member-slot-free-bg:#ffffff;--member-slot-free-line:#3a454e;--member-slot-free-time:#22282e;
-  --member-slot-booked-bg:#f0f2f3;--member-slot-booked-line:#dadee1;--member-slot-booked-time:#8b949a;--member-slot-booked-text:#828b91;
-  --member-slot-past-bg:#fafafa;--member-slot-past-line:#edeef0;--member-slot-past-time:#c0c5c9;--member-slot-past-text:#ccd0d4;
-  --member-slot-echo-bg:#f2f4f5;--member-slot-echo-line:#5f7a86;
+  --member-primary:#103F3B;--member-primary-deep:#0B302D;--member-accent:#4C76DF;--member-soft:#EAFBF4;
+  --member-hero:linear-gradient(135deg,#0C302D 0%,#104B45 58%,#28566B 100%);--member-hero-label:#F3B941;--member-hero-ink:#FFFFFF;
+  --member-page-bg:#FBFAF5;--member-surface:#FFFFFF;--member-surface-alt:#F3F7F5;
+  --member-border:#E3EBE7;--member-border-strong:#C6DED5;
+  --member-shadow:0 16rpx 44rpx rgba(16,63,59,.08);
+  --member-text:#102A2B;--member-text-sub:#71837F;--member-tag-bg:#EDF3FF;--member-tag-text:#4C76DF;
+  --member-success:#22A77A;--member-warning:#9A7024;--member-danger:#DD6848;
+  --member-success-soft:#EAFBF4;--member-warning-soft:#FFF8DF;--member-danger-soft:#FFF1EC;
+  --member-nav-active:#103F3B;--member-nav-idle:#91A09D;
+  --member-deco-primary:#F3B941;--member-deco-secondary:#D9F7EC;
+  --member-deco-sun-radius:999rpx;--member-deco-leaf-radius:999rpx;
+  --member-slot-free-bg:#FFFFFF;--member-slot-free-line:#22A77A;--member-slot-free-time:#103F3B;
+  --member-slot-booked-bg:#EDF2F0;--member-slot-booked-line:#D7E2DE;--member-slot-booked-time:#81918E;--member-slot-booked-text:#879591;
+  --member-slot-past-bg:#F8F8F4;--member-slot-past-line:#ECEDE7;--member-slot-past-time:#BCC4C1;--member-slot-past-text:#C5CBC8;
+  --member-slot-echo-bg:#EAFBF4;--member-slot-echo-line:#F3B941;
   /* 弹层强调色（components/member-sheet 用） */
   --member-sheet-mask:rgba(20,26,30,.42);
   --member-sheet-handle:#d8dcdf;
@@ -87,17 +87,19 @@
      ⇒ 底栏实高 ≈ **157rpx > 150rpx** ⇒ 列表最后一行正好被压在底栏下面（差 7rpx，字的下沿看不见）。
    ⇒ 统一写成 `calc(<固定值> + env(safe-area-inset-bottom))`：函数返回空/0 时也还留得下固定那一截。
    ⛔ 页面 wxss 里不许再写自己的 padding-bottom 去覆盖这条（要留白就用 `.member-safe-bottom`）。 */
-.member-page{min-height:100vh;background:var(--member-page-bg,#f6f7f8);color:var(--member-text,#22282e);padding:var(--member-gap-lg) var(--member-gap-xl) calc(150rpx + env(safe-area-inset-bottom));box-sizing:border-box}
-.member-card{background:var(--member-surface,#ffffff);border:var(--member-divider,1rpx) solid var(--member-border,#e6e8ea);border-radius:var(--member-radius-card);padding:var(--member-gap-lg);margin-bottom:var(--member-gap-md);box-shadow:var(--member-shadow)}
+.member-page{min-height:100vh;background:var(--member-page-bg,#F7F7F2);color:var(--member-text,#172B3A);padding:28rpx var(--member-gap-xl) calc(150rpx + env(safe-area-inset-bottom));box-sizing:border-box;animation:memberPageIn .28s ease-out}
+@keyframes memberPageIn{from{opacity:0;transform:translateY(8rpx)}to{opacity:1;transform:none}}
+.member-card{background:var(--member-surface,#fff);border:0;border-radius:var(--member-radius-card);padding:var(--member-gap-lg);margin-bottom:var(--member-gap-md);box-shadow:var(--member-shadow)}
 
 /* ── 排版层级 ── */
-.member-title{font-size:var(--member-font-title);font-weight:800;color:var(--member-text,#22282e)}
+.member-title{font-size:var(--member-font-title);font-weight:760;line-height:1.22;letter-spacing:-1rpx;color:var(--member-text,#172B3A)}
 .member-subtitle{font-size:var(--member-font-sub);color:var(--member-text-sub,#757e86);line-height:1.55}
-.member-section-title{font-size:var(--member-font-section);font-weight:800;margin:30rpx 4rpx 16rpx;color:var(--member-text,#22282e)}
+.member-section-title{font-size:var(--member-font-section);font-weight:760;line-height:1.35;letter-spacing:-.3rpx;margin:40rpx 4rpx 18rpx;color:var(--member-text,#172B3A)}
 .member-display{font-size:var(--member-font-display);font-weight:850;line-height:1.05;letter-spacing:-3rpx;color:var(--member-hero-ink,#1d2429)}
 
 /* ── 按钮（⛔ 高度统一：三处"确认"按钮必须同高，否则切换弹层时会跳）── */
-.member-primary{background:var(--member-primary);color:#fff;border:0;border-radius:var(--member-radius-control);font-size:var(--member-font-body);font-weight:750;line-height:var(--member-button-height)}
+.member-primary{background:var(--member-primary);color:#fff;border:0;border-radius:var(--member-radius-control);font-size:var(--member-font-body);font-weight:700;line-height:var(--member-button-height);box-shadow:0 12rpx 24rpx rgba(23,59,87,.14);transition:transform .14s ease,opacity .14s ease}
+.member-primary:active,.member-ghost:active,.member-card[bindtap]:active{transform:scale(.985);opacity:.86}
 .member-primary::after{border:0}
 .member-primary[disabled]{background:var(--member-border-strong);color:#fff}
 /* ⭐ 危险操作统一红色（⛔ 不许各页面自己挑一个红）：取消预约 / 删除 / 清空都走这一个。
@@ -125,14 +127,13 @@
 /* ── 行 / 列表 ── */
 .member-row{display:flex;align-items:center;gap:var(--member-gap-md)}
 .member-spread{justify-content:space-between}
-.member-list-row{padding:20rpx 0;border-bottom:var(--member-divider,1rpx) solid var(--member-border,#e6e8ea)}
+.member-list-row{min-height:76rpx;padding:20rpx 0;border-bottom:var(--member-divider,1rpx) solid var(--member-border,#E4ECE8);box-sizing:border-box}
 .member-list-row:last-child{border-bottom:0}
 .member-divider{height:var(--member-divider,1rpx);background:var(--member-border,#e6e8ea);margin:var(--member-gap-md) 0}
 .member-arrow{color:var(--member-text-sub,#757e86);font-size:38rpx}
 
 /* ── 头像 ── */
-.member-avatar{width:78rpx;height:78rpx;border-radius:25rpx;background:var(--member-soft);display:flex;align-items:center;justify-content:center;color:var(--member-primary);font-weight:800;overflow:hidden}
-.member-avatar image{width:100%;height:100%}
+.member-avatar{width:78rpx;height:78rpx;border-radius:26rpx;background:linear-gradient(145deg,var(--member-soft),#fff);display:flex;align-items:center;justify-content:center;color:var(--member-primary);font-weight:800;overflow:hidden;box-shadow:inset 0 0 0 1rpx rgba(45,172,181,.12)}
 
 /* ── 状态标签（⛔ 高度统一 44rpx；三个页面三种高度时列表会左右跳）── */
 .member-pill{display:inline-flex;align-items:center;min-height:var(--member-tag-height);padding:0 16rpx;border-radius:var(--member-radius-pill);background:var(--member-soft);color:var(--member-primary);font-size:var(--member-font-cap);font-weight:700;line-height:1.25}
@@ -149,9 +150,30 @@
 .member-empty{text-align:center;padding:70rpx 32rpx;color:var(--member-text-sub,#757e86)}
 .member-notice{background:var(--member-warning-soft);border:var(--member-divider,1rpx) solid var(--member-border-strong);border-radius:24rpx;padding:20rpx 22rpx;margin-top:var(--member-gap-md)}
 .member-notice-line{font-size:var(--member-font-cap);color:var(--member-warning);line-height:1.6}
+.member-inline-notice{margin:0 0 18rpx;padding:18rpx 22rpx;border-left:6rpx solid var(--member-accent);border-radius:0 18rpx 18rpx 0;background:rgba(255,255,255,.66);color:var(--member-text-sub);font-size:22rpx;line-height:1.55;box-sizing:border-box}
+.member-inline-notice-line+.member-inline-notice-line{margin-top:6rpx}
+.member-inline-notice--error{border-left-color:var(--member-warning);background:var(--member-warning-soft);color:var(--member-warning)}
 
 /* ── 输入 ── */
 .member-input{height:var(--member-button-height);border:2rpx solid var(--member-border-strong,#d2d6da);border-radius:var(--member-radius-control);padding:0 22rpx;background:var(--member-surface,#ffffff);margin:var(--member-gap-sm) 0;font-size:var(--member-font-body)}
 
 /* ── 底部安全距离（⛔ 底部导航 / 弹层按钮都靠它，小屏才不会顶到 Home 指示条）── */
 .member-safe-bottom{height:calc(var(--member-safe-gap,40rpx) + env(safe-area-inset-bottom))}
+
+/* 2026-10-17 · 会员端扁平化收口
+   统一去掉层层悬浮阴影，保留清楚的分区和触控边界。业务页面继续复用原类名。 */
+.member-page{background:#f5f7f5}
+.member-card{border:1rpx solid var(--member-border);border-radius:24rpx;box-shadow:none}
+.member-hero{border:1rpx solid var(--member-border);border-radius:30rpx;box-shadow:none}
+.member-primary{box-shadow:none}
+.member-action{border-radius:22rpx;box-shadow:none}
+.member-notice{border-radius:18rpx}
+.member-input{border-width:1rpx;border-radius:20rpx}
+
+/* 首页与“我的”共用的纯 CSS 哑铃图形。没有图片资源和表情字符，颜色跟随会员端设计变量。 */
+.member-fitness-mark{position:relative;width:150rpx;height:86rpx;flex:0 0 auto;opacity:.92}
+.member-fitness-bar{position:absolute;left:22rpx;right:22rpx;top:40rpx;height:8rpx;border-radius:999rpx;background:var(--member-primary)}
+.member-fitness-plate{position:absolute;top:25rpx;width:13rpx;height:38rpx;border-radius:7rpx;background:var(--member-primary)}
+.member-fitness-plate.left{left:22rpx}.member-fitness-plate.right{right:22rpx}
+.member-fitness-plate.outer{top:18rpx;width:15rpx;height:52rpx;background:var(--member-accent)}
+.member-fitness-plate.left.outer{left:3rpx}.member-fitness-plate.right.outer{right:3rpx}

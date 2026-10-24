@@ -134,6 +134,10 @@ const read = cloud => readService({ db: cloud.db, getOpenId: cloud.getOpenId })
     assert.strictEqual(slots2.find(row => row.start === 840).available, false, '14:00 被占')
     assert.strictEqual(slots2.find(row => row.start === 900).available, false, '15:00 仍被 90 分钟那节课占着')
     assert.strictEqual(slots2.find(row => row.start === 960).available, true, '16:00 已经空出来')
+    const legacyBusy = view.busyOf({ bookings: [{ historyId: 'h3', date: '2026-09-30', hour: 14, minute: 0, status: 'booked' }], coachBusy: [], dateKey: '2026-09-30' })
+    const legacySlots = view.slotsFor({ dateKey: '2026-09-30', busy: legacyBusy, todayKey: '2026-01-01' })
+    assert.strictEqual(legacySlots.find(row => row.start === 14 * 60 + 30).available, false, '14:00 的旧预约即使缺时长，14:30 仍必须被占用')
+    assert.strictEqual(legacySlots.find(row => row.start === 15 * 60).available, true, '固定 60 分钟结束后，15:00 才重新可约')
   })
 
   await runner('④ ⭐ 开课窗口边界（2026-10-03 **四次**口径）：06:00 起、23:00 收尾、步长 30 ⇒ 35 格', async () => {
@@ -214,7 +218,10 @@ const read = cloud => readService({ db: cloud.db, getOpenId: cloud.getOpenId })
       assert.deepEqual(missing, [], `${page}：这些按钮点了没反应：${missing.join('、')}`)
     }
     const homeWxml = fs.readFileSync(path.join(ROOT, 'pages/member-home/member-home.wxml'), 'utf8')
-    assert.ok(homeWxml.includes('bindtap="bookings"') && homeWxml.includes('bindtap="bookSlots"'), '会员首页必须有「我的预约 / 去约课」两个入口')
+    const navWxml = fs.readFileSync(path.join(ROOT, 'components/member-nav/member-nav.wxml'), 'utf8')
+    assert.ok(homeWxml.includes('bindtap="bookings"'), '会员首页的具体「下一节课」仍须能进入预约详情')
+    assert.ok(!homeWxml.includes('bindtap="bookNow"') && !homeWxml.includes('预约课程'), '会员首页不得重复显示预约课程按钮')
+    assert.ok(navWxml.includes('data-target="book"') && navWxml.includes('<text>约课</text>'), '主预约入口必须固定保留在会员底部导航')
   })
 
   // M3-P3（2026-09-30）：真实提交链已打开 ⇒ 这里把**总闸按回关闭**来验证"未开放"这条路径仍然诚实：

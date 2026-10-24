@@ -464,16 +464,33 @@ async function test(name, fn) {
     assert.equal((await service(execute('updateManualSale', 'course_date_reject', 1, { saleId: 'course-1', date: '2026-09-01' }))).code, 'NOT_MANUAL_SALE')
   })
 
-  await test('无销售赠送 package 可独立维护，删除必须确认无使用/预约/收入历史', async () => {
+  await test('清除赠送课剩余权益会取消未上预约并保留已上历史与收入', async () => {
     const { owner, datasetId } = seed(), packageId = 'gift-1', studentId = 'student-1'
     put('packages', businessId('packages', owner, datasetId, packageId), { ownerCoachId: owner, datasetId, packageId, studentId, data: { id: packageId, type: '赠送课程', total: 5, used: 0, remaining: 5, price: 80, status: 'active' } })
     const service = main(); assert.equal((await service(execute('updatePackage', 'gift_update_001', 0, { packageId, total: 8, remaining: 3 }))).ok, true)
     assert.deepEqual({ total: rows('packages')[0].data.total, used: rows('packages')[0].data.used, remaining: rows('packages')[0].data.remaining, price: rows('packages')[0].data.price }, { total: 8, used: 0, remaining: 3, price: 80 })
-    put('bookings', businessId('bookings', owner, datasetId, 'future-1'), { ownerCoachId: owner, datasetId, bookingId: 'future-1', packageId, data: { id: 'future-1', packageId, status: 'booked' } })
-    assert.equal((await service(execute('deletePackage', 'gift_delete_block', 1, { packageId }))).code, 'PACKAGE_HAS_HISTORY'); assert.equal(rows('packages').length, 1)
-    stores.bookings.clear(); put('incomes', businessId('incomes', owner, datasetId, 'legacy-income'), { ownerCoachId: owner, datasetId, incomeId: 'legacy-income', studentId, data: { id: 'legacy-income', studentId, typeName: '赠送课程', amount: 80 } })
-    assert.equal((await service(execute('deletePackage', 'gift_delete_legacy_income', 1, { packageId }))).code, 'PACKAGE_HAS_HISTORY'); assert.equal(rows('packages').length, 1)
-    stores.incomes.clear(); const call = execute('deletePackage', 'gift_delete_001', 1, { packageId }); assert.equal((await service(call)).ok, true); assert.equal((await service(call)).idempotent, true); assert.equal(rows('packages').length, 0)
+    put('bookings', businessId('bookings', owner, datasetId, 'future-1'), { ownerCoachId: owner, datasetId, bookingId: 'future-1', studentId, packageId, data: { id: 'future-1', studentId, packageId, status: 'booked' } })
+    put('bookings', businessId('bookings', owner, datasetId, 'done-1'), { ownerCoachId: owner, datasetId, bookingId: 'done-1', studentId, packageId, data: { id: 'done-1', studentId, packageId, status: 'done' } })
+    put('incomes', businessId('incomes', owner, datasetId, 'income-1'), { ownerCoachId: owner, datasetId, incomeId: 'income-1', studentId, packageId, data: { id: 'income-1', bookingId: 'done-1', studentId, packageId, typeName: '赠送课程', amount: 80 } })
+    const call = execute('deletePackage', 'gift_delete_001', 1, { packageId }), first = await service(call)
+    assert.equal(first.ok, true); assert.equal((await service(call)).idempotent, true)
+    assert.equal(rows('packages').length, 1); assert.equal(rows('packages')[0].data.remaining, 0); assert.equal(rows('packages')[0].data.status, 'reversed')
+    assert.deepEqual(rows('bookings').map(row => row.bookingId), ['done-1']); assert.equal(rows('incomes').length, 1)
+  })
+
+  await test('删除付费课包后从当前资料消失，同时保留销售业绩、已完成课程和收入', async () => {
+    const { owner, datasetId } = seed(), packageId = 'paid-close-1', saleId = 'sale-close-1', studentId = 'student-1'
+    put('packages', businessId('packages', owner, datasetId, packageId), { ownerCoachId: owner, datasetId, packageId, studentId, saleId, data: { id: packageId, type: '常规训练', total: 10, used: 3, remaining: 7, price: 300, status: 'active', saleId } })
+    put('sales', businessId('sales', owner, datasetId, saleId), { ownerCoachId: owner, datasetId, saleId, studentId, packageId, data: { id: saleId, source: 'course', studentId, packageId, typeName: '常规训练', amount: 3000, status: 'active' } })
+    put('bookings', businessId('bookings', owner, datasetId, 'future-paid'), { ownerCoachId: owner, datasetId, bookingId: 'future-paid', studentId, packageId, data: { id: 'future-paid', studentId, packageId, status: 'booked' } })
+    put('bookings', businessId('bookings', owner, datasetId, 'done-paid'), { ownerCoachId: owner, datasetId, bookingId: 'done-paid', studentId, packageId, data: { id: 'done-paid', studentId, packageId, status: 'done' } })
+    put('incomes', businessId('incomes', owner, datasetId, 'income-paid'), { ownerCoachId: owner, datasetId, incomeId: 'income-paid', studentId, packageId, data: { id: 'income-paid', bookingId: 'done-paid', studentId, packageId, amount: 300 } })
+    const result = await main()(execute('deletePackage', 'paid_close_001', 0, { packageId }))
+    assert.equal(result.ok, true); assert.equal(result.result.deleted, true); assert.equal(result.result.archived, true); assert.deepEqual(result.result.cancelledBookingIds, ['future-paid'])
+    assert.equal(rows('packages')[0].data.remaining, 0); assert.equal(rows('packages')[0].data.status, 'reversed')
+    assert.equal(rows('packages')[0].data.closedReason, 'package-deleted')
+    assert.equal(rows('sales')[0].data.status, 'active'); assert.equal(rows('sales')[0].data.amount, 3000)
+    assert.deepEqual(rows('bookings').map(row => row.bookingId), ['done-paid']); assert.equal(rows('incomes').length, 1)
   })
 
   await test('新增命令继续隔离 owner/dataset，失败不留 revision/receipt 半成品', async () => {

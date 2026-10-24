@@ -10,6 +10,7 @@
 const role = require('./app-role')
 
 const KEY = 'coachMemberEnvironment'
+const CLAIMED_SCENE_KEY = 'coachMemberClaimedScene'
 const PRODUCTION = 'production'
 const SANDBOX = 'sandbox'
 
@@ -20,6 +21,33 @@ function write(value) {
   const next = value === SANDBOX ? SANDBOX : PRODUCTION
   try { wx.setStorageSync(KEY, next) } catch (error) {}
   return next
+}
+function normalizeScene(scene) {
+  try { return decodeURIComponent(String(scene || '').trim()).toLowerCase() } catch (error) { return String(scene || '').trim().toLowerCase() }
+}
+// 领取成功后只记住二维码的随机门牌号，不保存姓名、手机号、课时或数据库编号。
+// 微信在冷启动时可能再次带回上一次的小程序码入口；若不记住这个门牌号，
+// 已经领取成功的会员会再次落进领取页，而云端此时会如实提示“二维码已失效”。
+function rememberClaimScene(scene) {
+  const value = normalizeScene(scene)
+  if (!value) return ''
+  try { wx.setStorageSync(CLAIMED_SCENE_KEY, value) } catch (error) {}
+  return value
+}
+function isRememberedClaimScene(scene) {
+  const value = normalizeScene(scene)
+  if (!value) return false
+  try { return normalizeScene(wx.getStorageSync(CLAIMED_SCENE_KEY)) === value } catch (error) { return false }
+}
+// 兼容已经在旧体验版领取并进入过会员首页的设备：旧版没有 claimed-scene 标记，
+// 但会员首页成功读取后会留下按环境隔离的 ready 缓存。只把“有真实会员资料”的缓存视为已登录，
+// 单纯点过“我是会员”或中途退出领取页都不会被误放行。
+function hasReadyMemberCache() {
+  const environment = read()
+  try {
+    const value = wx.getStorageSync(`coachMemberActiveCache:${environment}`)
+    return !!value && value.environment === environment && value.state === 'ready' && !!value.member
+  } catch (error) { return false }
 }
 // 冷启动 / 任何分支：把持久化的环境恢复到运行时。
 // ⚠️ 2026-09-27（M2 真机修复）：这里**不再按角色过滤**。
@@ -33,8 +61,24 @@ function apply() {
   runtime.setEnvironment(read())
   return runtime.environment()
 }
-// 进入会员测试区：会员角色 + 测试区环境，一起落盘。
-function enterSandbox() { role.set('member'); return write(SANDBOX) }
+// 进入会员测试区：本次运行环境先立即切换，再把会员角色 + 测试区环境一起落盘。
+// 扫码冷启动时领取页会立刻发起预览；如果这里只写 Storage、不改运行时，
+// 第一趟请求仍会被当成 Production，并被 Sandbox 门禁拒绝。
+function enterSandbox() {
+  const runtime = require('./data-runtime')
+  runtime.setEnvironment(runtime.ENVIRONMENTS.SANDBOX)
+  role.set('member')
+  return write(SANDBOX)
+}
+// 专属二维码自带一个不透明环境前缀：p=正式区、s=测试区；旧版无前缀二维码仍按测试区兼容。
+function enterFromClaimScene(scene) {
+  const runtime = require('./data-runtime')
+  const value = String(scene || '').trim().toLowerCase()
+  const next = /^p[0-9a-f]{31}$/.test(value) ? PRODUCTION : SANDBOX
+  runtime.setEnvironment(next === SANDBOX ? runtime.ENVIRONMENTS.SANDBOX : runtime.ENVIRONMENTS.PRODUCTION)
+  role.set('member')
+  return write(next)
+}
 // 以"当前运行时环境"成为会员（正式区身份不会被误标成测试区）。
 function enterMember() { role.set('member'); return write(require('./data-runtime').environment()) }
 // 切回教练端：教练角色 + 正式区环境，一起落盘（不让 Sandbox 状态污染教练正式区）。
@@ -56,4 +100,4 @@ function consistent() {
   try { return require('./data-runtime').environment() === current.environment } catch (error) { return false }
 }
 
-module.exports = { KEY, PRODUCTION, SANDBOX, read, write, apply, enterSandbox, enterMember, exitToCoach, enterCoachSandbox, pair, consistent }
+module.exports = { KEY, CLAIMED_SCENE_KEY, PRODUCTION, SANDBOX, read, write, apply, enterSandbox, enterFromClaimScene, enterMember, exitToCoach, enterCoachSandbox, rememberClaimScene, isRememberedClaimScene, hasReadyMemberCache, pair, consistent }

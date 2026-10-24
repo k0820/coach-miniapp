@@ -450,7 +450,7 @@ async function dispatchLocalFirst(command, body, options) {
 // write. No Cloud call, receipt wait, or active-data read is on the UI path.
 //
 // ⚠️ 这条链**必须**同时覆盖「新增」和「新增失败后重试」两种入口。
-//    真机故障（「姜来」）：第一次保存时课时包那几笔没成功 → 表单里 `form.id` 已经被写上，
+//    历史真机故障：第一次保存时课时包那几笔没成功 → 表单里 `form.id` 已经被写上，
 //    用户再点一次保存，`!f.id` 不再成立 → 走到旧路径 → 课时包继续走云端先行的
 //    createPackage / createCourseSale → 被 `readActive` 失败挡在出网之前，
 //    于是报了「最新数据暂时没读到」。**同一个动作，只因为失败了第二次，就换了一套语义。**

@@ -57,7 +57,7 @@ const NARROW = Object.freeze({
   updateStudent: r => [['students', r.studentId]],
   createPackage: r => [['packages', r.packageId]],
   updatePackage: r => [['packages', r.packageId]],
-  deletePackage: r => [['packages', r.packageId]],
+  deletePackage: r => [['packages', r.packageId]].concat((r.cancelledBookingIds || []).map(id => ['bookings', id])),
   createCourseSale: r => [['packages', r.packageId], ['sales', r.saleId]],
   createManualSale: r => [['sales', r.saleId]],
   updateManualSale: r => [['sales', r.saleId]],
