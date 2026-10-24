@@ -360,7 +360,7 @@ async function main() {
     assert.deepStrictEqual([...client.TYPES_FOR_MEMBER].sort(), [...client.ALL_SLOTS].sort(), '⛔ 会员必须一次申请 3 个模板')
   })
 
-  await test('⑥-b 一次性订阅已从正式界面撤下，历史投递模块保持可审计', async () => {
+  await test('⑥-b 独立设置页撤下；会员端不再弹无效提醒，教练端已可用链路保留', async () => {
     const profile = fs.readFileSync(P('pages/member-profile/member-profile.js'), 'utf8')
     // ⭐ 2026-10-06：旧「会员教练工具（认领）」页面已下线 ⇒ 教练端唯一的通知入口落在**「我的/统计」设置页**。
     const tools = fs.readFileSync(P('pages/stats/stats.js'), 'utf8')
@@ -399,12 +399,21 @@ async function main() {
     assert.strictEqual(client.translate('member', { a: 'reject', b: 'reject', c: 'reject' }).ok, false, '🚨 用户拒绝却算成"已开启"')
     assert.strictEqual(client.translate('member', { a: 'accept', b: 'reject', c: 'reject' }).ok, true, '（前置）至少一个 accept 就算同意')
     assert.strictEqual(client.translate('member', { a: 'ban' }).status, 'wechat-denied', 'ban 必须报「微信不允许」')
-    // ⑥ 产品已收口为单教练个人版：一次性订阅不再出现在正式操作界面。
-    // 历史投递模块仍保留可审计，防止旧云端事件失去解释依据。
+    // ⑥ 产品已收口为单教练个人版：不保留独立设置入口；会员端不再打断业务申请无效提醒。
     assert.ok(!/quotaNote|微信通知设置|允许下一条/.test(profileWxml), '⛔ 会员端仍残留一次性订阅入口或额度说明')
     const settingsWxml = fs.readFileSync(P('pages/notify-settings/notify-settings.wxml'), 'utf8')
     assert.ok(/\{\{longTermNote\}\}/.test(settingsWxml), '⛔ 历史设置页仍须保留准确说明，供旧版本兼容与审计')
     assert.ok(!/notify-settings\/notify-settings\?role=coach/.test(tools), '⛔ 教练端仍能进入已经撤下的一次性订阅设置页')
+    const commonActions = [
+      fs.readFileSync(P('components/booking-modal/booking-modal.js'), 'utf8'),
+      fs.readFileSync(P('pages/session/session.js'), 'utf8'),
+      fs.readFileSync(P('pages/member-book-slots/member-book-slots.js'), 'utf8'),
+      fs.readFileSync(P('pages/member-bookings/member-bookings.js'), 'utf8'),
+      fs.readFileSync(P('pages/member-claim/member-claim.js'), 'utf8')
+    ].join('\n')
+    assert.ok(/requestNextAfterAction\('coach'/.test(commonActions), '⛔ 教练常用动作没有申请下一条提醒')
+    assert.ok(!/requestNextAfterAction\('member'|requestConsent\('member'/.test(commonActions), '⛔ 会员常用动作仍会申请无效提醒')
+    assert.ok(!/await\s+notifyConsent\.requestNextAfterAction/.test(commonActions), '⛔ 通知授权等待结果，可能卡住业务')
     assert.ok(/一次同意只够/.test(client.LONG_TERM_NOTE), '⛔ LONG_TERM_NOTE 必须写明"一次同意只够一条"')
     assert.ok(!/一直|永久|长期有效|终身/.test(client.LONG_TERM_NOTE), '⛔ 长期说明里不许暗示一次同意永久有效')
     // ⛔ 2026-10-05 用户逐条指定的口径，一句都不许少：

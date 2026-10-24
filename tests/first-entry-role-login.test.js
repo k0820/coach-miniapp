@@ -29,16 +29,20 @@ const onShowStart = app.indexOf('onShow(options)')
 const memberShow = app.indexOf('if (appRole.isMemberPath(options))', onShowStart)
 const coachShow = app.indexOf("appRole.stored() === 'member'", onShowStart)
 assert.ok(onShowStart >= 0 && /\n\s*if \(appRole\.isMemberPath\(options\)\) \{/.test(app.slice(onShowStart)) && memberShow > onShowStart && memberShow < coachShow, '后台扫码必须先接住会员入口，再判断旧教练身份')
-assert.ok(app.includes('appRole.isMemberBindingQr(options)') && app.includes('memberEnvironment.enterSandbox()'), '扫码（会员添加教练）必须把新设备带入签发它的会员测试环境')
+assert.ok(app.includes('appRole.isMemberBindingQr(options)') && app.includes('memberEnvironment.enterFromClaimScene(appRole.memberBindingScene(options))'), '专属扫码必须按 p/s 前缀把新设备带入签发二维码的正确会员环境')
 assert.ok(app.includes('appRole.memberBindingScene(options)') && app.includes('current !== targetPath'), '后台扫码必须确保真正打开添加页并保留scene')
 
 const rolePage = read('pages/role-entry/role-entry.js')
 const coachPage = read('pages/coach-entry/coach-entry.js')
-assert.ok(!rolePage.includes("wx.reLaunch({ url: role.stored()"), '用户主动回到身份选择页后必须停住，不能按旧身份自动跳走')
-assert.ok(rolePage.includes('if (this.data.routing) this.setData({ routing: false })'), '从登录页返回时必须恢复身份按钮')
+assert.ok(rolePage.includes('if (!role.hasChoice())'), '全新设备没有身份时必须停在选择页')
+assert.ok(rolePage.includes("role.stored() === 'member' ? '/pages/member-home/member-home' : '/pages/schedule/schedule'"), '记住身份后再次进入必须自动回到自己的端')
 assert.ok(rolePage.includes("memberEnvironment.enterMember()"), '会员选择必须持久保存会员身份')
+assert.ok(rolePage.includes("memberEnvironment.exitToCoach()"), '选择教练时必须立即记住教练身份，不能等云端初始化后才保存')
+assert.ok(rolePage.indexOf("memberEnvironment.exitToCoach()") < rolePage.indexOf("url: '/pages/coach-entry/coach-entry'"), '教练身份必须先落盘再进入登录页')
 assert.ok(coachPage.includes("startCoachRuntime('coach-login')"), '教练登录必须复用统一运行时')
 assert.ok(coachPage.indexOf("exitToCoach()") < coachPage.indexOf("startCoachRuntime('coach-login')"), '点击登录后才允许建立教练身份')
+assert.ok(!/await\s+app\.startCoachRuntime\('coach-login'\)/.test(coachPage), '进入教练端不能等待整轮云端读取结束')
+assert.ok(coachPage.indexOf("startCoachRuntime('coach-login')") < coachPage.indexOf("wx.reLaunch"), '后台同步先启动，课表随后立即打开')
 
 // ⭐ 首屏 / 会员入口 UI 不得出现旧认领体系的迷惑文案。
 const visible = [
@@ -59,8 +63,8 @@ assert.ok(directory.includes("role === ROLE_COACH ? 'C' : 'M'"), '公开编号�
 const directoryClient = read('utils/member-directory.js')
 assert.ok(directoryClient.includes('directoryAction'), '客户端必须把动作包进 memberDirectory 信封')
 assert.ok(directoryClient.includes("require('./sandbox-cloud-functions')"), '客户端必须通过路由表取云函数名（隔离护栏）')
-assert.ok(!/resolveMemberBinding|bindMember|issueMemberBinding|MEMBER_BIND_PAGE/.test(directoryClient), '客户端不得再出现旧认领动作')
-assert.ok(/createMemberByCoach|loginByPhone/.test(directoryClient), '客户端必须暴露新会员入口')
+assert.ok(!/resolveMemberBinding|issueMemberBinding|MEMBER_BIND_PAGE/.test(directoryClient), '客户端不得再出现旧认领动作')
+assert.ok(/claimMemberByQr/.test(directoryClient), '客户端必须暴露专属二维码会员入口')
 
 const oldWx = global.wx
 const store = {}
@@ -83,14 +87,13 @@ assert.strictEqual(appRole.isMemberBindingQr({ path: 'pages/member-home/member-h
 assert.strictEqual(appRole.memberBindingScene({ path: 'pages/member-add-coach/member-add-coach', scene: 'ticket-9' }), 'ticket-9')
 assert.strictEqual(appRole.memberBindingScene({ path: 'pages/member-add-coach/member-add-coach', query: { ticket: 'abc' } }), 'abc')
 
-// ⭐ 新会员入口 = 手机号登录页：微信手机号按钮 + 手动输入兜底，无旧认领词。
+// ⭐ 新会员入口 = 当前微信扫描教练专属二维码；手机号不再承担登录。
 const memberLoginWxml = read('pages/member-login/member-login.wxml')
 const memberLoginJs = read('pages/member-login/member-login.js')
-assert.ok(memberLoginWxml.includes('open-type="getPhoneNumber"') && memberLoginWxml.includes('bindgetphonenumber="onPhone"'), '会员登录页必须保留微信手机号按钮')
-assert.ok(memberLoginWxml.includes('fallback') && memberLoginWxml.includes('手动输入手机号'), '会员登录页必须保留手动输入兜底')
-assert.ok(!/认领码|训练档案|绑定会员微信/.test(memberLoginWxml), '会员登录页不得出现旧认领词')
-assert.ok(memberLoginJs.includes('loginByPhone') && memberLoginJs.includes('resolvePhoneCode'), '会员登录页必须接新手机号登录链路')
+assert.ok(memberLoginWxml.includes('专属二维码') && memberLoginWxml.includes('当前微信'), '会员登录页必须明确使用当前微信扫描专属二维码')
+assert.ok(!/getPhoneNumber|手动输入手机号|用手机号登录/.test(memberLoginWxml), '会员登录页不得继续要求手机号')
+assert.ok(memberLoginJs.includes('directory.dashboard') && !/loginByPhone|resolvePhoneCode/.test(memberLoginJs), '会员登录页只能检查当前微信绑定状态')
 if (oldWx === undefined) delete global.wx
 else global.wx = oldWx
 
-console.log('first entry role/login tests: PASS (home stays on role choice, member phone login, C/M public code)')
+console.log('first entry role/login tests: PASS (first choice only, remembered role auto-login, member QR identity, C/M public code)')

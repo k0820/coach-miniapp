@@ -8,18 +8,37 @@
 const member = require('../../utils/member-runtime')
 const theme = require('../../utils/member-theme')
 const archiveState = require('../../utils/member-archive-state')
+const trainingView = require('../../utils/member-training-view')
+const insights = require('../../utils/training-insights')
 Page({
-  data: { rows: [], themeStyle: theme.cssVars(), scopedTo: '', multiple: false },
+  data: { rows: [], month: '', monthLabel: '', summary: null, chart: { width: 560, points: [], lines: [] }, selected: null, themeStyle: theme.cssVars(), scopedTo: '', multiple: false, errorText: '', busy: false },
   onShow() {
-    const raw = member.cached() || {}
+    this.render(member.cached() || {})
+    this.refresh()
+  },
+  render(raw) {
     const data = archiveState.narrow(raw)
-    const rows = (data.recentTraining || []).map(row => ({ ...row, actionNames: (row.items || []).map(item => item.name).filter(Boolean).join(' / ') }))
+    const rows = trainingView.rowsOf(data)
     const current = archiveState.archiveById(archiveState.archivesOf(raw), archiveState.readStored())
+    const fallbackMonth = rows.length ? String(rows[0].date || '').slice(0, 7) : new Date().toISOString().slice(0, 7)
+    const month = this.data.month && rows.some(row => String(row.date || '').startsWith(this.data.month)) ? this.data.month : fallbackMonth
+    const summary = insights.memberMonthSummary(rows, month)
+    const chart = insights.chartModel(summary.records)
     this.setData({
-      rows, themeStyle: theme.cssVars(),
+      rows, month, monthLabel: /^\d{4}-\d{2}$/.test(month) ? `${Number(month.slice(0, 4))}年${Number(month.slice(5))}月` : month,
+      summary, chart, selected: chart.points.length ? chart.points[chart.points.length - 1] : null, themeStyle: theme.cssVars(),
       scopedTo: current ? current.name : '',
       multiple: archiveState.archivesOf(raw).length > 1
     })
   },
+  async refresh() {
+    if (this.data.busy) return
+    this.setData({ busy: true })
+    try { this.render(await member.read({ allowCache: true })); this.setData({ errorText: '' }) }
+    catch (error) { if (!this.data.rows.length) this.setData({ errorText: '暂时读不到最新训练记录，请稍后重试。' }) }
+    finally { this.setData({ busy: false }) }
+  },
+  changeMonth(e) { this.setData({ month: String(e.detail.value || '').slice(0, 7) }); this.render(member.cached() || {}) },
+  selectPoint(e) { const row = (this.data.chart.points || []).find(item => item.historyId === e.currentTarget.dataset.id); if (row) this.setData({ selected: row }) },
   detail(e) { wx.navigateTo({ url: `/pages/member-history-detail/member-history-detail?id=${encodeURIComponent(e.currentTarget.dataset.id)}` }) }
 })

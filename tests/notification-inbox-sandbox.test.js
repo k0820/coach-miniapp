@@ -212,6 +212,17 @@ async function main() {
     assert.strictEqual(memberRow.wechat.code, 'SELF_ACTION_NO_PUSH')
   })
 
+  await check('会员在消息中心能看见这一条微信到底有没有发出去', () => {
+    const clientInbox = require(P('utils/notification-inbox'))
+    const failed = clientInbox.rowsView([{ id: 'n1', audience: 'counterpart', wechat: { sent: false, code: 'SUBSCRIBE_NOT_AUTHORIZED' } }])[0]
+    const sent = clientInbox.rowsView([{ id: 'n2', audience: 'counterpart', wechat: { sent: true, code: 'SENT' } }])[0]
+    const own = clientInbox.rowsView([{ id: 'n3', audience: 'actor', wechat: { sent: false, code: 'SELF_ACTION_NO_PUSH' } }])[0]
+    assert.ok(/重新允许/.test(failed.wechatText), `⛔ 没把没有提醒次数说清楚：${failed.wechatText}`)
+    assert.strictEqual(sent.wechatText, '微信提醒已发送')
+    assert.strictEqual(own.wechatText, '', '⛔ 自己的操作不应误报成微信发送失败')
+    assert.ok(/wechat:\s*\{/.test(read('cloudfunctions/coachBusinessSandboxCommand/notification-inbox.js')), '⛔ 服务端没有把真实微信结果返回给消息中心')
+  })
+
   await check('投递层 `writeInbox`：微信**没尝试过**（通道未开）⇒ 站内消息**仍然写**', async () => {
     const { db, stores } = fakeDb()
     const box = inboxModule.createInbox({ db, environment: 'sandbox' })
@@ -394,34 +405,38 @@ async function main() {
     })
   })
 
-  console.log('\n【⑦ 入口 / 红点 / 业务按钮顺手申请额度】')
+  console.log('\n【⑦ 入口 / 红点 / 会员端提醒收口】')
 
-  await check('会员「我的」+ 首页、教练「统计」都有**可见入口**与未读条数', () => {
+  await check('会员端消息卡片已撤下，教练端入口照旧', () => {
     const profile = read('pages/member-profile/member-profile.wxml')
     const home = read('pages/member-home/member-home.wxml')
     const stats = read('pages/stats/stats.wxml')
-    assert.ok(/bindtap="openInbox"/.test(profile), '⛔ 会员「我的」没有消息中心入口')
-    assert.ok(/inboxUnread>0/.test(profile), '⛔ 会员「我的」没有未读条数')
-    assert.ok(/bindtap="openInbox"/.test(home), '⛔ 会员首页没有消息中心入口')
+    assert.ok(!/bindtap="openInbox"/.test(profile), '⛔ 会员「我的」仍有已撤下的消息中心入口')
+    assert.ok(!/inboxUnread>0/.test(profile), '⛔ 会员「我的」仍有已撤下的未读条数')
+    assert.ok(!/bindtap="openInbox"/.test(home), '⛔ 会员首页仍有重复的消息中心入口')
     assert.ok(/bindtap="openInbox"/.test(stats), '⛔ 教练「统计」没有消息中心入口')
     assert.ok(/inboxUnread>0/.test(stats), '⛔ 教练端没有未读条数')
-    // ⛔ 入口必须受 `inboxAvailable` 约束（正式区藏起来，绝不留下点了就报错的按钮）
-    assert.ok(/wx:if="{{inboxAvailable}}"/.test(profile) && /wx:if="{{inboxAvailable}}"/.test(stats), '⛔ 入口没做环境门禁')
+    // 教练端入口必须继续受 `inboxAvailable` 约束；会员页面不再加载消息模块。
+    assert.ok(!/inboxAvailable|openInbox|inboxUnread/.test(profile), '⛔ 会员“我的”仍加载已撤下的消息模块')
+    assert.ok(/wx:if="{{inboxAvailable}}"/.test(stats), '⛔ 教练端入口没做环境门禁')
     const pageJson = JSON.parse(read('app.json'))
     assert.ok(pageJson.pages.indexOf('pages/notification-inbox/notification-inbox') >= 0, '⛔ 消息中心页没有注册')
   })
 
-  await check('真实预约与取消按钮不再申请一次性微信订阅', () => {
+  await check('会员端不再申请无效微信提醒；教练端已可用链路继续保留', () => {
     const slots = read('pages/member-book-slots/member-book-slots.js')
     const bookings = read('pages/member-bookings/member-bookings.js')
     const bookingModal = read('components/booking-modal/booking-modal.js')
     const session = read('pages/session/session.js')
-    for (const [name, source] of [['booking-modal', bookingModal], ['session', session], ['member-book-slots', slots], ['member-bookings', bookings]]) {
-      assert.ok(!/runBusinessTap|requestNextAfterAction/.test(source), `⛔ ${name} 仍会弹一次性订阅授权`)
-    }
+    const claim = read('pages/member-claim/member-claim.js')
+    assert.ok(/requestNextAfterAction\('coach'/.test(bookingModal), '⛔ 教练排课没有补下一条提醒额度')
+    assert.ok((session.match(/requestNextAfterAction\('coach'/g) || []).length >= 2, '⛔ 教练取消或改期没有补下一条提醒额度')
+    assert.ok(!/notify-consent|requestNextAfterAction\('member'/.test(slots + bookings), '⛔ 会员预约管理仍会弹微信提醒')
+    assert.ok(!/notify-consent|requestConsent\('member'/.test(claim), '⛔ 新会员首次领取仍会弹微信提醒')
+    assert.ok(!/await\s+notifyConsent\.requestNextAfterAction/.test(bookingModal + session + slots + bookings), '⛔ 通知授权阻断了主业务')
   })
 
-  await check('旧订阅模块保留为历史兼容，但正式页面没有调用入口', () => {
+  await check('统一订阅模块由常用按钮调用，独立设置页仍不进入产品路由', () => {
     const source = read('utils/notify-consent.js')
     assert.ok(/function requestNextAfterAction/.test(source))
     assert.ok(/\.then\([\s\S]{0,400}\}\)?\s*,\s*\(\)\s*=>\s*null\)/.test(source), '⛔ 没有兜住失败 ⇒ 会把业务一起拖下水')
@@ -433,11 +448,11 @@ async function main() {
     assert.ok(!app.pages.includes('pages/notify-settings/notify-settings'), '⛔ 通知设置页仍注册在正式产品路由')
   })
 
-  await check('课表手动刷新只刷新数据，⛔ 不再申请一次性订阅', () => {
+  await check('课表不再显示手动刷新字样，下拉刷新也不申请一次性订阅', () => {
     const wxml = read('pages/schedule/schedule.wxml')
     const js = read('pages/schedule/schedule.js')
-    assert.ok(/bindtap="refreshScheduleNow"/.test(wxml), '⛔ 课表页没有普通手动刷新按钮')
-    assert.ok(/refreshAllowText:\s*'刷新课表'/.test(js), '⛔ 刷新按钮仍带通知授权文案')
+    assert.ok(!/bindtap="refreshScheduleNow"|刷新课表|刷新页面/.test(wxml), '⛔ 课表页仍显示多余的手动刷新入口')
+    assert.ok(!/refreshAllowText/.test(js), '⛔ 课表数据里仍保留多余的刷新文字')
     assert.ok(!/notify-consent|requestConsent|refreshAndAllow/.test(js), '⛔ 课表页仍接入一次性订阅')
     // ⛔ 下拉刷新 / 换日期 / 返回 / 看统计这些路径里**不许**出现授权调用
     const refreshBlock = js.slice(js.indexOf('async refreshSchedule('), js.indexOf('loadScheduleData()'))
@@ -548,12 +563,12 @@ async function main() {
     })
   })
 
-  await check('判别力⑥：四个真实按钮有独立的内存反证脚本', () => {
+  await check('判别力⑥：教练提醒丢失或会员提醒回潮时，内存反证会变红', () => {
     const mutation = read('tests/_notify-business-buttons-mutate.js')
-    assert.ok(/重新绑上一次性订阅/.test(mutation), '⛔ 没有验证“不等待授权”')
-    assert.ok(/教练共享排课重新绑上/.test(mutation) && /教练普通排课重新绑上/.test(mutation), '⛔ 教练排课两条分支缺少反证')
-    assert.ok(/教练取消重新绑上/.test(mutation), '⛔ 教练取消缺少反证')
-    assert.ok(/会员预约重新绑上/.test(mutation) && /会员取消重新绑上/.test(mutation), '⛔ 会员预约/取消缺少反证')
+    assert.ok(/教练排课漏掉下一条提醒/.test(mutation) && /教练取消和改期漏掉下一条提醒/.test(mutation), '⛔ 教练排课/取消/改期缺少反证')
+    assert.ok(/会员预约重新弹提醒/.test(mutation) && /会员取消重新弹提醒/.test(mutation), '⛔ 会员预约/取消提醒回潮缺少反证')
+    assert.ok(/会员首次领取重新弹提醒/.test(mutation), '⛔ 会员首次领取提醒回潮缺少反证')
+    assert.ok(/通知授权被 await 后阻塞业务/.test(mutation), '⛔ 没有验证通知不得阻塞业务')
   })
 
   const failed = results.filter(row => row.startsWith('❌'))

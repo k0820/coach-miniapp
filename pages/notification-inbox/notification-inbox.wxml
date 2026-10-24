@@ -20,6 +20,7 @@
     </view>
     <view class="inbox-row-body">{{item.body}}</view>
     <view class="inbox-row-meta">{{item.audienceText}}<text wx:if="{{item.timeText}}"> · {{item.timeText}}</text></view>
+    <view wx:if="{{item.wechatText}}" class="inbox-row-meta">{{item.wechatText}}</view>
   </view>
 
   <button wx:if="{{available && rows.length}}" class="btn ghost" bindtap="markAll">全部标为已读</button>

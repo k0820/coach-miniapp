@@ -1,71 +1,42 @@
-<view class="member-page member-shell" style="{{themeStyle}}">
-  <view class="member-row member-spread">
-    <view>
-      <view class="member-title">首页</view>
-      <view class="member-subtitle">你好，{{vm.member.displayName||'训练伙伴'}}</view>
+<view class="member-home-root" data-weui-theme="light" style="{{themeStyle}}">
+<scroll-view class="member-home-scroll" scroll-y enhanced show-scrollbar="{{false}}" refresher-enabled refresher-default-style="none" refresher-background="transparent" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresherRefresh">
+<view class="member-page member-shell home-page weui-page">
+  <view class="home-header">
+    <view class="home-greeting"><view class="home-kicker">今天也要好好训练</view><view class="member-title">你好，{{displayName||'训练伙伴'}}</view><view class="home-greeting-sub">把每一次训练，都变成看得见的积累</view></view>
+    <view class="member-fitness-mark" aria-hidden="true"><view class="member-fitness-bar"></view><view class="member-fitness-plate left"></view><view class="member-fitness-plate left outer"></view><view class="member-fitness-plate right"></view><view class="member-fitness-plate right outer"></view></view>
+  </view>
+  <view class="home-stat-grid">
+    <view class="home-stat home-stat-mint" bindtap="packages"><view class="home-stat-icon">◷</view><view><text>剩余课时</text><b>{{vm.summary.available}}</b><small>节</small></view><i>›</i></view>
+    <view class="home-stat home-stat-blue" bindtap="bookings"><view class="home-stat-icon">▣</view><view><text>下节课</text><b class="home-stat-word">{{vm.next?'已预约':'还没有'}}</b><small>{{vm.next?'查看详情':'待上课程'}}</small></view><i>›</i></view>
+    <view class="home-stat home-stat-coral" bindtap="history"><view class="home-stat-icon">▥</view><view><text>近30天</text><b>{{trainingSummary.count30}}</b><small>次</small></view><i>›</i></view>
+  </view>
+  <view wx:if="{{notice.length}}" class="member-inline-notice"><view wx:for="{{notice}}" wx:key="*this" class="member-inline-notice-line">{{item}}</view></view>
+  <view wx:if="{{incompleteText}}" class="member-inline-notice">{{incompleteText}}</view>
+  <view wx:if="{{errorText}}" class="member-inline-notice member-inline-notice--error">{{errorText}}</view>
+  <view wx:if="{{!snapshotReady}}" class="home-loading"><view class="home-loading-bar"></view><text>正在读取训练资料</text></view>
+  <view class="home-surface balance-surface weui-panel">
+    <view class="balance-head"><view><view class="surface-kicker">我的课包</view><view class="balance-total"><b>{{vm.summary.available}}</b><text>节可约</text></view></view><view class="surface-link" bindtap="packages">查看全部 ›</view></view>
+    <view class="package-list" wx:if="{{vm.packages.length}}">
+      <view wx:for="{{vm.packages}}" wx:key="packageKey" class="package-row"><view class="package-dot"></view><view class="package-copy"><b>{{item.typeName||'常规训练'}}</b><text>{{item.saleDate||'当前课时包'}}</text></view><view class="package-remain">{{item.available}} 节</view></view>
     </view>
-    <view class="member-avatar">{{vm.initial}}</view>
+    <view wx:else class="surface-empty">{{vm.emptyText}}</view>
   </view>
-
-  <!-- ⛔ 异常不得静默：环境不对 / 账号没读到 / 少读一份，都必须在首页说成人话 -->
-  <view wx:if="{{notice.length}}" class="member-card member-empty">
-    <view wx:for="{{notice}}" wx:key="*this">{{item}}</view>
-  </view>
-  <view wx:if="{{incompleteText}}" class="member-card member-empty">{{incompleteText}}</view>
-  <view wx:if="{{errorText}}" class="member-card member-empty">{{errorText}}</view>
-
-  <!-- ① 课时概况 -->
-  <view class="member-card">
-    <view class="member-section-title" style="margin-top:0">课时概况</view>
-    <view class="member-row">
-      <view class="home-stat"><view class="home-num">{{vm.summary.available}}</view><view class="home-label">可用课时</view></view>
-      <view class="home-stat"><view class="home-num alt">{{vm.summary.occupied}}</view><view class="home-label">已占用</view></view>
-      <view class="home-stat"><view class="home-num weak">{{vm.summary.used}}</view><view class="home-label">已完成</view></view>
+  <view class="home-quick-grid">
+    <view class="home-actions weui-cells">
+      <view class="next-card weui-cell weui-cell_access" bindtap="bookings"><view class="weui-cell__bd"><view class="surface-kicker">下一节课</view><view class="next-title">{{vm.next?vm.nextText:'还没有待上课程'}}</view><view class="next-sub">{{vm.next?(vm.next.typeName+' · '+vm.next.coachName):'预约成功后会在这里显示'}}</view></view><view class="weui-cell__ft">查看</view></view>
     </view>
-    <view class="member-subtitle card-foot" bindtap="packages">查看课时明细 ›</view>
-    <view wx:if="{{vm.emptyText}}" class="member-subtitle" style="margin-top:10rpx">{{vm.emptyText}}</view>
-  </view>
-
-  <!-- ② 下一节课 -->
-  <view class="member-card">
-    <view class="member-section-title" style="margin-top:0">下一节课</view>
-    <view wx:if="{{vm.next}}">
-      <view class="member-row member-spread">
-        <view>
-          <view>{{vm.next.coachName}}</view>
-          <view class="member-subtitle">{{vm.nextText}} · {{vm.next.typeName}}</view>
-        </view>
-        <view class="member-pill">已预约</view>
+    <view class="home-training weui-cells">
+      <view class="training-entry weui-cell weui-cell_access" bindtap="history">
+        <view class="weui-cell__bd"><view class="training-title-line"><view class="training-entry-title">训练记录</view><view class="training-count">近30天 {{trainingSummary.count30}} 次</view></view><view class="training-entry-sub">{{trainingSummary.latestText}}</view></view>
+        <view class="weui-cell__ft"></view>
       </view>
     </view>
-    <view wx:else class="member-subtitle">暂时没有待上课程</view>
   </view>
-
-  <!-- 单教练产品：只显示资料所属教练，不再提供添加、切换或联系人码。 -->
-  <view class="member-card">
-    <view class="member-section-title" style="margin:0">我的教练</view>
-    <scroll-view wx:if="{{vm.coaches.length}}" class="home-coaches" scroll-x enable-flex>
-      <view wx:for="{{vm.coaches}}" wx:for-index="coachIndex" wx:if="{{coachIndex===0}}" wx:key="contactKey" class="home-coach" data-key="{{item.contactKey}}" bindtap="bookCoach">
-        <view class="member-avatar small">{{item.displayName}}</view>
-        <view class="home-coach-name">{{item.displayName}}</view>
-        <view class="member-subtitle">尾号 {{item.phoneTail}}</view>
-      </view>
-    </scroll-view>
-    <view wx:else class="member-subtitle">还没有绑定教练录入的会员资料。</view>
-  </view>
-
-  <!-- 快捷按钮 -->
-  <view class="member-card member-list-row member-row member-spread" bindtap="bookSlots">
-    <view>约一节课</view><view class="member-arrow">›</view>
-  </view>
-  <view class="member-card member-list-row member-row member-spread" bindtap="bookings">
-    <view>查看预约</view><view class="member-arrow">›</view>
-  </view>
-  <view wx:if="{{inboxAvailable}}" class="member-card member-list-row member-row member-spread" bindtap="openInbox">
-    <view>消息中心<text wx:if="{{inboxUnread>0}}" class="member-dot"> 未读 {{inboxUnread}} 条</text></view>
-    <view class="member-arrow">›</view>
-  </view>
-
-  <member-nav active="home"/>
+  <view class="home-preference" bindtap="openAlias"><text>显示设置</text><text>修改我的称呼 ›</text></view>
 </view>
-
+</scroll-view>
+<member-sheet visible="{{aliasOpen}}" title="修改我的称呼" desc="只在你的会员端显示，不会改变教练登记的姓名" confirmText="保存称呼" cancelText="暂不修改" bindconfirm="saveAlias" bindcancel="closeAlias" bindclose="closeAlias">
+  <view class="alias-editor"><input maxlength="12" value="{{aliasDraft}}" bindinput="aliasInput" placeholder="输入你喜欢的称呼"/><view class="alias-help">留空保存会恢复教练登记的原称呼</view></view>
+</member-sheet>
+<member-nav active="home"/>
+</view>

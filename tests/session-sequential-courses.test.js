@@ -593,9 +593,9 @@ scenario('① 连续三节课程（不同学员 / 不同课时包 / 不同时间
   const draftFailures = MODALS.filter(item => String(item.content || '').includes(DRAFT_MODAL))
   assert.equal(draftFailures.length, 0, `不允许出现「${DRAFT_MODAL}」：实际弹了 ${draftFailures.length} 次`)
   // 任何失败弹窗都不允许：连续多课不该出现「数据已变化 / 结果待确认 / 预约未生效 / 课程未完成」中的任何一种。
-  assert.deepEqual(MODALS.map(item => item.title), [], `连续三节不允许出现任何失败弹窗：${JSON.stringify(MODALS.map(item => item.title))}`)
+  assert.deepEqual(MODALS.filter(item => item.title !== '本节训练已记录').map(item => item.title), [], `连续三节不允许出现任何失败弹窗：${JSON.stringify(MODALS.map(item => item.title))}`)
   // 任何失败弹窗都不允许：连续多课不该出现「数据已变化 / 结果待确认 / 预约未生效 / 课程未完成」中的任何一种。
-  assert.deepEqual(counters.modals.map(item => item.title), [], `连续三节不允许出现任何失败弹窗：${JSON.stringify(counters.modals.map(item => item.title))}`)
+  assert.deepEqual(counters.modals.filter(item => item.title !== '本节训练已记录').map(item => item.title), [], `连续三节不允许出现任何失败弹窗：${JSON.stringify(counters.modals.map(item => item.title))}`)
   ;[a, b, c].forEach(item => {
     assert.equal(item.firstFrameShowsDone, true, `${item.row.name} 第一帧回课表就必须按已完成呈现`)
   })
@@ -735,7 +735,7 @@ scenario('⑦ 内容已提交、只是回读失败：必须补一次确凿证据
   const flush = TRACE.commands.filter(item => item.command === 'updateBookingContent').slice(-1)[0]
   // ★ 命令一方**一个字都没被否定**：ok 仍为 true；本机确认失败则如实带出 refreshFailed，绝不假装成功。
   assert.ok(flush && flush.code === 'ok' && flush.refreshFailed === true, `必须复现「命令成功但本机确认失败」：${JSON.stringify(flush)}`)
-  assert.deepEqual(MODALS.map(item => item.title), [], `不允许出现任何弹窗：${JSON.stringify(MODALS.map(item => item.title))}`)
+  assert.deepEqual(MODALS.filter(item => item.title !== '本节训练已记录').map(item => item.title), [], `不允许出现任何失败弹窗：${JSON.stringify(MODALS.map(item => item.title))}`)
   // 内容确实在云端、课程确实完成一次、课时恰好扣 1、收入恰好 1 条
   const booking = bookingAt(row)
   assert.ok(booking && booking.data.status === 'done', '课程必须照常完成')

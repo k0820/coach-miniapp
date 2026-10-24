@@ -145,6 +145,11 @@ const PAYLOAD_KEYS = Object.freeze({
   loginByPhone: Object.freeze(['phone']),
   resolvePhoneCode: Object.freeze(['code']),
   createMemberByCoach: Object.freeze(['phone', 'displayName']),
+  getMemberClaimQr: Object.freeze(['studentRef', 'qrEnvVersion']),
+  rotateMemberClaimQr: Object.freeze(['studentRef', 'qrEnvVersion']),
+  unbindMemberWechat: Object.freeze(['studentRef']),
+  previewMemberClaimQr: Object.freeze(['scene']),
+  claimMemberByQr: Object.freeze(['scene']),
 })
 
 // ───────────────────────────────────────────── 我是谁（⛔ 只从服务端可信 OPENID 推导）
@@ -450,6 +455,199 @@ async function renderContactMiniCode({ cloud, scene, role }) {
   })
   if (!response || !response.buffer) throw Object.assign(new Error('微信没有返回小程序码图片。'), { code: 'QRCODE_GENERATE_FAILED' })
   return response.buffer
+}
+
+// 会员专属码长期有效。二维码里只有随机 scene，不放手机号、openid、memberId、
+// 教练编号、课时或数据库主键；主管教练主动换码后，旧 scene 会立即失效。
+async function renderMemberClaimMiniCode({ cloud, scene }) {
+  if (!cloud || !cloud.openapi || !cloud.openapi.wxacode || typeof cloud.openapi.wxacode.getUnlimited !== 'function') {
+    throw Object.assign(new Error('当前云函数没有小程序码能力。'), { code: 'QRCODE_CAPABILITY_UNAVAILABLE' })
+  }
+  const response = await cloud.openapi.wxacode.getUnlimited({
+    scene: cleanText(scene, 32), page: MEMBER_CLAIM_PAGE, width: 430,
+    auto_color: false, is_hyaline: false, check_path: false, env_version: QR_ENV_VERSION
+  })
+  if (!response || !response.buffer) throw Object.assign(new Error('微信没有返回小程序码图片。'), { code: 'QRCODE_GENERATE_FAILED' })
+  return response.buffer
+}
+
+const memberClaimQrId = memberId => fixedId('member-dedicated-claim-qr', memberId)
+const newMemberClaimScene = environment => `${environment === 'sandbox' ? 's' : 'p'}${crypto.randomBytes(16).toString('hex').slice(0, 31)}`
+
+async function memberClaimRowByScene({ db, scene, now }) {
+  const value = cleanText(scene, 32).toLowerCase()
+  if (!/^(?:[sp][0-9a-f]{31}|[0-9a-f]{32})$/.test(value)) return null
+  const row = await oneRow(db, COLLECTIONS.tickets, { kind: 'member-claim', scene: value, status: 'active' })
+  if (!row) return null
+  // 兼容已经生成过的旧 15 分钟码；新码带环境前缀且 permanent=true，不再按时间失效。
+  if (row.permanent !== true && (!Number.isFinite(Number(row.expiresAt)) || Number(row.expiresAt) <= Number(now))) return null
+  return row
+}
+
+// 把教练当前账本里**已经存在**的学员记录接到会员身份入口。
+// 这里只建立“微信将来认领哪条学员记录”的索引，不新建学员、不复制课包、不复制预约。
+async function ensureMemberForStudent({ db, environment, actor, studentRef, now }) {
+  const context = await core.activeContext(db, actor.id, environment)
+  const student = await oneRow(db, 'students', {
+    ownerCoachId: actor.id, datasetId: context.datasetId, studentId: studentRef
+  })
+  if (!student) return { ok: false, code: 'STUDENT_NOT_FOUND', message: '找不到这位学员，请返回学员列表后重试。' }
+  const existing = await oneRow(db, COLLECTIONS.members, {
+    ownerCoachId: actor.id, ownerDatasetId: context.datasetId, studentId: studentRef
+  })
+  if (existing && existing.status !== CONTACT_REMOVED) return { ok: true, member: existing, student }
+
+  const source = student.data || student
+  const memberId = fixedId('member-by-student', actor.id, context.datasetId, studentRef)
+  const member = {
+    memberId,
+    displayName: cleanText(source.name, 30) || '会员',
+    publicCode: publicCodeFor(ROLE_MEMBER, memberId),
+    ownerCoachId: actor.id,
+    ownerDatasetId: String(context.datasetId || ''),
+    studentId: studentRef,
+    status: CONTACT_ACTIVE,
+    createdByCoachId: actor.id,
+    source: 'existing-student',
+    createdAt: now,
+    updatedAt: now
+  }
+  await setRow(db, COLLECTIONS.members, fixedId('member-directory-member', memberId), member)
+  await writeContact({
+    db, environment, memberId, coachId: actor.id,
+    actorKey: `coach:${actor.id}`, source: 'existing-student-qr', now
+  })
+  return { ok: true, member, student }
+}
+
+// 主管教练为“学员”页里已有的资料生成长期领取二维码。同一会员稳定复用同一张码；
+// 只有主管教练主动“换一张码”时才轮换 scene，旧码随即失效。
+async function getMemberClaimQr({ db, cloud, environment, actor, payload, now, forceRotate = false }) {
+  if (!actor || actor.kind !== ROLE_COACH) return { ok: false, code: 'COACH_ONLY', message: '只有教练可以生成会员二维码。' }
+  const studentRef = cleanText(payload && payload.studentRef, 64)
+  if (!studentRef) return { ok: false, code: 'INVALID_PAYLOAD', message: '缺少学员编号，请返回后重试。' }
+  const prepared = await ensureMemberForStudent({ db, environment, actor, studentRef, now })
+  if (!prepared.ok) return prepared
+  const member = prepared.member
+  const memberId = member.memberId
+
+  const rowId = memberClaimQrId(memberId)
+  const existing = await getRow(db, COLLECTIONS.tickets, rowId)
+  // 历史上曾生成过 develop（开发版）小程序码；微信会让这类入口过期。
+  // 只有明确记录为当前 release/trial 环境的码才能继续复用，旧记录首次打开时自动换成长期有效码。
+  const keep = !forceRotate && existing && existing.kind === 'member-claim' && existing.status === 'active'
+    && existing.permanent === true && existing.qrEnvVersion === QR_ENV_VERSION
+    && /^[sp][0-9a-f]{31}$/.test(String(existing.scene || ''))
+  const scene = keep ? String(existing.scene) : newMemberClaimScene(environment)
+  let row = keep ? existing : {
+    ticketId: rowId, kind: 'member-claim', scene, memberId,
+    coachId: actor.id, status: 'active', createdAt: now, updatedAt: now,
+    permanent: true, expiresAt: 0, qrEnvVersion: QR_ENV_VERSION, rotatedAt: forceRotate ? now : 0, fileID: ''
+  }
+  if (keep && row.fileID) {
+    return { ok: true, stable: true, permanent: true, bound: !!cleanText(member.openId, 160), scene, fileID: row.fileID, expiresAt: 0, member: publicCardOf({ role: ROLE_MEMBER, id: memberId, displayName: member.displayName, publicCode: member.publicCode }) }
+  }
+  await setRow(db, COLLECTIONS.tickets, rowId, row)
+  let buffer
+  try { buffer = await renderMemberClaimMiniCode({ cloud, scene }) }
+  catch (error) { return { ok: false, code: error.code || 'QRCODE_GENERATE_FAILED', message: '专属二维码生成失败，请稍后重试。' } }
+  try {
+    const uploaded = await cloud.uploadFile({ cloudPath: `member-claim-qr/${rowId}/${scene}.png`, fileContent: buffer })
+    if (!uploaded || !uploaded.fileID) throw new Error('missing fileID')
+    row = { ...row, fileID: uploaded.fileID, updatedAt: now }
+    await setRow(db, COLLECTIONS.tickets, rowId, row)
+    return { ok: true, stable: true, permanent: true, bound: !!cleanText(member.openId, 160), rotated: forceRotate, scene, fileID: uploaded.fileID, expiresAt: 0, member: publicCardOf({ role: ROLE_MEMBER, id: memberId, displayName: member.displayName, publicCode: member.publicCode }) }
+  } catch (error) {
+    return { ok: false, code: 'QRCODE_UPLOAD_FAILED', message: '二维码已经生成，但暂时不能保存，请稍后重试。' }
+  }
+}
+
+async function rotateMemberClaimQr(options) {
+  return getMemberClaimQr({ ...options, forceRotate: true })
+}
+
+async function unbindMemberWechat({ db, environment, actor, payload, now }) {
+  if (!actor || actor.kind !== ROLE_COACH) return { ok: false, code: 'COACH_ONLY', message: '只有主管教练可以解除会员微信绑定。' }
+  const studentRef = cleanText(payload && payload.studentRef, 64)
+  if (!studentRef) return { ok: false, code: 'INVALID_PAYLOAD', message: '缺少学员编号，请返回后重试。' }
+  const context = await core.activeContext(db, actor.id, environment)
+  const existing = await oneRow(db, COLLECTIONS.members, { ownerCoachId: actor.id, ownerDatasetId: context.datasetId, studentId: studentRef })
+  if (!existing || existing.status === CONTACT_REMOVED) return { ok: false, code: 'MEMBER_NOT_FOUND', message: '这位学员还没有会员绑定资料。' }
+  if (!cleanText(existing.openId, 160)) return { ok: true, alreadyUnbound: true, memberId: existing.memberId }
+  return db.runTransaction(async tx => {
+    const docId = fixedId('member-directory-member', existing.memberId)
+    const member = await getRow(tx, COLLECTIONS.members, docId)
+    if (!member || member.status === CONTACT_REMOVED) return { ok: false, code: 'MEMBER_NOT_FOUND', message: '这位学员还没有会员绑定资料。' }
+    const previousOpenId = cleanText(member.openId, 160)
+    member.openId = ''
+    member.claimedAt = 0
+    member.claimedByQr = false
+    member.unboundAt = now
+    member.updatedAt = now
+    await setRow(tx, COLLECTIONS.members, docId, member)
+    const account = await oneRow(tx, DERIVED_COLLECTIONS.accounts, { memberId: member.memberId })
+    if (account && account._id) await setRow(tx, DERIVED_COLLECTIONS.accounts, account._id, { ...account, openId: '', identityHash: '', status: 'unbound', unboundAt: now, updatedAt: now })
+    if (member.claimId && previousOpenId) {
+      const names = authorization.collectionsFor(environment)
+      const claim = await getRow(tx, names.claims, String(member.claimId))
+      if (claim) await setRow(tx, names.claims, String(member.claimId), { ...claim, memberId: member.memberId, unboundAt: now, reboundFrom: memberIdForOpenId(previousOpenId) })
+    }
+    return { ok: true, alreadyUnbound: false, memberId: member.memberId }
+  })
+}
+
+// 扫码第一步只读预览，绝不自动认领。新微信未注册时也必须能走到这里。
+async function previewMemberClaimQr({ db, environment, openId, payload, now }) {
+  const row = await memberClaimRowByScene({ db, scene: payload && payload.scene, now })
+  if (!row) return { ok: false, code: 'MEMBER_CLAIM_QR_INVALID', message: '这个二维码已经失效，请让教练重新生成。' }
+  const member = await getRow(db, COLLECTIONS.members, fixedId('member-directory-member', row.memberId))
+  if (!member || member.status === CONTACT_REMOVED) return { ok: false, code: 'MEMBER_NOT_FOUND', message: CONTACT_TEXT.MEMBER_NOT_FOUND }
+  const place = await ownerPlaceOf({ db, environment, member })
+  const summary = place ? await memberPackageSummary({ db, member, place }) : { available: 0, occupied: 0, used: 0, packageCount: 0 }
+  const bound = cleanText(member.openId, 160)
+  const state = !bound ? 'available' : (bound === String(openId || '') ? 'mine' : 'claimed')
+  return {
+    ok: true, state,
+    member: { displayName: cleanText(member.displayName, 30), publicCode: normalizePublicCode(member.publicCode) },
+    summary: { available: Number(summary.available || summary.remaining || 0), occupied: Number(summary.occupied || 0), packageCount: Number(summary.packageCount || 0) }
+  }
+}
+
+// 点击“确认领取”才写入。身份只取云端 OPENID；同一份资料只能绑定一个微信，
+// 同一微信也不能借一张新二维码覆盖自己已经绑定的另一份资料。
+async function claimMemberByQr({ db, environment, openId, payload, now }) {
+  // “检查有没有被领走”与“写入当前微信”必须在同一事务里。
+  // 否则两台手机同时点确认时都可能先读到空值，最后一台覆盖前一台。
+  const outcome = await db.runTransaction(async tx => {
+    const row = await memberClaimRowByScene({ db: tx, scene: payload && payload.scene, now })
+    if (!row) return { ok: false, code: 'MEMBER_CLAIM_QR_INVALID', message: '这个二维码已经失效，请让教练重新生成。' }
+    const memberDocId = fixedId('member-directory-member', row.memberId)
+    const member = await getRow(tx, COLLECTIONS.members, memberDocId)
+    if (!member || member.status === CONTACT_REMOVED) return { ok: false, code: 'MEMBER_NOT_FOUND', message: CONTACT_TEXT.MEMBER_NOT_FOUND }
+    const bound = cleanText(member.openId, 160)
+    if (bound && bound !== String(openId)) return { ok: false, code: 'MEMBER_ALREADY_CLAIMED', message: '这份会员资料已经由其他微信领取，不能重复领取。' }
+    const other = await oneRow(tx, COLLECTIONS.members, { openId: String(openId) })
+    if (other && String(other.memberId || '') !== String(member.memberId || '')) {
+      return { ok: false, code: 'WECHAT_ALREADY_BOUND', message: '当前微信已经绑定另一份会员资料，不能重复领取。' }
+    }
+    const alreadyMine = bound === String(openId)
+    if (!alreadyMine) {
+      member.openId = String(openId)
+      member.updatedAt = now
+      member.claimedAt = now
+      member.claimedByQr = true
+      await setRow(tx, COLLECTIONS.members, memberDocId, member)
+    }
+    return { ok: true, alreadyMine, member }
+  })
+  if (!outcome || outcome.ok !== true) return outcome
+  const member = outcome.member
+  await ensureMemberAccount({ db, member, openId, now })
+  if (!outcome.alreadyMine && member.claimId) await rebindClaim({ db, environment, member, openId, now })
+  return {
+    ok: true, alreadyMine: outcome.alreadyMine, claimed: true,
+    member: publicCardOf({ role: ROLE_MEMBER, id: member.memberId, displayName: member.displayName, publicCode: member.publicCode })
+  }
 }
 
 // ③ 把临时 scene 交给微信，生成能直接打开对应确认页的官方小程序码。
@@ -821,11 +1019,13 @@ async function resolvePhoneCode({ cloud, payload }) {
 
 const ACTIONS = Object.freeze([
   'dashboard', 'issueTicket', 'drawTicketQr', 'resolveTicket', 'findByCode', 'addContact',
-  'listContacts', 'removeContact', 'readMemberDetail', 'updateMemberCore', 'loginByPhone', 'resolvePhoneCode', 'createMemberByCoach'
+  'listContacts', 'removeContact', 'readMemberDetail', 'updateMemberCore', 'loginByPhone', 'resolvePhoneCode', 'createMemberByCoach',
+  'getMemberClaimQr', 'rotateMemberClaimQr', 'unbindMemberWechat', 'previewMemberClaimQr', 'claimMemberByQr'
 ])
 // 📱 扫码后打开的**确认页**：⛔ 扫码只到这里，**绝不**自动添加（见到人确认才建立关系）。
 const RESOLVE_PAGE = 'pages/member-add-coach/member-add-coach'
 const COACH_ADD_MEMBER_PAGE = 'pages/coach-add-member/coach-add-member'
+const MEMBER_CLAIM_PAGE = 'pages/member-claim/member-claim'
 const QR_ENV_VERSION = 'trial'
 
 function validateRequestId(value) {
@@ -860,6 +1060,8 @@ function createDirectory({ db, cloud = null, getOpenId = () => '', now = () => D
       // 第一次进入时没有会员身份也可以创建；身份只取可信 OPENID。
       if (action === 'loginByPhone') return { ...(await loginByPhone({ db, openId, payload, now: stamped })), environment: core.SANDBOX, requestId }
       if (action === 'resolvePhoneCode') return { ...(await resolvePhoneCode({ cloud, payload })), environment: core.SANDBOX, requestId }
+      if (action === 'previewMemberClaimQr') return { ...(await previewMemberClaimQr({ db, environment: core.SANDBOX, openId, payload, now: stamped })), environment: core.SANDBOX, requestId }
+      if (action === 'claimMemberByQr') return { ...(await claimMemberByQr({ db, environment: core.SANDBOX, openId, payload, now: stamped })), environment: core.SANDBOX, requestId }
       // 同一个微信可能既是教练又绑定了会员资料。会员页面的动作必须优先按会员身份，
       // 否则会把 actor.memberId 读成空值，真机首页就会整页空白。
       const memberOnlyActions = new Set(['dashboard', 'loginByPhone'])
@@ -888,6 +1090,9 @@ function createDirectory({ db, cloud = null, getOpenId = () => '', now = () => D
       if (action === 'removeContact') return { ...(await removeContact({ db, environment: core.SANDBOX, actor, payload, now: stamped })), environment: core.SANDBOX, requestId }
       if (action === 'createMemberByCoach') return { ...(await createMemberByCoach({ db, environment: core.SANDBOX, actor, payload, now: stamped })), environment: core.SANDBOX, requestId }
       if (action === 'readMemberDetail') return { ...(await readMemberDetail({ db, environment: core.SANDBOX, actor, payload })), environment: core.SANDBOX, requestId }
+      if (action === 'getMemberClaimQr') return { ...(await getMemberClaimQr({ db, cloud, environment: core.SANDBOX, actor, payload, now: stamped })), environment: core.SANDBOX, requestId }
+      if (action === 'rotateMemberClaimQr') return { ...(await rotateMemberClaimQr({ db, cloud, environment: core.SANDBOX, actor, payload, now: stamped })), environment: core.SANDBOX, requestId }
+        if (action === 'unbindMemberWechat') return { ...(await unbindMemberWechat({ db, environment: core.SANDBOX, actor, payload, now: stamped })), environment: core.SANDBOX, requestId }
       return { ...(await updateMemberCore({ db, environment: core.SANDBOX, actor, payload, now: stamped })), environment: core.SANDBOX, requestId }
     } catch (error) {
       return { ok: false, code: error.commandCode || 'MEMBER_DIRECTORY_FAILED', message: error.message || '操作失败，请重试。', environment: core.SANDBOX, extra: error.extra || {} }
@@ -899,6 +1104,7 @@ module.exports = {
   COLLECTIONS, ROLE_MEMBER, ROLE_COACH, CONTACT_ACTIVE, CONTACT_REMOVED, CONTACT_TEXT,
   LOOKUP_LIMIT, LOOKUP_WINDOW_MS, ACTIONS,
   publicCodeFor, normalizePublicCode, publicCardOf, sensitiveIn, PAYLOAD_KEYS, todayKey, ensureSandboxCollections,
-  RESOLVE_PAGE, COACH_ADD_MEMBER_PAGE, translateQrError, drawTicketQr, renderContactMiniCode,
-  createDirectory, memberIdForOpenId, memberIdByPhone, rebindClaim, writeContact, grantPackagesToCoach, recentTraining, memberIdByOpenId, resolvePhoneCode
+  RESOLVE_PAGE, COACH_ADD_MEMBER_PAGE, MEMBER_CLAIM_PAGE, translateQrError, drawTicketQr, renderContactMiniCode, renderMemberClaimMiniCode,
+  createDirectory, memberIdForOpenId, memberIdByPhone, rebindClaim, writeContact, grantPackagesToCoach, recentTraining, memberIdByOpenId, resolvePhoneCode,
+  ensureMemberForStudent, getMemberClaimQr, rotateMemberClaimQr, memberClaimRowByScene
 }

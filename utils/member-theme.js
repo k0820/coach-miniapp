@@ -1,4 +1,4 @@
-// ⭐⭐ 会员端**唯一一套界面色板**（2026-10-05：三套主题已撤回，只保留灰白简约版）。
+// 会员端唯一一套界面色板：暖白底、深海蓝文字、青绿色小面积强调。
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // ⛔⛔ 本轮撤回了什么（改动前必读，别把旧东西加回来）
@@ -9,7 +9,7 @@
 //
 //   用户最终决定：**不要主题**。理由很实在 —— 教练/会员是来上课、约课、看课时的，
 //   换皮肤没有业务价值，反而每加一个新页面都要适配三套颜色，出错的面白白大三倍。
-//   ⇒ 现在只保留**一套**灰白简约界面：页面浅灰白 / 卡片纯白 / 深灰文字 / 少量统一低饱和强调色。
+//   ⇒ 现在只保留一套统一界面：页面暖白 / 内容面纯白 / 深海蓝文字 / 青绿色小面积强调。
 //
 // ⛔⛔ 三条纪律
 //   ① **`THEMES` 里只允许有一套。** 再加第二套就是**本轮撤回的功能回来了**，
@@ -99,28 +99,28 @@ const CSS_VAR_NAMES = {
 /** 唯一一套界面：命名仍叫 `default`，`id` 只用于形状完整性，⛔ 不代表可以切换。 */
 const THEME_ID = 'default'
 const DEFAULT_ID = THEME_ID
-const THEME_NAME = '简约'
+const THEME_NAME = '清透'
 
 const THEMES = Object.freeze({
   [THEME_ID]: Object.freeze({
     id: THEME_ID, name: THEME_NAME,
-    // ⭐ 主色用中性石墨；唯一的强调色 `#5f7a86`（低饱和蓝灰）只做小面积点缀。
-    primary: '#3a454e', primaryDeep: '#252d34', accent: '#5f7a86', soft: '#eef1f3',
-    hero: 'linear-gradient(135deg,#eff2f4,#ffffff)', heroLabel: '#5c6770', heroInk: '#1d2429',
-    // ⭐ 层次怎么来的：页面 `#f6f7f8`（浅灰白）→ 卡片 `#ffffff`（纯白）+ 1rpx 描边 + 极淡阴影。
-    pageBg: '#f6f7f8', surface: '#ffffff', surfaceAlt: '#fafbfb', border: '#e6e8ea', borderStrong: '#d2d6da',
-    shadow: '0 8rpx 24rpx rgba(37,45,52,.05)',
-    text: '#22282e', textSub: '#757e86', tagBg: '#eef1f3', tagText: '#414c55',
-    success: '#4f7a5c', warning: '#8a6f34', danger: '#a8453c',
-    successSoft: '#ecf1ed', warningSoft: '#f3eee2', dangerSoft: '#f4e9e8',
-    navActive: '#3a454e', navIdle: '#939ba1',
-    decoPrimary: '#c3cace', decoSecondary: '#9aa3a9', decoShape: 'plain', illustration: 'plain',
-    decoSunRadius: '8rpx', decoLeafRadius: '0',
+    // 样板色板：森林绿负责主操作，浅蓝 / 珊瑚 / 暖黄只做信息分层。
+    primary: '#103F3B', primaryDeep: '#0B302D', accent: '#4C76DF', soft: '#EAFBF4',
+    hero: 'linear-gradient(135deg,#0C302D 0%,#104B45 58%,#28566B 100%)', heroLabel: '#F3B941', heroInk: '#FFFFFF',
+    // 暖白页面与白色内容面形成轻层次，避免灰色后台感。
+    pageBg: '#FBFAF5', surface: '#FFFFFF', surfaceAlt: '#F3F7F5', border: '#E3EBE7', borderStrong: '#C6DED5',
+    shadow: '0 16rpx 44rpx rgba(16,63,59,.08)',
+    text: '#102A2B', textSub: '#71837F', tagBg: '#EDF3FF', tagText: '#4C76DF',
+    success: '#22A77A', warning: '#9A7024', danger: '#DD6848',
+    successSoft: '#EAFBF4', warningSoft: '#FFF8DF', dangerSoft: '#FFF1EC',
+    navActive: '#103F3B', navIdle: '#91A09D',
+    decoPrimary: '#F3B941', decoSecondary: '#D9F7EC', decoShape: 'plain', illustration: 'plain',
+    decoSunRadius: '999rpx', decoLeafRadius: '999rpx',
     slot: Object.freeze({
-      freeBg: '#ffffff', freeLine: '#3a454e', freeTime: '#22282e',
-      bookedBg: '#f0f2f3', bookedLine: '#dadee1', bookedTime: '#8b949a', bookedText: '#828b91',
-      pastBg: '#fafafa', pastLine: '#edeef0', pastTime: '#c0c5c9', pastText: '#ccd0d4',
-      echoBg: '#f2f4f5', echoLine: '#5f7a86'
+      freeBg: '#FFFFFF', freeLine: '#22A77A', freeTime: '#103F3B',
+      bookedBg: '#EDF2F0', bookedLine: '#D7E2DE', bookedTime: '#81918E', bookedText: '#879591',
+      pastBg: '#F8F8F4', pastLine: '#ECEDE7', pastTime: '#BCC4C1', pastText: '#C5CBC8',
+      echoBg: '#EAFBF4', echoLine: '#F3B941'
     })
   })
 })

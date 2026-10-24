@@ -81,7 +81,10 @@ function bookingModal() {
   if (!definition) throw new Error('booking-modal 组件没有被注册。')
   const instance = {
     data: copy(definition.data), properties: {}, events: {},
-    setData(patch) { Object.entries(patch).forEach(([key, value]) => { this.data[key] = copy(value) }) },
+    setData(patch, done) {
+      Object.entries(patch).forEach(([key, value]) => { this.data[key] = copy(value) })
+      if (typeof done === 'function') done()
+    },
     triggerEvent(name, detail) { (this.events[name] = this.events[name] || []).push(copy(detail)) }
   }
   Object.keys(definition.methods).forEach(name => {
@@ -136,6 +139,36 @@ async function scenario(name, body) {
 }
 
 async function run() {
+  // ================================================================ UI【2026-10-17 真机反馈】课表点中的时间必须直接沿用
+  // 从课表 17:00 点进来后时间已经确定；选择常规课或拉伸课只切换课包，不应强迫教练再点一次 17:00。
+  // 只有主动点「修改时间」时才展开时间表，同时仍要保护多课包选择不会偷偷切回第一份。
+  await scenario('UI 多课程：选择拉伸课沿用预设时间，只有点修改时间才展开时间表', async world => {
+    world.seed(seeded()); world.memoryRevision = 0
+    const modal = bookingModal()
+    // 这条只验证入口交互，使用明确的未来日期，避免测试运行日变化后整天被正确判成「已过时间」。
+    modal.properties = { visible: true, presetDate: '2099-10-16', presetHour: 17 }
+    modal.init()
+    modal.chooseStudent({ currentTarget: { dataset: { id: 'stu-1' } } })
+    assert.deepStrictEqual(modal.data.packages.map(item => item.type), ['常规训练', '拉伸恢复'], '同一会员的两个可用课包都必须显示')
+
+    modal.choosePackage({ currentTarget: { dataset: { index: 1, disabled: false } } })
+    assert.equal(modal.data.packageIndex, 1, '点击第二个课包后必须明确选中第二个，不能仍停在常规训练')
+    assert.equal(modal.data.packages[modal.data.packageIndex].id, 'pkg-2', '选中项必须是拉伸恢复自己的课包')
+    assert.equal(modal.data.hour, 17, '选择课程不能改掉从课表点中的 17:00')
+    assert.equal(modal.data.minute, 0, '选择课程不能偷偷改成其他分钟')
+    assert.equal(modal.data.timeEdit, false, '选好课程后必须直接停在确认态，不能重复展开时间表')
+
+    modal.toggleTime()
+    assert.equal(modal.data.timeEdit, true, '只有主动点修改时间才展开时间表')
+    assert.ok(modal.data.slots.length > 0, '主动展开的时间表必须真的包含可点击时段')
+
+    const slot = modal.data.slots.find(item => item.reason !== 'booked')
+    assert.ok(slot, '测试日期必须至少有一个可选时段')
+    modal.pickSlot({ currentTarget: { dataset: { start: slot.start } } })
+    assert.equal(modal.data.timeEdit, false, '点选时间后必须收起时间表并回到确认约课按钮')
+    assert.equal(modal.data.packageIndex, 1, '选择时间不能把课程偷偷切回第一个课包')
+  })
+
   // ================================================================ A【本轮主场景】老学员预约
   // 点确认那一刻：云端一次都没被叫到、课表当帧就有这条预约、弹层立刻关、没有「结果待确认」。
   await scenario('A 老学员预约：前台零等待、课表当帧可见、后台静默收敛、全程无「结果待确认」', async world => {

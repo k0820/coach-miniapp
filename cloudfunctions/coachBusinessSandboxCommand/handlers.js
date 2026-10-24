@@ -458,27 +458,28 @@ const handlers = {
     return { packageId, total: pkg.total, used: pkg.used, remaining: pkg.remaining }
   },
 
-  async deletePackage(business, payload) {
+  async deletePackage(business, payload, context) {
     requireOnly(payload, ['packageId'])
     const packageId = text(payload.packageId, 'packageId'), packages = business.collection('packages'), row = await packages.get(packageId)
     if (!row) throw commandError('PACKAGE_NOT_FOUND', '课时包不存在或不属于当前数据集。')
-    const pkg = businessData(row), sales = await business.collection('sales').list({ packageId })
+    const pkg = businessData(row)
     if (row.packageId !== packageId || pkg.id !== packageId) throw commandError('PACKAGE_RELATION_INVALID', '课时包标识关系不一致。')
-    if (row.saleId || pkg.saleId || sales.length) throw commandError('PACKAGE_HAS_SALE', '有销售关联的课时包必须通过撤销课程销售处理。')
-    if (Number(pkg.used || 0) !== 0) throw commandError('PACKAGE_HAS_HISTORY', '课时包已有使用历史，不能删除。')
-    const bookingCollection = business.collection('bookings'), bookings = await bookingCollection.list({}), linkedBookings = bookings.filter(item => item.packageId === packageId || businessData(item).packageId === packageId)
-    if (linkedBookings.length) throw commandError('PACKAGE_HAS_HISTORY', '课时包已有预约或课程历史，不能删除。')
-    const incomeRows = await business.collection('incomes').list({}), bookingById = new Map(bookings.map(item => [item.bookingId || businessData(item).id, item]))
-    const linkedOrAmbiguousIncome = incomeRows.some(item => {
-      const income = businessData(item)
-      if (item.packageId === packageId || income.packageId === packageId) return true
-      if ((item.studentId || income.studentId) !== row.studentId || income.typeName !== pkg.type) return false
-      const booking = bookingById.get(item.bookingId || income.bookingId)
-      return !booking || !(booking.packageId || businessData(booking).packageId)
-    })
-    if (linkedOrAmbiguousIncome) throw commandError('PACKAGE_HAS_HISTORY', '课时包存在收入历史或旧关联无法安全排除，不能删除。')
-    await packages.remove(packageId)
-    return { packageId, deleted: true }
+    // “删除课时包”从当前资料中移除可用权益；销售、已完成课程和收入作为历史凭证全部保留。
+    // 未上预约先取消，避免留下一个已经没有可用课时的未来课程。
+    const bookingCollection = business.collection('bookings')
+    const linkedBookings = await bookingCollection.list({ studentId: row.studentId, packageId })
+    const cancelledBookingIds = []
+    for (const bookingRow of linkedBookings) {
+      if (businessData(bookingRow).status === 'done') continue
+      await bookingCollection.remove(bookingRow.bookingId)
+      cancelledBookingIds.push(bookingRow.bookingId)
+    }
+    pkg.remaining = 0
+    pkg.status = 'reversed'
+    pkg.closedAt = context.now
+    pkg.closedReason = 'package-deleted'
+    await packages.set(packageId, writableRow(row, { packageId, studentId: row.studentId, saleId: row.saleId || pkg.saleId || '', data: pkg }))
+    return { packageId, deleted: true, archived: true, historyPreserved: true, salePreserved: true, cancelledBookingIds }
   },
 
   async deleteStudent(business, payload, context) {

@@ -5,10 +5,18 @@ const theme = require('../../utils/member-theme')
 Page({
   data: { themeStyle: theme.cssVars(), routing: false },
   onShow() {
-    // 这个页面被看见，就代表用户明确点了微信左上角“小房子”或主动回到身份选择。
-    // 已记住的身份只由 app.js 在真正冷启动时自动恢复；这里绝不能再次把人拉走。
-    // 从教练登录页返回时同时解除按钮忙碌态，允许重新选择。
-    if (this.data.routing) this.setData({ routing: false })
+    // 第一次使用才选择身份。认领成功后角色已经落盘，今后从搜索、小房子或后台恢复
+    // 都应直接回自己的端，不能每次再让用户选择一次。
+    if (!role.hasChoice()) {
+      if (this.data.routing) this.setData({ routing: false })
+      return
+    }
+    if (this.data.routing) return
+    this.setData({ routing: true })
+    wx.reLaunch({
+      url: role.stored() === 'member' ? '/pages/member-home/member-home' : '/pages/schedule/schedule',
+      fail: () => this.setData({ routing: false })
+    })
   },
   chooseMember() {
     if (this.data.routing) return
@@ -20,6 +28,10 @@ Page({
   chooseCoach() {
     if (this.data.routing) return
     this.setData({ routing: true })
+    // 选择身份本身就是明确授权：立即记住“教练”，不要等下一页的云端
+    // 初始化结束后才落盘。之后扫码进入或冷启动都会直接回课表。
+    memberEnvironment.exitToCoach()
+    getApp().globalData.activeRole = 'coach'
     wx.navigateTo({
       url: '/pages/coach-entry/coach-entry',
       fail: () => this.setData({ routing: false })

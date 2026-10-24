@@ -108,7 +108,8 @@ function fakeDb(stores) {
     // 下拉刷新兜底：关键页面的 json 必须真的开了。
     ;['pages/schedule/schedule.json', 'pages/students/students.json', 'pages/stats/stats.json', 'pages/member-home/member-home.json'].forEach(file => {
       const json = JSON.parse(sourceOf(file))
-      assert.equal(json.enablePullDownRefresh, true, `${file} 必须支持下拉刷新`)
+      const customMemberRefresh = file.includes('member-home') && json.enablePullDownRefresh === false && /refresher-enabled/.test(sourceOf('pages/member-home/member-home.wxml'))
+      assert.ok(json.enablePullDownRefresh === true || customMemberRefresh, `${file} 必须支持原生或无图标的内容跟手下拉刷新`)
     })
   })
 

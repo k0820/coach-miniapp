@@ -375,6 +375,10 @@ async function seed(options = {}) {
       `改期选择器上界必须等于最晚开课 23:00（实测 ${(sessionWxml.match(/end="\d\d:\d\d"/g) || []).join(',')}）`)
     const modal = fs.readFileSync(path.join(ROOT, 'components', 'booking-modal', 'booking-modal.js'), 'utf8')
     assert.ok(/latestHour = Math\.floor\(occupancy\.latestStartMinutes\(\) \/ 60\)/.test(modal), '排课弹窗小时列上界必须取自同一公式')
+    assert.ok(/pickSlot\(e\)[\s\S]*?this\.setData\(\{[^}]*hour:[^}]*minute:[^}]*timeEdit:\s*false[^}]*preciseOpen:\s*false/.test(modal),
+      '点选时间格后必须立即收起时间编辑区，回到可见的确认约课按钮')
+    assert.ok(/onTime\(e\)[\s\S]*?this\.setData\(\{[^}]*hour[^}]*minute[^}]*timeEdit:false[^}]*preciseOpen:false/.test(modal),
+      '精确时间选择完成后也必须立即回到确认态')
     // 排课弹窗的时间选择器：**下界 06:00、上界 23:00**，两者都必须与闸门同口径。
     const wxml = fs.readFileSync(path.join(ROOT, 'components', 'booking-modal', 'booking-modal.wxml'), 'utf8')
     assert.ok(/start="06:00"/.test(wxml), '⭐ 精确时间的下界必须收在 06:00（与三态卡片、与云端闸门同一条规则）')

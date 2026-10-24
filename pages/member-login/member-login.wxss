@@ -1,1 +1,7 @@
 @import "../../styles/member.wxss";
+.login-page{padding-top:72rpx;background:linear-gradient(165deg,var(--member-soft) 0,var(--member-page-bg) 46%,var(--member-page-bg) 100%)}
+.login-kicker{font-size:22rpx;line-height:1.5;color:var(--member-accent);font-weight:800;margin-bottom:8rpx}
+.login-page>.member-subtitle{margin:14rpx 0 38rpx;line-height:1.75}
+.login-guide{text-align:center;padding:44rpx 34rpx 36rpx;box-shadow:0 18rpx 48rpx rgba(23,59,87,.08)}
+.guide-icon{width:104rpx;height:104rpx;margin:0 auto 24rpx;border-radius:28rpx;display:flex;align-items:center;justify-content:center;background:var(--member-soft);color:var(--member-primary);font-size:42rpx;font-weight:900}
+.guide-copy{margin:14rpx 0 28rpx;color:var(--member-muted);font-size:24rpx;line-height:1.75;text-align:left}

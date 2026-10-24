@@ -10,14 +10,13 @@ const db = cloud.database()
 // still do not call this function; owner and active dataset remain cloud-derived.
 // ─────────────────────────────────────────────────────────────────────────────
 // 🔔 微信订阅消息投递开关（2026-10-05）
-//   ⛔ **正式区默认关闭**：教练每天真在用的那套数据，在**真机验收通过之前**一条都不许发出去。
-//      （需求原文：正式区发送要保持受控，不拿真实用户做测试。）
-//   ⭐ 打开它需要**同时**满足三件事，少一件都不会发送（这样"半开"不会变成半 success）：
-//     ① 微信后台已申请到 5 个订阅消息模板；
-//     ② `subscribe-delivery.js` 的 `TEMPLATE_IDS` 已填入真实模板 ID；
-//     ③ 真机验收通过（会员预约/改期/取消 ⇒ 教练收到；教练改期/取消 ⇒ 会员收到）。
-const NOTIFY_DELIVERY_ENABLED = false
+//   ✅ 正式区保留发送能力：3 个真实模板 ID 已配置，教练接收会员预约/取消已真机验证。
+//   会员侧微信通知仍受一次性订阅额度与微信投递结果限制；无论微信是否送达，站内消息都会保留。
+//   ⛔ 这里仅允许随受控正式部署生效，不得拿 Production 做通知试验。
+const NOTIFY_DELIVERY_ENABLED = true
 const { createNotifyDelivery } = require('./notify-adapter')
+const { createDirectory } = require('./member-directory')
+const { createService: createMemberReadService } = require('./member-read')
 
 const service = createService({
   db,
@@ -28,12 +27,21 @@ const service = createService({
   //   旧的 `accounts` 派生索引降级为回落（测试区已实证：只靠索引会让整条链静默断掉）。
   delivery: createNotifyDelivery({ cloud, db, environment: 'production', enabled: NOTIFY_DELIVERY_ENABLED, accountsCollection: 'member_accounts', membersCollection: 'member_members' })
 })
+const directory = createDirectory({ db, cloud, getOpenId: () => cloud.getWXContext().OPENID, environment: 'production' })
+const memberRead = createMemberReadService({ db, getOpenId: () => cloud.getWXContext().OPENID })
 
 // ⚠️ 数据修复是**独立于正式命令服务**的一条窄通道：它不经过 `execute()`，因此不会
 //    解锁任何写能力，也不进 22 条命令契约（`utils/cloud-command-contract` 一个字没变）。
 //    它只做三件事：只读预演 / 补一条历史墓碑 / 撤销这一条墓碑。
 //    正式页面永远不调用它 —— 只有一次性修复页会调。
 exports.main = async event => {
+  const source = event || {}
+  if (source.action === 'memberDirectory') {
+    return directory({ ...source, action: String(source.directoryAction || ''), environment: 'production' })
+  }
+  if (source.action === 'memberRead') {
+    return memberRead({ ...source, action: String(source.readAction || 'read'), environment: 'production' })
+  }
   if (event && ACTIONS.includes(event.action)) return runRepair({ db, getOpenId: () => cloud.getWXContext().OPENID, event })
   return service(event)
 }

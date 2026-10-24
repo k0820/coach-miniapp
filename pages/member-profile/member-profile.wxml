@@ -1,39 +1,29 @@
-<view class="member-page member-shell" style="{{themeStyle}}"><member-sandbox-banner/>
+<view class="member-page member-shell profile-page weui-page" data-weui-theme="light" style="{{themeStyle}}"><member-sandbox-banner/>
   <!-- ① 顶部：昵称 + 会员编号 + 编辑昵称 -->
-  <view class="member-card profile-head">
+  <view class="profile-head">
+    <view class="profile-orb"></view>
     <view class="member-avatar big">{{initial}}</view>
     <view class="profile-copy">
       <view class="member-title">{{member.displayName||'训练伙伴'}}</view>
       <view class="member-subtitle">会员编号 · {{publicCode||'正在生成'}}</view>
-      <view class="profile-rename" bindtap="openName">{{sandboxHint||'编辑昵称 ›'}}</view>
+      <view wx:if="{{canRename}}" class="profile-rename" bindtap="openName">编辑昵称 ›</view>
     </view>
+    <view class="member-fitness-mark" aria-hidden="true"><view class="member-fitness-bar"></view><view class="member-fitness-plate left"></view><view class="member-fitness-plate left outer"></view><view class="member-fitness-plate right"></view><view class="member-fitness-plate right outer"></view></view>
   </view>
 
-  <view wx:if="{{errorText}}" class="member-card member-empty">{{errorText}}</view>
+  <view wx:if="{{errorText}}" class="member-inline-notice member-inline-notice--error">{{errorText}}</view>
 
-  <!-- ③ 第二组：课时 / 预约 / 训练记录 -->
-  <view class="member-card">
-    <view class="member-list-row member-row member-spread" bindtap="packages">
-      <view>我的课时与课时包</view><view class="member-arrow">›</view>
+  <view wx:if="{{!snapshotReady}}" class="profile-loading"><view class="wx_dot_loading"></view><text>正在同步会员资料</text></view>
+
+  <!-- 首页已经提供预约入口；这里用一组微信原生风格列表承载课包与训练。 -->
+  <view class="profile-list weui-cells">
+    <view class="member-list-row weui-cell weui-cell_access" bindtap="packages">
+      <view class="profile-row-icon package-icon">包</view><view class="weui-cell__bd"><view class="profile-row-title">我的课包</view><view class="profile-row-sub">查看每种课程的剩余课时</view></view><view class="weui-cell__ft"></view>
     </view>
-    <view class="member-list-row member-row member-spread" bindtap="bookings">
-      <view>我的预约</view><view class="member-subtitle">改期与取消 ›</view>
-    </view>
-    <view class="member-list-row member-row member-spread" bindtap="history">
-      <view>训练记录</view><view class="member-arrow">›</view>
+    <view class="member-list-row training-row weui-cell weui-cell_access" bindtap="history">
+      <view class="profile-row-icon training-icon">练</view><view class="weui-cell__bd"><view class="profile-row-title-line"><view class="profile-row-title">训练记录</view><view class="training-count">近30天 {{trainingSummary.count30}} 次</view></view><view class="profile-row-sub">{{trainingSummary.latestText}} · 查看动作和教练总结</view></view><view class="weui-cell__ft"></view>
     </view>
   </view>
-
-  <!-- 站内消息不受微信一次性订阅额度影响。 -->
-  <view class="member-card">
-    <view wx:if="{{inboxAvailable}}" class="member-list-row member-row member-spread" bindtap="openInbox">
-      <view>消息中心<text wx:if="{{inboxUnread>0}}" class="member-dot"> 未读 {{inboxUnread}} 条</text></view>
-      <view class="member-subtitle">不受微信次数限制 ›</view>
-    </view>
-  </view>
-
-  <!-- ⑤ 第四组：进入教练端 / 其他设置 -->
-  <button class="member-ghost" disabled="{{busy}}" bindtap="coachMode">{{busy?'正在返回…':'进入教练端'}}</button>
 
   <view wx:if="{{nameOpen}}" class="name-mask" catchtouchmove="noop" bindtap="closeName"></view>
   <view wx:if="{{nameOpen}}" class="name-sheet">

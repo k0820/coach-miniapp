@@ -2,14 +2,14 @@
 //
 // 用户的四条要求（本文件逐条钉死）：
 //   ① 月份切换：从卡片内「历史结算」按钮上移到页首「{{月份}} + 按月查看 ›」；
-//   ② 紧凑数据卡：原来的 3 列摘要 + 一条独立进度条，压成一行四格 .stat-mini；
+//   ② 极简数据路径：预计提成是主数字，收入双列，课时 / 会员 / 目标只留三项摘要；
 //   ③ 统一入口：月份切换与「按日期查询」共用同一个 .stats-head-entry（同一套尺寸/层级）；
 //   ④ 弱化设置：设置与数据改成虚线透明的轻量入口。
 //
-// ⛔ 硬约束：**只改外观与层级**。统计口径、字段来源、四个弹层、每一个入口都不许动。
+// ⛔ 硬约束：统计口径与字段来源不许动；「本月业绩明细 / 其他业绩」按最新需求合并进「按月查看」。
 //    所以本文件除了静态契约，还会把页面**真的跑起来**，验证：
 //      · monthTitle 是由北京时区当前月份现算的纯视图字段；
-//      · 四格数据卡引用的 monthSessions / ranking.length / monthlyGoalSessions 仍然是原来那套口径。
+//      · 三项摘要引用的 monthSessions / ranking.length / monthlyGoalSessions 仍然是原来那套口径。
 //
 // ⛔ 本文件只读：不写 Storage、不碰 Production / Sandbox、不发起任何云端写入。
 // ⛔ 反证见 tests/_stats-page-hierarchy-mutate.js（只改内存文本副本，磁盘一个字节不动）。
@@ -105,19 +105,19 @@ assert.strictEqual(page.data.monthTitle, TODAY.year + '年' + TODAY.month + '月
   'monthTitle 必须是当前（北京时区）月份，实得 ' + page.data.monthTitle)
 assert.strictEqual(page.data.monthTitle, page.data.monthTitle.trim(), 'monthTitle 前后不许有多余空白')
 
-// ② 四格数据卡引用的三个字段，口径与本次排版前完全一致
+// ② 摘要引用的三个字段，口径与本次排版前完全一致
 assert.strictEqual(page.data.monthSessions, 3, '本月完成课时必须是 3 节（上月那节与未完成的都不算）')
 assert.strictEqual(page.data.ranking.length, 2, '本月上课会员必须是 2 人（去重）')
 assert.strictEqual(page.data.monthlyGoalSessions, 42, '本月目标必须来自 settings.monthlyGoalSessions')
 assert.strictEqual(page.data.ranking.reduce((n, item) => n + item.count, 0), 3, '出勤排行的次数合计必须等于完成课时数')
 
-// ③ 数据卡上的四个表达式与 data 字段一一对应（防止"模板写 A、数据算 B"）
+// ③ 主数字与三项摘要都和 data 字段一一对应（防止"模板写 A、数据算 B"）
 const wxml = contract.stripHtml(SOURCES.wxml)
-const miniRow = (/<view class="stat-mini-row">([\s\S]*?)<\/view><\/view>/.exec(wxml) || [, ''])[1]
-assert.ok(miniRow.includes('{{monthSessions}}'), '第一格必须绑定 {{monthSessions}}')
-assert.ok(miniRow.includes('{{ranking.length}}'), '第二格必须绑定 {{ranking.length}}')
-assert.ok(miniRow.includes('{{monthlyGoalSessions}}'), '第三格必须绑定 {{monthlyGoalSessions}}')
-assert.ok(miniRow.includes('{{monthSessions}}/{{monthlyGoalSessions}}'), '第四格必须绑定 {{monthSessions}}/{{monthlyGoalSessions}}')
+const activity = (/<view class="month-activity">([\s\S]*?)<\/view><\/view>/.exec(wxml) || [, ''])[1]
+assert.ok(wxml.includes('class="overview-primary"><text>本月预计提成</text><b>¥{{estimatedCommission}}</b>'), '主数字必须绑定 {{estimatedCommission}}')
+assert.ok(activity.includes('{{monthSessions}}'), '第一项必须绑定 {{monthSessions}}')
+assert.ok(activity.includes('{{ranking.length}}'), '第二项必须绑定 {{ranking.length}}')
+assert.ok(activity.includes('{{monthlyGoalSessions}}'), '第三项必须绑定 {{monthlyGoalSessions}}')
 
 // ④ 只读自证：render() 不许顺手写 Storage
 assert.deepStrictEqual(writes, [], '统计页 render() 只读，不许写任何 Storage，实测 ' + JSON.stringify(writes))

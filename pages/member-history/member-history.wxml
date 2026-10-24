@@ -1,1 +1,20 @@
-<view class="member-page member-shell" style="{{themeStyle}}"><view class="member-title">训练记录</view><view class="member-subtitle">每一次认真训练，都算数</view><view wx:if="{{!rows.length}}" class="member-card member-empty">还没有已完成的训练记录</view><view wx:for="{{rows}}" wx:key="historyId" class="member-card training-card" data-id="{{item.historyId}}" bindtap="detail"><view class="member-row member-spread"><view><view class="training-date">{{item.date}} · {{item.coach.displayName}}</view><view class="member-subtitle">{{item.category||item.typeName||'训练课程'}}</view></view><view class="member-pill member-tag-done">已完成</view></view><view class="training-actions">{{item.actionNames||'训练内容已记录'}}</view></view><member-nav active="profile"/></view>
+<view class="member-page member-shell history-page weui-page" data-weui-theme="light" style="{{themeStyle}}">
+  <view wx:if="{{errorText}}" class="member-inline-notice member-inline-notice--error">{{errorText}}</view>
+  <view wx:if="{{!rows.length}}" class="history-empty"><view class="history-empty-mark">练</view><view>完成第一节课后，这里会留下训练记录</view></view>
+  <block wx:if="{{rows.length}}">
+    <view class="history-month-head"><view><view class="history-month-kicker">TRAINING RHYTHM</view><view class="history-month-title">{{monthLabel}}训练节奏</view></view><picker mode="date" fields="month" value="{{month}}" bindchange="changeMonth"><view class="history-month-picker">换月份 ›</view></picker></view>
+    <view class="trend-card">
+      <scroll-view scroll-x enhanced class="trend-scroll" show-scrollbar="{{false}}">
+        <view class="trend-canvas" style="width:{{chart.width}}rpx">
+          <view class="trend-grid line-one"></view><view class="trend-grid line-two"></view><view class="trend-grid line-three"></view>
+          <view wx:for="{{chart.lines}}" wx:key="index" class="trend-line" style="{{item.style}}"></view>
+          <view wx:for="{{chart.points}}" wx:key="historyId" class="trend-point {{selected.historyId===item.historyId?'active':''}}" style="{{item.pointStyle}}" data-id="{{item.historyId}}" bindtap="selectPoint"></view>
+          <view wx:for="{{chart.points}}" wx:key="historyId" class="trend-label" style="{{item.labelStyle}}"><text>{{item.shortDate}}</text><text>{{item.fullTime}}</text></view>
+        </view>
+      </scroll-view>
+      <view wx:if="{{selected}}" class="selected-training" data-id="{{selected.historyId}}" bindtap="detail"><view><b>{{selected.dateLabel}} {{selected.timeLabel}}</b><text>{{selected.typeLabel}} · {{selected.coachName}}</text><text>{{selected.actionNames||'本节训练内容已保存'}}</text></view><view class="selected-open">查看详情 ›</view></view>
+    </view>
+    <view class="month-summary-card"><view class="summary-count"><b>{{summary.count}}</b><text>本月训练</text></view><view class="summary-copy"><view>{{summary.datesText||'这个月还没有训练日期'}}</view><text>{{summary.careText}}</text></view></view>
+  </block>
+  <member-nav active="home"/>
+</view>

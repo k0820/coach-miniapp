@@ -1,10 +1,12 @@
 # 永久测试索引（GitHub 脱敏版）
 
-当前基线：**190 个测试文件通过、573 个 JavaScript 文件语法通过、87 个 JSON 文件解析通过**。
+当前基线：**197 个测试文件通过、548 个 JavaScript 文件语法通过、81 个 JSON 文件解析通过**。JavaScript / JSON 文件数变化来自实际项目文件增减，不代表业务数据变化。
 
 其中 1 份回归测试，以及 1 套真实事故救援工具，包含真实事故姓名或具体课程信息，按隐私要求只保留在项目所有者本机，不进入 GitHub。仓库保留其保护原则，但不公开真实事件内容。
 
 `tests/` 目录内的 `*.test.js` 是测试代码的权威来源。本文件按事故类型说明测试保护的范围，不复制真实数据或历史运行日志。
+
+`tests/coach-member-detail-ui-refresh.test.js` 保护教练端会员详情的最新排版：资料、二维码和课包使用连续分区；未展开课包去掉外层卡片，避免“卡片套卡片”；二维码主体不超过 460rpx，转发与保存并排，同时保留换码、解除绑定和“保存资料与课程”的原业务入口。判别力脚本 `tests/coach-member-detail-ui-refresh-mutate.js` 用内存覆盖层验证 4 种回退都会被测试抓住，不写生产源码。
 
 | 类别 | 保护内容 |
 |---|---|
@@ -20,8 +22,17 @@
 | UI 契约 | 页面入口、列表、课表、弹层、响应式布局 |
 | 会员身份 | 资料绑定、二维码/短码、重复认领、防抢占 |
 | 会员预约 | 可约时间、课包选择、提交、取消、改期 |
-| 单教练收口 | 唯一主教练、身份记忆、日历入口、通知入口撤除 |
+| 单教练收口 | 唯一主教练、身份记忆、日历入口、常用按钮顺带申请下一条通知且不阻塞业务 |
+| 微信通知可观测性 | 会员领取与首页本人授权、一次性额度真实口径、教练→会员收件人、43101 无额度、消息中心发送结果与站内兜底 |
 | 发布门禁 | 敏感文件、包体、路径完整性、干净设备启动 |
+
+专属会员二维码由 `tests/member-dedicated-qr.test.js` 保护：入口只能在现有「学员资料」中、15分钟内复用同一码、超时后旧码失效并换新、扫码只读预览、本人点击后才领取、其他微信不能抢占，并且生成与领取前后始终只有原学员和原课包。它还复现“专属 memberId 与旧 OPENID 哈希不同、没有旧 claim”的真机形状，要求领取后能读到教练与原课包并真正提交预约；首屏直接使用云文件，临时链接不阻塞显示。长按、转发与扫码路由也在同一测试中。其判别力脚本为 `tests/member-dedicated-qr-mutate.js`，11 项变异只使用内存覆盖层。
+
+通知与身份综合门禁继续由 `class-reminder-scheduler.test.js`、`member-addressbook-sandbox.test.js`、`member-notify-subscribe.test.js` 和 `notify-acceptance-16.test.js` 保护。
+
+动态占用由 `member-self-booking-identity.test.js` 与 `m3-p1-member-booking-view.test.js` 共同保护：会员自己的课程和其他会员的真实未取消课程都会占用对应分钟区间，已取消课程必须释放；旧预约缺少时长时按一节 60 分钟占位，防止 14:00 已有课程却错误放出 14:30。拉伸课等第二课包的选择、预约、取消与完课扣课由 `member-package-picker.test.js`、`m3-p6-member-manage-write.test.js` 与 `m2-package-occupancy.test.js` 共同保护。领取/预约按钮居中、详情不重复显示底部关闭键、业绩入口并入按月查看由 `member-ui-finishing.test.js` 及 6 项内存反证保护。首次身份记忆与教练登录不等待完整云读取由 `first-entry-role-login.test.js` 保护。教练“我的”简化层级与数据安全折叠入口由 `stats-page-hierarchy.test.js` 及其内存反证保护。
+
+正式发布包由 `release-gate.test.js` 保护：诊断、迁移与事故救援源码必须继续留在本地，但不得在正式 `app.json` 注册，并必须由 `project.config.json` 明确排除；Sandbox 控制页必须继续注册。该门禁同时要求正式会员二维码指向 `release`、Sandbox 二维码指向 `trial`，防止正式部署静默关闭现有微信通知能力，并限制会员页 WeUI 子集小于 20KB且保留实际使用的基础样式，避免主包再次超过微信 2MB 限制。
 
 ## 运行纪律
 

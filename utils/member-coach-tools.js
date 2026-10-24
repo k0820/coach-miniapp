@@ -42,6 +42,6 @@ async function readProfile(){
   try{result=await call({action:'coachMetadata',environment:environment()})}catch(error){return{ok:false,code:'COACH_PROFILE_READ_FAILED',message:'公开教练卡读取失败，请检查网络后重试。'}}
   if(!result||!result.ok)return{ok:false,code:(result&&result.code)||'COACH_PROFILE_READ_FAILED',message:(result&&result.message)||'公开教练卡读取失败，请稍后重试。'}
   const profile=result.profile||null
-  return{ok:true,environment:result.environment,profile:profile?{displayName:profile.displayName||'',specialties:Array.isArray(profile.specialties)?profile.specialties:[],introduction:profile.introduction||'',publicCode:profile.publicCode||''}:null}
+  return{ok:true,environment:result.environment,profile:profile?{displayName:profile.displayName||'',avatar:profile.avatar||'',specialties:Array.isArray(profile.specialties)?profile.specialties:[],introduction:profile.introduction||'',publicCode:profile.publicCode||''}:null}
 }
 module.exports={execute,readProfile,environment,pendingKey}

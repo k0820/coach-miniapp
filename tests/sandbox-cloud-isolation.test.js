@@ -404,6 +404,11 @@ async function test(name, fn) {
       const a = read(path.join('cloudfunctions', from)), b = read(path.join('cloudfunctions', to))
       assert.equal(b, a, `${to} 与 ${from} 不一致 —— 正式区改过之后必须重新镜像（整文件覆盖）`)
     })
+    // 会员身份定位逻辑必须同构，但集合名与环境闸必须各自独立，不能逐字节覆盖。
+    const prodIdentity = read(path.join('cloudfunctions', 'coachBusinessCommand/member-identity.js'))
+    const sandboxIdentity = read(path.join('cloudfunctions', 'coachBusinessSandboxCommand/member-identity.js'))
+    const normalizedProdIdentity = prodIdentity.replace(/member_members/g, 'member_sandbox_members').replace(/production/g, 'sandbox')
+    assert.equal(sandboxIdentity, normalizedProdIdentity, '两侧会员身份逻辑必须同构，且只允许集合名与环境名不同')
   })
 
   // ── ⑫ 部署清单：本轮测试区唯一需要新建的集合 ────────────────────────────────────

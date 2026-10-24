@@ -121,9 +121,13 @@ async function main() {
     assert.ok(!/wx\.cloud\.callFunction/.test(js), '⛔ 页面不许直接调 wx.cloud（会绕过 requestId / 回执）')
   })
 
-  await runner('C-② 首页问候语用的是**会员昵称**；⛔ 不再有第二套"档案名"', () => {
+  await runner('C-② 首页问候语允许本机称呼优先、会员昵称兜底；⛔ 不产生第二份会员资料', () => {
     const home = src('pages/member-home/member-home.wxml')
-    assert.ok(home.includes('你好，{{vm.member.displayName'), '首页问候语必须继续用会员显示名')
+    const homeJs = src('pages/member-home/member-home.js')
+    const alias = src('utils/member-local-alias.js')
+    assert.ok(home.includes("你好，{{displayName||'训练伙伴'}}"), '首页问候语必须使用唯一显示称呼')
+    assert.ok(/localAlias\.read\(\)\s*\|\|\s*String\(\(vm\.member\s*&&\s*vm\.member\.displayName\)/.test(homeJs), '未设置本机称呼时必须继续回退到教练登记的会员昵称')
+    assert.ok(/wx\.setStorageSync/.test(alias) && !/wx\.cloud|callFunction|renameSelf|updateMemberCore/.test(alias), '本机称呼不得写云端或生成第二份会员资料')
     // ⛔ 一位会员**始终只有一份资料** ⇒ "账号名 / 档案名 两套名字"这套说法必须消失。
     assert.ok(!home.includes('member-archive-picker'), '⛔ 首页不许再挂档案选择器（已不再有档案这一层）')
     const pages = fs.readdirSync(P('pages')).filter(name => !name.startsWith('.')).map(name => `pages/${name}/${name}.wxml`)

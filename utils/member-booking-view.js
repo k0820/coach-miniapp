@@ -445,7 +445,9 @@ function occupiedRanges(rows, dateKey) {
     const start = startMinutesOf(row)
     if (start == null) continue
     const length = lengthMinutesOf(row)
-    const end = length == null ? start + SLOT_STEP_MINUTES : start + length
+    // 旧预约可能没有保存 duration / plannedMinutes。详情可以如实显示“未记录”，
+    // 但排课冲突必须按固定的一节 60 分钟兜底，否则 14:00 的课会错误放出 14:30。
+    const end = start + (length == null ? occupancy.DEFAULT_PLANNED_MINUTES : length)
     if (end <= start) continue
     ranges.push({ start, end, own: true, historyId: String(row.historyId || '') })
   }

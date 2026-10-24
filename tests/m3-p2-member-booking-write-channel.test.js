@@ -390,6 +390,7 @@ async function main() {
       cloud: {
         callFunction: async option => {
           state.calls.push(option)
+          if (option.name === 'coachBusinessCommand' && option.data && option.data.action === 'memberRead') return { result: { ok: true, environment: 'production', bookings: [], coaches: [], packages: [] } }
           if (option.name === 'coachBusinessCommand') return { result: { ok: true, bookingId: 'bk-1', memberRequestStatus: 'confirmed' } }
           return { result: { ok: true, environment: 'production', bookings: [], coaches: [], packages: [] } }
         }
@@ -413,7 +414,7 @@ async function main() {
     assert.ok(page.submitRequest && page.submitRequest.payload, '打开确认层就要把请求结构准备好')
     assert.deepEqual(requestBuilder.identityKeysIn(page.submitRequest), [])
     await captured.submit.call(page)
-    const writes = state.calls.filter(row => row.name === 'coachBusinessCommand')
+    const writes = state.calls.filter(row => row.name === 'coachBusinessCommand' && row.data && row.data.action === 'memberBooking')
     assert.strictEqual(writes.length, 1, `点确认只许发一次写调用（实测 ${writes.length} 次）`)
     assert.strictEqual(writes[0].data.action, 'memberBooking')
     assert.strictEqual(writes[0].data.command, 'createMemberBooking')

@@ -67,15 +67,28 @@ function open(kind) {
 // 🧾 列表页的视图模型（纯函数）：把服务端下发的行变成界面能直接渲染的形状。
 function rowsView(rows) {
   const list = Array.isArray(rows) ? rows : []
-  return list.map(row => ({
-    id: String((row && row.id) || ''),
-    title: String((row && row.title) || '课程变动'),
-    body: String((row && row.body) || ''),
-    timeText: timeTextOf(row && row.createdAt),
-    read: !!(row && row.read),
-    // ⛔ 谁收到的（操作者本人 / 另一方）要让用户一眼分清 ⇒ 给一句人话标签。
-    audienceText: (row && row.audience) === 'actor' ? '你的操作' : '对方操作'
-  }))
+  return list.map(row => {
+    const actor = (row && row.audience) === 'actor'
+    const wechat = (row && row.wechat) || {}
+    let wechatText = ''
+    if (!actor) {
+      wechatText = wechat.sent === true
+        ? '微信提醒已发送'
+        : (/43101|NOT_AUTHORIZED|NO_OPENID/.test(String(wechat.code || ''))
+            ? '微信提醒未发送：需要重新允许下一条提醒'
+            : '微信提醒未发送，站内消息已保留')
+    }
+    return {
+      id: String((row && row.id) || ''),
+      title: String((row && row.title) || '课程变动'),
+      body: String((row && row.body) || ''),
+      timeText: timeTextOf(row && row.createdAt),
+      read: !!(row && row.read),
+      wechatText,
+      // ⛔ 谁收到的（操作者本人 / 另一方）要让用户一眼分清 ⇒ 给一句人话标签。
+      audienceText: actor ? '你的操作' : '对方操作'
+    }
+  })
 }
 
 function pad(value) { return String(value).padStart(2, '0') }

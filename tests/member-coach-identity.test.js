@@ -143,17 +143,20 @@ async function main() {
   await runner('⑦ 单教练界面只显示当前授课教练，不再出现身份标签和切换入口', async () => {
     const wxml = readFile('pages/member-book-slots/member-book-slots.wxml')
     assert.ok(wxml.includes('授课教练'), '单教练页面必须明确告诉会员当前授课教练')
-    assert.ok(/class="slot-coach active">\{\{item\.displayName\}\}/.test(wxml), '唯一教练姓名必须可见')
+    assert.ok(wxml.includes("{{coaches[coachIndex].displayName||'正在读取教练'}}"), '顶部合并按钮必须显示唯一教练姓名')
     assert.ok(!/slot-coach-role|slot-coach-tail|pickCoach/.test(wxml), '⛔ 单教练页面仍残留身份标签或教练切换入口')
+    assert.ok(wxml.includes('<text wx:if="{{coaches[coachIndex].hasRole}}" class="confirm-coach-role">'),
+      '最终确认弹层必须保留云端给出的教练身份提示，防止历史同名资料选错')
   })
 
   // ---------------------------------------------------------------- ⑧ 只有一位教练 ⇒ 不制造噪音
   await runner('⑧ 只有一位教练 ⇒ 不加标签（单教练用户的界面不许变）', async () => {
     const rows = view.coachOptionsView([SANDBOX_A])
     assert.strictEqual(rows[0].showCodeTail, false)
-    // 页面只显示唯一授课教练，不提供选择器。
+    // 页面把唯一教练与课程合并展示，不提供教练切换器。
     const wxml = readFile('pages/member-book-slots/member-book-slots.wxml')
-    assert.ok(wxml.includes('wx:if="{{coaches.length}}"'), '有教练时必须显示当前授课教练')
+    assert.ok(wxml.includes("booking-choice {{coaches.length?'':'disabled'}}"), '顶部合并按钮必须随唯一教练读取状态启用')
+    assert.ok(wxml.includes("{{coaches[coachIndex].displayName||'正在读取教练'}}"), '有教练时必须显示当前授课教练')
     assert.ok(!wxml.includes('选择教练'), '⛔ 单教练产品不应要求会员选择教练')
   })
 

@@ -14,9 +14,9 @@ const writeStorage = (key, value) => { wx.setStorageSync(key, value); return wx.
 const clone = value => value == null ? value : JSON.parse(JSON.stringify(value))
 const requestId = action => `member_${action}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
 const call = (name, data) => wx.cloud.callFunction({ name, data }).then(result => result && result.result || result)
-const readCall = data => environment() === 'sandbox'
-  ? call(routing.businessFunction(environment()), { ...data, action: 'memberRead', readAction: data.action, environment: 'sandbox' })
-  : call('readMyMemberData', data)
+const readCall = data => call(routing.businessFunction(environment()), {
+  ...data, action: 'memberRead', readAction: data.action, environment: environment()
+})
 
 function cached() { const value = readStorage(cacheKey()); return value && value.environment === environment() ? clone(value) : null }
 function pending() { const value = readStorage(pendingKey()); return Array.isArray(value) ? value.filter(row => row.environment === environment()) : [] }

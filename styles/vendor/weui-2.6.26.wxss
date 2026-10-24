@@ -1,0 +1,32 @@
+/*!
+ * WeUI v2.6.26 (https://github.com/weui/weui-wxss)
+ * Copyright 2026 Tencent, Inc.
+ * Licensed under the MIT license
+ * Project subset: variables and cell/panel primitives used by member pages.
+ */
+page,[data-weui-theme="light"]{
+  --weui-BG-0:#ededed;--weui-BG-1:#f7f7f7;--weui-BG-2:#fff;
+  --weui-FG-0:rgba(0,0,0,.9);--weui-FG-1:rgba(0,0,0,.55);
+  --weui-FG-2:rgba(0,0,0,.3);--weui-FG-3:rgba(0,0,0,.1);
+  --weui-SEPARATOR-0:rgba(0,0,0,.1);--weui-TEXTGREEN:#06ae56;
+  --weui-BRAND:#07c160;--weui-LINK:#576b95;
+  line-height:1.6;font-family:system-ui,-apple-system,"Helvetica Neue",sans-serif;
+}
+.weui-cells{margin-top:16rpx;background-color:var(--weui-BG-2);overflow:hidden;position:relative}
+.weui-cells::before,.weui-cells::after{content:" ";position:absolute;left:0;right:0;height:2rpx;color:var(--weui-FG-3);z-index:2;transform:scaleY(.5)}
+.weui-cells::before{top:0;border-top:2rpx solid var(--weui-FG-3);transform-origin:0 0}
+.weui-cells::after{bottom:0;border-bottom:2rpx solid var(--weui-FG-3);transform-origin:0 100%}
+.weui-cell{padding:32rpx;position:relative;display:flex;align-items:center;line-height:1.41176471;font-size:34rpx;color:var(--weui-FG-0)}
+.weui-cell::before{content:" ";position:absolute;left:32rpx;top:0;right:0;height:2rpx;border-top:2rpx solid var(--weui-FG-3);color:var(--weui-FG-3);transform-origin:0 0;transform:scaleY(.5);z-index:2}
+.weui-cell:first-child::before{display:none}
+.weui-cell__bd{flex:1;min-width:0}
+.weui-cell__ft{text-align:right;color:var(--weui-FG-1)}
+.weui-cell_access{-webkit-tap-highlight-color:rgba(0,0,0,0)}
+.weui-cell_access:active::after{content:"";position:absolute;inset:0;background:var(--weui-FG-3);pointer-events:none}
+.weui-cell_access .weui-cell__ft{padding-right:28rpx;position:relative}
+.weui-cell_access .weui-cell__ft::after{content:" ";width:14rpx;height:14rpx;border-top:3rpx solid currentColor;border-right:3rpx solid currentColor;color:var(--weui-FG-2);position:absolute;top:50%;right:2rpx;transform:translateY(-50%) rotate(45deg)}
+.weui-panel{background-color:var(--weui-BG-2);margin-top:20rpx;position:relative;overflow:hidden}
+.weui-panel:first-child{margin-top:0}
+.weui-panel::before,.weui-panel::after{content:" ";position:absolute;left:0;right:0;height:2rpx;color:var(--weui-FG-3);transform:scaleY(.5)}
+.weui-panel::before{top:0;border-top:2rpx solid var(--weui-FG-3);transform-origin:0 0}
+.weui-panel::after{bottom:0;border-bottom:2rpx solid var(--weui-FG-3);transform-origin:0 100%}

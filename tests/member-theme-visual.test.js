@@ -127,7 +127,7 @@ function themeContract(mod) {
       `token「${key}」不许是空值 —— 空值会让那块样式静默失效（不报错、只是不生效）`)
   })
 
-  // ⭐⭐ 灰白简约的**硬规格**（用户要求：页面浅灰白 / 卡片白 / 深灰字 / 少量统一低饱和强调色）
+  // 唯一视觉规格：暖白页面 / 白色内容面 / 深海蓝正文 / 青绿色小面积强调。
   const rgbOf = hex => {
     const hit = /^#([0-9a-f]{6})$/i.exec(String(hex || ''))
     if (!hit) return null
@@ -148,22 +148,19 @@ function themeContract(mod) {
   }
   const one = ids.length ? mod.THEMES[ids[0]] : null
   if (one) {
-    need(one.surface === '#ffffff', '卡片底必须是纯白 #ffffff（卡片靠纯白与页面灰拉开层次）')
+    need(String(one.surface).toLowerCase() === '#ffffff', '内容面必须是纯白 #ffffff')
     const pageLum = lum(one.pageBg)
     need(pageLum !== null && pageLum > 0.9 && pageLum < 0.995,
-      `页面底必须是**浅灰白**（不能纯白到没有层次），实得 ${one.pageBg}`)
+      `页面底必须是很浅的暖白色（不能纯白到没有层次），实得 ${one.pageBg}`)
     need(String(one.pageBg).toLowerCase() !== String(one.surface).toLowerCase(),
       '页面底不许等于卡片底 —— 同一个值 = 卡片与页面糊成一片')
     const textLum = lum(one.text)
-    need(textLum !== null && textLum < 0.25, `正文必须是深灰（不能太浅看不清），实得 ${one.text}`)
+    need(textLum !== null && textLum < 0.25, `正文必须足够深（不能太浅看不清），实得 ${one.text}`)
     const primarySat = sat(one.primary), accentSat = sat(one.accent)
-    need(primarySat !== null && primarySat <= 0.35,
-      `主色必须是低饱和（⛔ 不要绿色/蓝色/黄色那种鲜亮皮肤），实得 ${one.primary}`)
-    need(accentSat !== null && accentSat <= 0.40,
-      `唯一的强调色必须是低饱和，实得 ${one.accent}`)
-    // ⛔ 只允许**一个**强调色 token。再加第二个就是"多了一套配色"。
-    const accentLike = ['primary', 'primaryDeep', 'accent'].filter(k => sat(one[k]) > 0.4)
-    need(accentLike.length === 0, `这些主色 token 饱和度过高（变成彩色皮肤了）：${accentLike.join('、')}`)
+    need(primarySat !== null && primarySat <= 0.76,
+      `深海蓝主色不能变成刺眼的高饱和彩色，实得 ${one.primary}`)
+    need(accentSat !== null && accentSat <= 0.76,
+      `青绿色强调色不能变成荧光色，实得 ${one.accent}`)
     need(one.decoShape === 'plain', '装饰必须是极简的 plain（⛔ 不要回到三套那种叶片/斜切块装饰）')
   }
 
@@ -498,9 +495,9 @@ function sheetContract() {
   need(/border-radius\s*:\s*32rpx\s+32rpx\s+0\s+0/.test(sheet),
     '面板顶部必须是 32rpx 圆角（下角为 0，贴底），实得 ' + decl(sheet, 'border-radius'))
   need(body(wxss, '.member-sheet-handle'), '必须有顶部拖动短横线')
-  need(/font-size\s*:\s*28rpx/.test(body(wxss, '.member-sheet-title')) &&
-    /font-weight\s*:\s*(800|bold)/.test(body(wxss, '.member-sheet-title')),
-    '标题必须 28rpx 加粗')
+  need(/font-size\s*:\s*32rpx/.test(body(wxss, '.member-sheet-title')) &&
+    /font-weight\s*:\s*(7[0-9]{2}|800|bold)/.test(body(wxss, '.member-sheet-title')),
+    '标题必须 32rpx 加粗')
   need(body(wxss, '.member-sheet-close'), '右上角必须有关闭 ×')
   const scroll = body(wxss, '.member-sheet-body')
   need(/max-height\s*:\s*\d+vh/.test(scroll),
@@ -653,12 +650,12 @@ function isolationContract() {
 async function main() {
   const real = loadTheme(null)
 
-  // ① 只剩一套色板 + 灰白简约规格 + resolve 兜底 + cssVars 完整
+  // ① 只剩一套色板 + 暖白/深蓝/青绿规格 + resolve 兜底 + cssVars 完整
   const a = themeContract(real)
   assert.deepStrictEqual(a, [], '① 单一界面色板 / resolve 兜底 / cssVars 契约：\n' + a.map(x => '  ✗ ' + x).join('\n'))
   console.log('① 单一色板：' + Object.keys(real.THEMES).length + ' 套 × ' +
     Object.keys(flatten(real.THEMES[Object.keys(real.THEMES)[0]])).length +
-    ' 个 token；页面浅灰白 / 卡片纯白 / 深灰字 / 强调色低饱和；脏 theme id 也一律落到同一套')
+    ' 个 token；页面暖白 / 内容面纯白 / 深海蓝文字 / 青绿强调；脏 theme id 也一律落到同一套')
 
   // ② 时段四态读主题变量，且教练端最终计算值不变
   const b = slotContract(real)
@@ -702,7 +699,7 @@ async function main() {
     {
       id: 'D2',
       what: '⭐ 主色改成鲜绿（回到三套皮肤那种**高饱和彩色**的样子）',
-      expect: '低饱和 + 灰白规格',
+      expect: '不得变成刺眼的鲜绿色皮肤',
       build(realMod) {
         const base = realMod.resolve()
         return { ...realMod, THEMES: { default: { ...base, primary: '#22a06b', accent: '#f0b429' } } }
@@ -711,7 +708,7 @@ async function main() {
     {
       id: 'D3',
       what: '⭐ 页面底改成**纯白**且与卡片同色（层次被抹平，卡片与背景糊成一片）',
-      expect: '页面浅灰白 ≠ 卡片纯白',
+      expect: '页面暖白 ≠ 内容面纯白',
       build(realMod) {
         const base = realMod.resolve()
         return { ...realMod, THEMES: { default: { ...base, pageBg: '#ffffff' } } }
@@ -827,8 +824,8 @@ async function main() {
     const appJson = JSON.parse(read('app.json'))
     const appWithThemePage = JSON.stringify({ ...appJson, pages: [...appJson.pages, 'pages/member-theme/member-theme'] })
     const profileWxml = read('pages/member-profile/member-profile.wxml')
-      .replace('<view class="member-list-row member-row member-spread" bindtap="history">',
-        '<view class="member-list-row member-row member-spread" bindtap="theme"><view>个性化主题</view><view class="member-subtitle">{{themeName}} ›</view></view>\n    <view class="member-list-row member-row member-spread" bindtap="history">')
+      .replace('<view class="member-list-row training-row weui-cell weui-cell_access" bindtap="history">',
+        '<view class="member-list-row weui-cell" bindtap="theme"><view>个性化主题</view><view class="member-subtitle">{{themeName}} ›</view></view>\n    <view class="member-list-row training-row weui-cell weui-cell_access" bindtap="history">')
     const identityJs = read('cloudfunctions/memberIdentityCommand/service.js')
       .replace("displayName: cleanText(payload.displayName, 30), updatedAt: timestamp",
         "displayName: cleanText(payload.displayName, 30), theme: payload.theme || 'vitality', updatedAt: timestamp")

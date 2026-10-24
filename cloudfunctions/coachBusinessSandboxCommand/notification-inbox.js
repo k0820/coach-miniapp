@@ -230,7 +230,15 @@ function createInbox({ db, environment }) {
       ok: true, environment: 'sandbox', role,
       collection: collectionFor(role),
       unread: await unreadCount({ kind: role, ownerId }),
-      rows: rows.map(row => ({ id: row._id, type: row.type, title: row.title, body: row.body, createdAt: row.createdAt, read: row.read === true, audience: row.audience }))
+      rows: rows.map(row => ({
+        id: row._id, type: row.type, title: row.title, body: row.body,
+        createdAt: row.createdAt, read: row.read === true, audience: row.audience,
+        // 只返回这一条消息自身的微信发送事实；不包含 openId、模板 ID 或其他账号信息。
+        wechat: {
+          sent: !!(row.wechat && row.wechat.sent),
+          code: String((row.wechat && row.wechat.code) || '')
+        }
+      }))
     }
   }
 

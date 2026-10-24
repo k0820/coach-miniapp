@@ -176,10 +176,8 @@ async function relations() {
 // 它返回：state 分类（A/B/C…）、dataRevision、云端 booking.status、package.used/remaining、
 // 该 booking 的 income 行、以及**该 booking 的全部 receipt**（requestId/command/status/revisionBefore/After/completedAt）。
 // 这正是「这条命令到底在云端成了没有 / 有没有回执」的唯一权威口径 —— 纯查询，零写分支。
-const COMPLETION_PROBE = Object.freeze([
-  { id: 'zhuge-0919', label: '诸葛逍遥 2026-09-19（ob_29_l5cmqb completeBooking 的目标课）', bookingId: 'booking_d4149d6670a3d944adfd' },
-  { id: 'yingzi-0922', label: '莹子 2026-09-22 17:00（电脑侧 ob_2_i4g811，已确认成功的那条）', bookingId: 'booking_927436bcd4f8eed2cb76' }
-])
+// 历史真实目标已从可提交源码移除；本机原始取证版本只保存在被 Git 忽略的私有备份目录。
+const COMPLETION_PROBE = Object.freeze([])
 async function completionFacts() {
   const rows = []
   for (const target of COMPLETION_PROBE) {

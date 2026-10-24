@@ -1,10 +1,20 @@
-<view class="member-page member-shell" style="{{themeStyle}}">
-  <view class="member-title">约课</view>
-  <view class="member-subtitle">挑一个你方便的时间</view>
+<view class="member-page member-shell slots-page weui-page" data-weui-theme="light" style="{{themeStyle}}">
 
-  <view wx:if="{{error}}" class="member-card member-empty">{{error}}</view>
+  <view wx:if="{{error}}" class="member-inline-notice member-inline-notice--error">{{error}}</view>
 
-  <view class="member-card">
+  <!-- 单教练产品：把教练和课程收进同一个顶部入口；点击后只选择实际有余量的课程。 -->
+  <view class="booking-choice {{coaches.length?'':'disabled'}}" bindtap="openChoice">
+    <view class="choice-mark">练</view>
+    <view class="choice-copy">
+      <view class="choice-kicker">教练与课程</view>
+      <view class="choice-title">{{coaches[coachIndex].displayName||'正在读取教练'}} · {{packages[packageIndex].typeName||'暂无可用课程'}}</view>
+      <view class="choice-sub" wx:if="{{packages[packageIndex]}}">本课程还能预约 {{packages[packageIndex].availableToBook}} 节</view>
+      <view class="choice-sub" wx:else>读取完成后可在这里选择课程</view>
+    </view>
+    <view class="choice-arrow">›</view>
+  </view>
+
+  <view class="member-card date-card">
     <view class="member-row member-spread">
       <view class="slot-day-copy">
         <view class="slot-day">{{dateLabel}}</view>
@@ -28,14 +38,7 @@
   <!-- ⛔ 2026-10-06 新会员方案：不再有「训练档案 / 选择档案」这一层。
        一位会员只有一份资料 ⇒ 这里不需要（也不许）提示"现在约的是哪一份"。 -->
 
-  <!-- 单教练产品：明确显示当前教练，但不再提供选择或切换。 -->
-  <view class="member-card">
-    <view class="member-section-title" style="margin-top:0">授课教练</view>
-    <view wx:if="{{coaches.length}}" class="slot-coaches">
-      <view wx:for="{{coaches}}" wx:key="coachKey" class="slot-coach active">{{item.displayName}}</view>
-    </view>
-    <view wx:else class="member-subtitle">{{archiveEmpty||'暂时读取不到教练名单，请下拉重试。'}}</view>
-  </view>
+  <view wx:if="{{packageHint}}" class="booking-hint">{{packageHint}}</view>
 
   <view wx:if="{{hint}}" class="booking-hint">{{hint}}</view>
 
@@ -65,22 +68,19 @@
     </view>
   </block>
 
-  <!-- ⭐ 真机阻断 Bug 修复：课时包**可以点选**（原来整张列表没有 bindtap ⇒ 只能默默用第一个）。
-       单份课包时 `packagesSelectable=false` ⇒ 不显示"选它/已选"、不显示"点一个再确认"，
-       单课包用户体验与改造前逐字相同。 -->
-  <view class="member-card" wx:if="{{packages.length}}">
-    <view class="member-section-title" style="margin-top:0">可用课时包<text wx:if="{{packagesSelectable}}" class="slot-pkg-tip">点一个再确认</text></view>
-    <view wx:for="{{packages}}" wx:key="packageViewId" class="member-row member-list-row slot-pkg {{item.selected&&packagesSelectable?'active':''}}" data-index="{{index}}" bindtap="pickPackage">
-      <view class="booking-copy">
-        <view>{{item.typeName}}</view>
-        <!-- ⭐ 多份学员档案时才出现：这份课时包属于哪一份档案（单档案用户看不到这一行） -->
-        <view class="member-subtitle">{{item.archiveName?item.archiveName+' · ':''}}{{item.coachName}} · 还能约 {{item.availableToBook}} 节</view>
+  <member-sheet visible="{{choiceOpen}}"
+    title="选择本次课程"
+    desc="{{coaches[coachIndex].displayName||'授课教练'}}"
+    confirmText="选好了" showCancel="{{false}}"
+    bindconfirm="closeChoice" bindclose="closeChoice">
+    <view wx:if="{{packages.length}}" class="choice-list">
+      <view wx:for="{{packages}}" wx:key="packageViewId" class="choice-option {{item.selected?'active':''}}" data-index="{{index}}" bindtap="choosePackage">
+        <view class="choice-option-main"><view class="choice-option-name">{{item.typeName}}</view><view class="choice-option-remain">还能预约 {{item.availableToBook}} 节</view></view>
+        <view class="choice-option-check">{{item.selected?'✓':'选择'}}</view>
       </view>
-      <view wx:if="{{packagesSelectable}}" class="slot-pkg-check">{{item.selected?'✓ 已选':'选它'}}</view>
     </view>
-  </view>
-  <!-- ⛔ 这位教练一份可授权的课包都没有 ⇒ 明说原因，绝不留一片空白让人以为系统坏了。 -->
-  <view wx:if="{{packageHint}}" class="booking-hint">{{packageHint}}</view>
+    <view wx:else class="choice-empty">{{packageHint||'暂时没有可用课程，请联系教练。'}}</view>
+  </member-sheet>
 
   <!-- ⭐⭐ 约课确认：**统一弹层** `member-sheet`（2026-10-04 H）。
        ⛔ 改造前这里是本页自建的一整套遮罩（`.booking-detail-mask` + `.booking-detail`），

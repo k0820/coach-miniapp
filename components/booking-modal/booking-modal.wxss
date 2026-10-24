@@ -23,3 +23,29 @@
 /* 精确到分钟：默认收起的一行入口（原来那个 time picker 一个字没改，只是藏在这行后面） */
 .precise-toggle{text-align:center;color:#7d8da3;font-size:19rpx;padding:16rpx 0 2rpx}
 .precise-toggle:active{color:#2563eb}
+
+/* 2026-10-17 · 教练约课弹窗与会员端统一：底部滑出、少阴影、青绿色选择反馈。 */
+.mask{background:rgba(12,38,40,.42);backdrop-filter:blur(6px)}
+.modal{max-height:88vh;padding:30rpx 34rpx calc(24rpx + env(safe-area-inset-bottom));border:0;border-radius:36rpx 36rpx 0 0;background:#fff;box-shadow:0 -12rpx 38rpx rgba(18,54,53,.12);animation-duration:.24s}
+.title{color:#153536;font-size:34rpx}
+.close{right:28rpx;top:22rpx;background:#f1f5f3;color:#71827f}
+.time-banner{background:#edf7f4;border:1rpx solid #cee5df;color:#176e68}
+.time-label{color:#6f8580}
+.student{border:0;border-bottom:1rpx solid #e9efed;border-radius:0;box-shadow:none}
+.student:active{background:#f0f8f5}
+.remain{background:#e8f5f1;color:#176e68}
+.compact-pkg{border-color:#dfe9e6!important;border-radius:18rpx;box-shadow:none!important}
+.compact-pkg.selected{border-color:#238d80!important;background:#edf8f4!important}
+.pkg-copy>view:first-child{color:#173b3a}
+.pkg-price{color:#176e68}
+.compact-time{background:#f5f8f7;border-color:#dce9e5;box-shadow:none}
+.time-editor-head b,.select-line>view:nth-child(2) b{color:#173b3a}
+.time-preview{color:#176e68;border-color:#cce3dd;box-shadow:none}
+.select-icon{background:#e3f3ee;color:#176e68}
+.time-icon{background:#e8f1ef;color:#176e68}
+.hour-chip.on,.minute-tabs>view.on{background:#176e68;border-color:#176e68;box-shadow:none}
+.confirm{height:88rpx;line-height:88rpx;background:#133f46;border-radius:22rpx;box-shadow:none}
+.precise-toggle:active{color:#176e68}
+
+/* 2026-10-23 · 点击课表时间格后的预约弹层，与样板完全共用色板。 */
+.mask{background:rgba(12,38,40,.46)}.modal{background:#fbfaf5;border-radius:36rpx 36rpx 0 0}.title{color:#102a2b}.close{background:#eafaf4;color:#176e68}.time-banner,.compact-time{background:linear-gradient(145deg,#edf3ff,#fff);border-color:#dce7fa}.time-banner{color:#4c76df}.time-label{color:#7183a1}.student{background:#fff}.student:active{background:#eafaf4}.remain{background:#eafaf4;color:#176e68}.compact-pkg.selected{border-color:#22a77a!important;background:#eafaf4!important}.pkg-price{color:#176e68}.select-icon,.time-icon{background:#dff7ee;color:#176e68}.hour-chip.on,.minute-tabs>view.on,.confirm{background:#103f3b;border-color:#103f3b;color:#fff}.time-preview{color:#176e68}.slot-cell:not(.booked):not(.past){background:linear-gradient(145deg,#fff,#eafaf4)}

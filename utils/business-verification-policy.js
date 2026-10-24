@@ -40,7 +40,7 @@ const POLICY = Object.freeze({
   deleteCompletedBooking: { level: LEVELS.REQUIRED, risk: RISKS.MONEY, verifier: null, effect: '返还课时 + 删收入 + 删预约', why: '反向动钱且不可逆；**尚无只读核验器 ⇒ 拒发**' },
   reverseCourseSale: { level: LEVELS.REQUIRED, risk: RISKS.MONEY, verifier: null, effect: '撤销销售并回退关联课时包', why: '动钱且不可逆；**尚无只读核验器 ⇒ 拒发**' },
   updatePackage: { level: LEVELS.REQUIRED, risk: RISKS.MONEY, verifier: null, effect: '改写既有课时包（used/remaining 就是钱）', why: '改的是钱；**尚无只读核验器 ⇒ 拒发**' },
-  deletePackage: { level: LEVELS.REQUIRED, risk: RISKS.MONEY, verifier: null, effect: '删除既有课时包', why: '不可逆；**尚无只读核验器 ⇒ 拒发**' },
+  deletePackage: { level: LEVELS.REQUIRED, risk: RISKS.MONEY, verifier: null, effect: '清除课时包剩余权益并取消未上预约，保留销售与已上历史', why: '不可逆；**尚无只读核验器 ⇒ 抢修通道拒发**' },
   updateCourseSale: { level: LEVELS.REQUIRED, risk: RISKS.MONEY, verifier: null, effect: '改写既有销售记录（金额）', why: '改的是钱；**尚无只读核验器 ⇒ 拒发**' },
   updateManualSale: { level: LEVELS.REQUIRED, risk: RISKS.MONEY, verifier: null, effect: '改写既有手工销售（金额）', why: '改的是钱；**尚无只读核验器 ⇒ 拒发**' },
   deleteManualSale: { level: LEVELS.REQUIRED, risk: RISKS.MONEY, verifier: null, effect: '删除既有手工销售', why: '不可逆；**尚无只读核验器 ⇒ 拒发**' },

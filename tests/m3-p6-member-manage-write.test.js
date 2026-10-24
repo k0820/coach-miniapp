@@ -157,6 +157,20 @@ async function main() {
     assert.strictEqual(bookingDataOf(created.bookingId).status, 'booked')
   })
 
+  await runner('①b 拉伸恢复与常规课走同一条完整预约/取消链', async () => {
+    setupBase()
+    const pkg = pkgData()
+    pkg.type = '拉伸恢复'
+    const created = await create(D(3), 14)
+    assert.strictEqual(created.ok, true, `拉伸课必须能预约：${created.code || ''} ${created.message || ''}`)
+    assert.strictEqual(bookingDataOf(created.bookingId).typeName, '拉伸恢复', '预约必须绑定用户选择的拉伸课包')
+    assert.strictEqual(reserved(), 1, '拉伸课预约必须占用 1 节')
+    const cancelled = await cancel(created.bookingId)
+    assert.strictEqual(cancelled.ok, true, `拉伸课必须能取消：${cancelled.code || ''} ${cancelled.message || ''}`)
+    assert.strictEqual(reserved(), 0, '取消拉伸课必须释放占用课时')
+    assert.strictEqual(pkgData().remaining, 8, '取消不能提前扣除拉伸课余额')
+  })
+
   // ---------------------------------------------------------------- 规则 1
   await runner('② 规则1：任何时间都能取消 —— 开课当天 / 已开课的时段都能取消（没有截止时间）', async () => {
     setupBase()

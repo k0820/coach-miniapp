@@ -205,7 +205,7 @@ async function main() {
     })
   })
 
-  await check('一次性通知设置从正式界面和路由撤下', () => {
+  await check('独立通知设置从正式界面和路由撤下', () => {
     const profile = fs.readFileSync(P('pages/member-profile/member-profile.wxml'), 'utf8')
     const stats = fs.readFileSync(P('pages/stats/stats.wxml'), 'utf8')
     assert.ok(!profile.includes('微信通知设置'), '⛔ 会员「我的」仍有通知入口')
